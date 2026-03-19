@@ -1,3 +1,6 @@
+import hashlib
+from unittest import result
+
 from flask import Flask, render_template, request
 import sqlite3 as sql
 
@@ -48,7 +51,20 @@ def authenticate(username, password):
         pass
 
     return  render_template('input.html', error=error)
-
+def password_to_hash_checker(email, password):
+    """Helper function for checking the user entered password and verify it against the database"""
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT password, salt FROM Users WHERE email = ?', (email,)) #finds the hashed password for the provided username
+    result = cursor.fetchone()
+    connection.close()
+    if result is None:
+        #the username is incorrect or not in the databse
+            return False
+    stored_hash, salt = result
+    password_and_salt = (password + salt).encode('utf-8')
+    user_input_hash = hashlib.sha256(password_and_salt).hexdigest()
+    return user_input_hash == stored_hash
 if __name__ == "__main__":
     app.run()
 
