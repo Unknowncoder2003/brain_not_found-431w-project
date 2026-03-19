@@ -33,8 +33,8 @@ def valid_name(first_name, last_name):
 
 def valid_email_password(username, password):
     connection = sql.connect('database.db')
-    email = connection.execute('SELECT email FROM users;')
-    password = connection.execute('SELECT password FROM users;')
+    email = connection.execute('SELECT email FROM Users;')
+    password = connection.execute('SELECT password FROM Users;')
     return None
 
 @app.route('/name', methods=['POST', 'GET'])
