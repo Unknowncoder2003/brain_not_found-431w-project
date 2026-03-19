@@ -31,6 +31,23 @@ def valid_name(first_name, last_name):
     cursor = connection.execute('SELECT * FROM users;')
     return cursor.fetchall()
 
+def valid_email_password(username, password):
+    connection = sql.connect('database.db')
+    email = connection.execute('SELECT email FROM Users;')
+    password = connection.execute('SELECT password FROM Users;')
+    return None
+
+@app.route('/name', methods=['POST', 'GET'])
+def authenticate(username, password):
+    error = None
+    #when click the login button the authenticate stuff occur
+    if request.method == 'POST':
+        #valid_email_password(username, password)
+        #if match then goes to welcome
+        #if not match stay in the same page and have error message
+        pass
+
+    return  render_template('input.html', error=error)
 
 if __name__ == "__main__":
     app.run()
