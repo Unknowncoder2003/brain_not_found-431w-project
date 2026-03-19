@@ -25,7 +25,7 @@ def name():
             error = 'invalid input name'
     return render_template('input.html', error=error)
 
-
+'''
 def valid_name(first_name, last_name):
     connection = sql.connect('database.db')
     connection.execute('CREATE TABLE IF NOT EXISTS users(firstname TEXT, lastname TEXT);')
@@ -33,24 +33,26 @@ def valid_name(first_name, last_name):
     connection.commit()
     cursor = connection.execute('SELECT * FROM users;')
     return cursor.fetchall()
+'''
 
-def valid_email_password(username, password):
+def valid_email_password(email, password):
     connection = sql.connect('database.db')
-    email = connection.execute('SELECT email FROM Users;')
-    password = connection.execute('SELECT password FROM Users;')
+    Email = connection.execute('SELECT email FROM Users;')
+    Password = connection.execute('SELECT password FROM Users;')
     return None
 
 @app.route('/name', methods=['POST', 'GET'])
-def authenticate(username, password):
+def authenticate():
     error = None
     #when click the login button the authenticate stuff occur
     if request.method == 'POST':
-        #valid_email_password(username, password)
+        #valid_email_password(request.form['Email'], request.form['Password'])
         #if match then goes to welcome
         #if not match stay in the same page and have error message
         pass
 
     return  render_template('input.html', error=error)
+
 def password_to_hash_checker(email, password):
     """Helper function for checking the user entered password and verify it against the database"""
     connection = sql.connect('database.db')
