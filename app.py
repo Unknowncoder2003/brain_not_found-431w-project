@@ -13,7 +13,9 @@ host = 'http://127.0.0.1:5000/'
 def index():
     return render_template('index.html')
 
-
+@app.route('/bidder')
+def bidder():
+    return render_template('bidder.html')
 
 '''
 def valid_name(first_name, last_name):
