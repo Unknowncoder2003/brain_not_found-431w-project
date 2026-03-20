@@ -4,9 +4,7 @@ import secrets
 
 def generate_salt():
     return secrets.token_urlsafe(16)
-def hash_with_salt(password, salt):
-    password_and_hash = password + salt
-    return hashlib.sha256(password_and_hash.encode('utf-8')).hexdigest()
+
 input_file = 'dataset/Users.csv'
 output_file = 'dataset/HashedUsers.csv'
 with open(input_file) as csvfile:
@@ -16,7 +14,11 @@ with open(input_file) as csvfile:
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         for row in reader:
+            password = row['password'].strip()
             salt = generate_salt()
+            password_and_salt = (password + salt).encode('utf-8')
+            hashed_password = hashlib.sha256(password_and_salt).hexdigest()
             row['salt'] = salt
-            row['password'] = hash_with_salt(row['password'], salt)
+            row['password'] = hashed_password
+
             writer.writerow(row)

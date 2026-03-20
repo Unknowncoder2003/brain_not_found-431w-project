@@ -38,10 +38,11 @@ def authenticate():
     #when click the login button the authenticate stuff occur
     if request.method == 'POST':
         # result1 = valid_email_password(request.form['Email'], request.form['Password'])
-        result2 = password_to_hash_checker(request.form['Email'], request.form['Password'])
+        result2 = password_to_hash_checker(request.form['email'], request.form['password'])
+        print(result2)
         # if result1 == True and result2 = True: go to welcome.html
         if result2:
-            return render_template('welcome.html', error=error)
+            return render_template(find_user_html(request.form['email']), error=error)
         # if not match stay in the same page and have error message or go to another html?
         else:
             return render_template('login.html', error=error)
@@ -57,10 +58,17 @@ def password_to_hash_checker(email, password):
     connection.close()
     if result is None:
         #the username is incorrect or not in the databse
+            print("No matching user.")
             return False
     stored_hash, salt = result
-    password_and_salt = (password + salt).encode('utf-8')
+    salt = salt
+    stored_hash = stored_hash
+    password_and_salt = (password.strip() + salt).encode('utf-8')
     user_input_hash = hashlib.sha256(password_and_salt).hexdigest()
+    print(f"Stored Hash: '{stored_hash}' (Length: {len(stored_hash)})")
+    print(f"Input  Hash: '{user_input_hash}' (Length: {len(user_input_hash)})")
+    print(f"Input Password: '{password}'")
+    print(f"Salt Used:   '{salt}' (Length: {len(salt)})")
     return user_input_hash == stored_hash
 def find_user_html(email):
     connection = sql.connect('database.db')
