@@ -20,10 +20,10 @@ def name():
     if request.method == 'POST':
         result = valid_name(request.form['FirstName'], request.form['LastName'])
         if result:
-            return render_template('input.html', error=error, result=result)
+            return render_template('login.html', error=error, result=result)
         else:
             error = 'invalid input name'
-    return render_template('input.html', error=error)
+    return render_template('login.html', error=error)
 
 '''
 def valid_name(first_name, last_name):
@@ -53,9 +53,9 @@ def authenticate():
             return render_template('welcome.html', error=error)
         # if not match stay in the same page and have error message or go to another html?
         else:
-            return render_template('input.html', error=error)
+            return render_template('login.html', error=error)
 
-    return render_template('input.html', error=error)
+    return render_template('login.html', error=error)
 
 def password_to_hash_checker(email, password):
     """Helper function for checking the user entered password and verify it against the database"""
