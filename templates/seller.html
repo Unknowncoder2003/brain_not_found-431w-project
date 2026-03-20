@@ -1,10 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Seller Dashboard | NittanyAuction</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
+    <style>
+        body { background-color: #f2f2f2; }
+
+        .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
+        }
+
+        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
+        .brand-text .auction { color: #28a745; font-weight: bold; }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 2rem;
+        }
+
+        .welcome-header {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
+
+<nav class="navbar navbar-light">
+    <span class="navbar-brand brand-text">
+        <span class="nittany">Nittany</span><span class="auction">Auction</span>
+    </span>
+    <span class="text-muted">Seller Portal</span>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 dashboard-card">
+            <h2 class="welcome-header">Hi, {{ first_name }}!</h2>
+
+            <p class="lead">Welcome to your seller dashboard. Here you can manage your listings and view current bids.</p>
+
+            <div class="mt-4">
+                <a href="/login" class="btn btn-outline-secondary">Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
