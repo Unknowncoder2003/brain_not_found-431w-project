@@ -1,10 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NittanyAuction HelpDesk</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
+
+    <style>
+        body {
+            background-color: #f2f2f2;
+        }
+
+        .page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dashboard-card {
+            width: 800px;
+            background: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .brand-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .brand-title .nittany {
+            color: #1e4fa1;
+        }
+
+        .brand-title .auction {
+            color: #28a745;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .welcome-title {
+            text-align: center;
+            color: #f0ad4e;
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .user-email {
+            text-align: center;
+            color: #444;
+            margin-bottom: 30px;
+        }
+
+        .feature-card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            height: 100%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .feature-card h5 {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: #666;
+            margin-bottom: 0;
+        }
+
+        .bottom-links {
+            margin-top: 25px;
+            text-align: center;
+        }
+    </style>
 </head>
+
 <body>
 
+<div class="page-wrapper">
+
+    <div class="dashboard-card">
+
+        <div class="brand-title">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </div>
+
+        <p class="subtitle">HelpDesk Dashboard</p>
+
+        <div class="welcome-title">
+            Welcome HelpDesk
+        </div>
+
+        <p class="user-email">
+            Logged in as: <strong>{{ email }}</strong>
+        </p>
+
+        <div class="row justify-content-center">
+
+            <div class="col-md-5 mb-3">
+                <div class="feature-card">
+                    <h5>User Requests</h5>
+                    <p>
+                        Review support requests submitted by buyers and sellers.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-5 mb-3">
+                <div class="feature-card">
+                    <h5>System Support</h5>
+                    <p>
+                        Provide administrative assistance for the NittanyAuction platform.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-links">
+            <a href="/" class="btn btn-primary">Back to Home</a>
+        </div>
+
+    </div>
+
+</div>
+
 </body>
-</html>
+</html>v
