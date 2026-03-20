@@ -69,11 +69,29 @@
         .dropdown:hover .dropdown-content {
           display: block;
         }
+
+        .brand-title {
+            text-align: right;
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .brand-title .nittany {
+            color: #1e4fa1;
+        }
+
+        .brand-title .auction {
+            color: #28a745;
+        }
     </style>
 </head>
 <body>
-    <header>
+    <header style="display: flex; align-items: center;">
         <h1>Hi............</h1>
+        <div class="brand-title" style="margin-left: auto;">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </div>
     </header>
     <div class="navbar">
     <a href="/">Home</a>
@@ -83,9 +101,9 @@
       <i class="fa fa-caret-down"></i>
     </button>
     <div class="dropdown-content">
-      <a href="#">Link 1</a>
-      <a href="#">Link 2</a>
-      <a href="#">Link 3</a>
+      <a href="#">Current bids</a>
+      <a href="#">Watch list</a>
+      <a href="#">Past bids</a>
     </div>
     </div>
         <a href="/login">Logout</a>
@@ -97,6 +115,15 @@
         <form action="/bidder" method="POST">
         </form>
     </div>
+
 </div>
+    <p>items: </p>
+    <figure>
+    <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"  width= "400" height = "300">
+    <figcaption>Toy Train.</figcaption>
+    </figure>
+
+
+
 </body>
 </html>
