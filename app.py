@@ -13,19 +13,7 @@ host = 'http://127.0.0.1:5000/'
 def index():
     return render_template('index.html')
 
-@app.route('/bidder')
-def bidder():
-    return render_template('bidder.html')
-@app.route('/name', methods=['POST', 'GET'])
-def name():
-    error = None
-    if request.method == 'POST':
-        result = valid_name(request.form['FirstName'], request.form['LastName'])
-        if result:
-            return render_template('login.html', error=error, result=result)
-        else:
-            error = 'invalid input name'
-    return render_template('login.html', error=error)
+
 
 '''
 def valid_name(first_name, last_name):
@@ -44,7 +32,7 @@ def valid_email_password(email, password):
     return None
 
 
-@app.route('/name', methods=['POST', 'GET'])
+@app.route('/login', methods=['POST', 'GET'])
 def authenticate():
     error = None
     #when click the login button the authenticate stuff occur
