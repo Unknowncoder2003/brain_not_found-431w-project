@@ -46,12 +46,16 @@ def authenticate():
     error = None
     #when click the login button the authenticate stuff occur
     if request.method == 'POST':
-        #valid_email_password(request.form['Email'], request.form['Password'])
-        #if match then goes to welcome
-        #if not match stay in the same page and have error message
-        pass
+        # result1 = valid_email_password(request.form['Email'], request.form['Password'])
+        result2 = password_to_hash_checker(request.form['Email'], request.form['Password'])
+        # if result1 == True and result2 = True: go to welcome.html
+        if result2:
+            return render_template('welcome.html', error=error)
+        # if not match stay in the same page and have error message or go to another html?
+        else:
+            return render_template('input.html', error=error)
 
-    return  render_template('input.html', error=error)
+    return render_template('input.html', error=error)
 
 def password_to_hash_checker(email, password):
     """Helper function for checking the user entered password and verify it against the database"""
