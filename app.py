@@ -41,6 +41,7 @@ def valid_email_password(email, password):
     Password = connection.execute('SELECT password FROM Users;')
     return None
 
+
 @app.route('/name', methods=['POST', 'GET'])
 def authenticate():
     error = None
@@ -71,6 +72,27 @@ def password_to_hash_checker(email, password):
     password_and_salt = (password + salt).encode('utf-8')
     user_input_hash = hashlib.sha256(password_and_salt).hexdigest()
     return user_input_hash == stored_hash
+def find_user_html(email):
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    #Check if the user is Helpdesk staff
+    cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (email,))
+    if cursor.fetchone():
+        connection.close()
+        return "helpdesk.html"
+    #Check if the user is a Seller
+    cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (email,))
+    if cursor.fetchone():
+        connection.close()
+        return "seller.html"
+    #Check if the user is a Bidder
+    cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (email,))
+    if cursor.fetchone():
+        connection.close()
+        return "bidder.html"
+    # Default fallback if email is not found in any role table
+    connection.close()
+    return "index.html"
 if __name__ == "__main__":
     app.run()
 
