@@ -67,10 +67,6 @@ def password_to_hash_checker(email, password):
     stored_hash = stored_hash
     password_and_salt = (password.strip() + salt).encode('utf-8')
     user_input_hash = hashlib.sha256(password_and_salt).hexdigest()
-    print(f"Stored Hash: '{stored_hash}' (Length: {len(stored_hash)})")
-    print(f"Input  Hash: '{user_input_hash}' (Length: {len(user_input_hash)})")
-    print(f"Input Password: '{password}'")
-    print(f"Salt Used:   '{salt}' (Length: {len(salt)})")
     return user_input_hash == stored_hash
 def find_user_html(email):
     connection = sql.connect('database.db')
