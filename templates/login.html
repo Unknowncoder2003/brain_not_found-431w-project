@@ -1,57 +1,101 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <title></title>
+    <title>NittanyAuction Login</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
+    <style>
+        body {
+            background-color: #f2f2f2;
+        }
+
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-card {
+            width: 420px;
+            background: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .brand-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .brand-title .nittany {
+            color: #1e4fa1;
+        }
+
+        .brand-title .auction {
+            color: #28a745;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .btn-login {
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .bottom-links {
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-<div class="container-sm">
-    <div class="card-body">
-        <h2 class="card-title">Enter Your Name</h2>
 
-        <form action="/name" method="POST">
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="brand-title">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </div>
+        <p class="subtitle">Sign in as Buyer, Seller, or HelpDesk</p>
+
+        <form action="/login" method="POST">
             <div class="form-group">
-                <label for="Email">Email</label>
-                <input type="text" name="Email" required class="form-control">
+                <label for="email">Email address</label>
+                <input type="email" class="form-control" id="email" name="email"
+                       placeholder="Enter your email" required>
             </div>
+
             <div class="form-group">
-                <label for="Password">Password</label>
-                <input type="text" name="Password" required class="form-control">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" name="password"
+                       placeholder="Enter your password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
-            <a class="btn btn-success" href="/" role="button">Go Back</a>
+
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary btn-login">Sign In</button>
+
+            <div class="bottom-links">
+                <a href="/">Go Back</a>
+            </div>
         </form>
-    </div>
-    <div class="card-body">
-        <h2 class="card-title">History</h2>
-        <table class="table table-dark">
-            <tr>
-                <th scope="col"> First Name</th>
-                <th scope="col"> Last Name</th>
-            </tr>
-            <tbody>
-            {% for first_name, last_name in result %}
-                <tr>
-                    <td> {{ first_name }} </td>
-                    <td> {{ last_name }} </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
-        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
-        crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-        crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
-        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
-        crossorigin="anonymous"></script>
 </body>
 </html>
