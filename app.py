@@ -98,10 +98,10 @@ def seller():
     # Get the email of the person who just logged in
     user_email = session.get('email')
     if not user_email:
-        pass  # not showing for debugging purpose
+        user_email = 'place_holder@lsu.edu'  # not returning to authenticate for debugging purpose
         # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
 
-    return render_template('seller.html')
+    return render_template('seller.html',email = user_email)
 @app.route('/bidder')
 def bidder():
     # Get the email of the person who just logged in
@@ -138,10 +138,6 @@ def helpdesk():
     if not result:
         #the user is not a helpdesk staff, abort
         return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
-    if user_email:
-        femail = user_email
-    else:
-        femail = "lsuhelpdeskStaff@lsu.edu"  # Fallback email
-    return render_template('helpdesk.html', email=femail)
+    return render_template('helpdesk.html', email=user_email)
 if __name__ == "__main__":
     app.run()
