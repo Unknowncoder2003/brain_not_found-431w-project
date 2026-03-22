@@ -59,6 +59,17 @@ HelpDesk:
 email: cantonacci6p@lsu.edu
 password: vKQmcc1y
 
+# Features Implemented for Progress Review
+Implemented Features:
+
+- User Login System
+- Secure password hashing (SHA256 + salt)
+- Database population from CSV / script
+- Role-based login:
+  - Bidder → bidder.html
+  - Seller → seller.html
+  - HelpDesk → helpdesk.html
+- Error handling for invalid login
 # File Structure 
 /dataset\
    -Address.csv\
@@ -88,4 +99,5 @@ CleanAuction_Listing.py\
 database.db\
 passwordHasher.py\
 README.md\
-test.py\
+-test.py
+
