@@ -1,21 +1,19 @@
+import email
 import hashlib
 from unittest import result
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request,redirect, url_for,session
 import sqlite3 as sql
 
 app = Flask(__name__)
+app.secret_key = 'super_secret_nittany_key_that_nobody_will_know' #for the session (the memory) to work
 
 host = 'http://127.0.0.1:5000/'
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/bidder')
-def bidder():
-    return render_template('bidder.html')
+
 
 '''
 def valid_name(first_name, last_name):
@@ -39,14 +37,16 @@ def authenticate():
     error = None
     #when click the login button the authenticate stuff occur
     if request.method == 'POST':
-        # result1 = valid_email_password(request.form['Email'], request.form['Password'])
-        result2 = password_to_hash_checker(request.form['email'], request.form['password'])
-        print(result2)
-        # if result1 == True and result2 = True: go to welcome.html
-        if result2:
-            return render_template(find_user_html(request.form['email']), error=error)
+        email = request.form['email']
+        password = request.form['password']
+        result = password_to_hash_checker(email, password)
+        if result:
+            # if result is true go to the user front page
+            session['email'] = email
+            return redirect(url_for(find_user_html(email), error=error))
         # if not match stay in the same page and have error message or go to another html?
         else:
+            error = 'Invalid username or password.'
             return render_template('login.html', error=error)
 
     return render_template('login.html', error=error)
@@ -59,7 +59,7 @@ def password_to_hash_checker(email, password):
     result = cursor.fetchone()
     connection.close()
     if result is None:
-        #the username is incorrect or not in the databse
+        #the username is incorrect or not in the database
             print("No matching user.")
             return False
     stored_hash, salt = result
@@ -75,21 +75,59 @@ def find_user_html(email):
     cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (email,))
     if cursor.fetchone():
         connection.close()
-        return "helpdesk.html"
+        return "helpdesk"
     #Check if the user is a Seller
     cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (email,))
     if cursor.fetchone():
         connection.close()
-        return "seller.html"
+        return "seller"
     #Check if the user is a Bidder
     cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (email,))
     if cursor.fetchone():
         connection.close()
-        return "bidder.html"
+        return "bidder"
     # Default fallback if email is not found in any role table
     connection.close()
-    return "index.html"
+    return "index"
+
+@app.route('/seller', methods=['POST', 'GET'])
+def seller():
+    # Get the email of the person who just logged in
+    user_email = session.get('email')
+    if not user_email:
+        pass  # not showing for debugging purpose
+        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
+
+    return render_template('seller.html')
+@app.route('/bidder')
+def bidder():
+    # Get the email of the person who just logged in
+    user_email = session.get('email')
+    if not user_email:
+        pass  # not showing for debugging purpose
+        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
+    # Connect to DB and get the First Name
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
+    result = cursor.fetchone()
+    connection.close()
+    # Handle the result
+    if result:
+        fname = result[0]
+    else:
+        fname = "Bidder"  # Fallback name
+    # SEND THE DATA TO HTML
+    return render_template('bidder.html', first_name=fname)
+@app.route('/helpdesk', methods=['POST', 'GET'])
+def helpdeask():
+    # Get the email of the person who just logged in
+    user_email = session.get('email')
+    if not user_email:
+        pass  # not showing for debugging purpose
+        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
+
+    return render_template('helpdesk.html')
+
 if __name__ == "__main__":
     app.run()
-
-

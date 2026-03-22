@@ -4,118 +4,97 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
     <style>
-    body {
-        font-family: Arial, Helvetica, sans-serif;
+
+    body { background-color: #f2f2f2; }
+
+    .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
         }
 
-        .navbar {
-          overflow: hidden;
-          background-color: #333;
+    .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
+    .brand-text .auction { color: #28a745; font-weight: bold; }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 2rem;
         }
 
-        .navbar a {
-          float: left;
-          font-size: 16px;
-          color: white;
-          text-align: center;
-          padding: 14px 16px;
-          text-decoration: none;
+    .welcome-header {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
 
-        .dropdown {
-          float: left;
-          overflow: hidden;
-        }
-
-        .dropdown .dropbtn {
-          font-size: 16px;
-          border: none;
-          outline: none;
-          color: white;
-          padding: 14px 16px;
-          background-color: inherit;
-          font-family: inherit;
-          margin: 0;
-        }
-
-        .navbar a:hover, .dropdown:hover .dropbtn {
-          background-color: red;
-        }
-
-        .dropdown-content {
-          display: none;
-          position: absolute;
-          background-color: #f9f9f9;
-          min-width: 160px;
-          box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-          z-index: 1;
-        }
-
-        .dropdown-content a {
-          float: none;
-          color: black;
-          padding: 12px 16px;
-          text-decoration: none;
-          display: block;
-          text-align: left;
-        }
-
-        .dropdown-content a:hover {
-          background-color: #ddd;
-        }
-
-        .dropdown:hover .dropdown-content {
-          display: block;
-        }
-
-        .brand-title {
-            text-align: right;
-            font-size: 2.2rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .brand-title .nittany {
-            color: #1e4fa1;
-        }
-
-        .brand-title .auction {
-            color: #28a745;
-        }
     </style>
 </head>
 <body>
-    <header style="display: flex; align-items: center;">
-        <h1>Hi............</h1>
-        <div class="brand-title" style="margin-left: auto;">
+
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand brand-text" href="/bidder">
             <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="sellerNavbar">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/bidder">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/my-listings">My Listings</a>
+                </li>
+                <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="exampleDropdown"
+                   role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Seller Tools
+                </a>
+                <div class="dropdown-menu" aria-labelledby="exampleDropdown">
+                    <a class="dropdown-item" href="/analytics">View Analytics</a>
+                    <a class="dropdown-item" href="/reports">Tax Reports</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/support">Contact HelpDesk</a>
+                </div>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <span class="nav-link text-muted">Seller: <strong>{{ first_name }}</strong></span>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                </li>
+
+            </ul>
         </div>
-    </header>
-    <div class="navbar">
-    <a href="/">Home</a>
-    <a href="/">Items</a>
-    <div class="dropdown">
-    <button class="dropbtn">Dropdown
-      <i class="fa fa-caret-down"></i>
-    </button>
-    <div class="dropdown-content">
-      <a href="#">Current bids</a>
-      <a href="#">Watch list</a>
-      <a href="#">Past bids</a>
     </div>
-    </div>
-        <a href="/login">Logout</a>
-    </div>
+</nav>
 
-<div>
-    <div>
-        <p class="subtitle">You are a bidder, go buy some stuff</p>
-        <form action="/bidder" method="POST">
-        </form>
-    </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 dashboard-card">
+            <h2 class="welcome-header">Hi, {{ first_name }}!</h2>
 
+            <p class="lead">Welcome to your Bidder dashboard. Go buy some stuff</p>
+
+            <div class="mt-4">
+                <a href="/login" class="btn btn-outline-secondary">Logout</a>
+            </div>
+        </div>
+    </div>
 </div>
     <p>items: </p>
     <figure>
