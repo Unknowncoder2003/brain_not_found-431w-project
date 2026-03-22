@@ -93,7 +93,7 @@ def seller():
 @app.route('/bidder')
 def bidder():
     return render_template('bidder.html')
-@app.route('/helpdeask', methods=['POST', 'GET'])
+@app.route('/helpdesk', methods=['POST', 'GET'])
 def helpdeask():
     return render_template('helpdesk.html')
 
