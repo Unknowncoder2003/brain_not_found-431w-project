@@ -14,10 +14,11 @@
         }
 
         .page-wrapper {
-            min-height: 100vh;
+            min-height: calc(100vh - 56px);
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 30px 0;
         }
 
         .dashboard-card {
@@ -92,8 +93,31 @@
 
 <body>
 
-<div class="page-wrapper">
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="/">NittanyAuction</a>
 
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="/helpdesk">HelpDesk</a>
+            </li>
+        </ul>
+
+        <span class="navbar-text text-light">
+            {{ email }}
+        </span>
+    </div>
+</nav>
+
+<div class="page-wrapper">
     <div class="dashboard-card">
 
         <div class="brand-title">
@@ -109,6 +133,32 @@
         <p class="user-email">
             Logged in as: <strong>{{ email }}</strong>
         </p>
+
+        <!-- HelpDesk form with placeholders -->
+        <div class="mb-4">
+            <form method="POST" action="/helpdesk">
+
+                <div class="form-group">
+                    <label>Search User Request</label>
+                    <input type="text"
+                           class="form-control"
+                           name="request"
+                           placeholder="Enter request ID or user email">
+                </div>
+
+                <div class="form-group">
+                    <label>HelpDesk Message</label>
+                    <textarea class="form-control"
+                              name="message"
+                              rows="3"
+                              placeholder="Type your response or notes here"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Submit
+                </button>
+            </form>
+        </div>
 
         <div class="row justify-content-center">
 
@@ -137,8 +187,11 @@
         </div>
 
     </div>
-
 </div>
 
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
 </body>
-</html>v
+</html>
