@@ -70,6 +70,14 @@ Implemented Features:
   - Seller → seller.html
   - HelpDesk → helpdesk.html
 - Error handling for invalid login
+
+# Known Limitations 
+Limitations:
+
+- Search functionality is not fully implemented
+- Listings are currently static (not database-driven yet)
+- UI is still under development
+
 # File Structure 
 /dataset\
    -Address.csv\
