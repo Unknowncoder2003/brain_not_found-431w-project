@@ -22,6 +22,31 @@ Technologies:
 
 # Database Setup 
 
+The project uses SQLite as the database management system.
+The database file is named `database.db`.
+
+The database is populated using the provided CSV dataset from Canvas,
+specifically the `users.csv` file for login functionality.
+
+Instead of using a Python script, the data was imported manually using
+PyCharm’s built-in “Import Data” feature. The CSV file was mapped to the
+Users table, and the records were inserted directly into the database.
+
+Before insertion, passwords were securely processed:
+- Passwords are NOT stored in plain text
+- A unique salt is associated with each user
+- The password is combined with the salt and hashed using SHA256
+- The hashed password and salt are stored in the Users table
+
+The Users table includes the following attributes:
+- email (PRIMARY KEY)
+- password (hashed password)
+- salt
+
+To verify that the database has been populated correctly, the following
+SQL query can be used:
+
+SELECT * FROM Users;
 # Password Hashing
 Passwords are NOT stored in plain text.
 
