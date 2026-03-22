@@ -35,6 +35,9 @@ def valid_email_password(email, password):
 @app.route('/login', methods=['POST', 'GET'])
 def authenticate():
     error = None
+    # Look for 'error' in the URL parameters
+    error = request.args.get('error')
+
     #when click the login button the authenticate stuff occur
     if request.method == 'POST':
         email = request.form['email']
@@ -43,7 +46,7 @@ def authenticate():
         if result:
             # if result is true go to the user front page
             session['email'] = email
-            return redirect(url_for(find_user_html(email), error=error))
+            return redirect(url_for(find_user_html(email)))
         # if not match stay in the same page and have error message or go to another html?
         else:
             error = 'Invalid username or password.'
@@ -120,14 +123,25 @@ def bidder():
     # SEND THE DATA TO HTML
     return render_template('bidder.html', first_name=fname)
 @app.route('/helpdesk', methods=['POST', 'GET'])
-def helpdeask():
+def helpdesk():
+    #security check: if a user is not a helpdesk, they will get aborted to the login page.
     # Get the email of the person who just logged in
     user_email = session.get('email')
     if not user_email:
         pass  # not showing for debugging purpose
         # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
-
-    return render_template('helpdesk.html')
-
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
+    result = cursor.fetchone()
+    connection.close()
+    if not result:
+        #the user is not a helpdesk staff, abort
+        return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
+    if user_email:
+        femail = user_email
+    else:
+        femail = "lsuhelpdeskStaff@lsu.edu"  # Fallback email
+    return render_template('helpdesk.html', email=femail)
 if __name__ == "__main__":
     app.run()
