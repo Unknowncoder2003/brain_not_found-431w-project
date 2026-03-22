@@ -59,6 +59,3 @@ HelpDesk:
 email: cantonacci6p@lsu.edu
 password: vKQmcc1y
 
-HelpDesk:
-email: helpdesk@test.com
-password: 12345
