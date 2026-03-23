@@ -104,33 +104,36 @@ Limitations:
 - UI is still under development
 
 # File Structure 
-/dataset\
-   -Address.csv\
-   -Auction_Listings.csv\
-   -Bidders.csv\
-   -Bids.csv\
-   -Categories.csv\
-   -Clean_Action_listining.csv\
-   -Credit_Cards.csv\
-   -HashedUsers.csv\
-   -Helpdesk.csv\
-   -Local_Venders.csv\
-   -Ratings.csv\
-   -Requests.csv\
-   -Sellers.csv\
-   -Transactions.csv\
-   -Users.csv\
-   -Zipcoe_Info.csv\
-/temples\
-   -bidder.html\
-   -helpdesk.html\
-   -index.html\
-   -login.html\
-   -seller.html\
-app.py\
-CleanAuction_Listing.py\
-database.db\
-passwordHasher.py\
-README.md\
--test.py
 
+**/dataset**
+- Address.csv  
+- Auction_Listings.csv  
+- Bidders.csv  
+- Bids.csv  
+- Categories.csv  
+- Clean_Auction_listing.csv  
+- Credit_Cards.csv  
+- HashedUsers.csv  
+- Helpdesk.csv  
+- Local_Vendors.csv  
+- Ratings.csv  
+- Requests.csv  
+- Sellers.csv  
+- Transactions.csv  
+- Users.csv  
+- Zipcode_Info.csv  
+
+**/templates**
+- bidder.html  
+- helpdesk.html  
+- index.html  
+- login.html  
+- seller.html  
+
+**Files**
+- app.py  
+- CleanAuction_Listing.py  
+- database.db  
+- passwordHasher.py  
+- README.md  
+- test.py  
