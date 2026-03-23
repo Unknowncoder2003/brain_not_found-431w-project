@@ -12,9 +12,6 @@ host = 'http://127.0.0.1:5000/'
 @app.route('/')
 def index():
     return render_template('index.html')
-
-
-
 '''
 def valid_name(first_name, last_name):
     connection = sql.connect('database.db')
@@ -53,7 +50,6 @@ def authenticate():
             return render_template('login.html', error=error)
 
     return render_template('login.html', error=error)
-
 def password_to_hash_checker(email, password):
     """Helper function for checking the user entered password and verify it against the database"""
     connection = sql.connect('database.db')
@@ -63,7 +59,7 @@ def password_to_hash_checker(email, password):
     connection.close()
     if result is None:
         #the username is incorrect or not in the database
-            print("No matching user.")
+            #print("No matching user.")
             return False
     stored_hash, salt = result
     salt = salt
@@ -91,8 +87,7 @@ def find_user_html(email):
         return "bidder"
     # Default fallback if email is not found in any role table
     connection.close()
-    return "index"
-
+    return "login"
 @app.route('/seller', methods=['POST', 'GET'])
 def seller():
     # Get the email of the person who just logged in
@@ -139,5 +134,58 @@ def helpdesk():
         #the user is not a helpdesk staff, abort
         return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
     return render_template('helpdesk.html', email=user_email)
+
+@app.route('/my-listings', methods=['POST', 'GET'])
+def my_listing():
+    user_email = session.get('email')
+    if not user_email:
+        pass  # not showing for debugging purpose
+        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT A.Listing_ID, A.Auction_Title, A.Category, A.Reserve_Price, A.Max_bids, A.Status FROM Auction_Listings A WHERE A.Seller_Email = ?', (user_email,))
+    result = cursor.fetchall()
+    connection.close()
+    return render_template('my-listings.html', email=user_email, listings=result)
+
+
+@app.route('/listing-details/<seller_email>/<int:listing_id>')
+def listing_details(seller_email, listing_id):
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+
+    # 1. Get the Auction Listing details
+    cursor.execute('''SELECT Seller_Email,
+                             Listing_ID,
+                             Category,
+                             Auction_Title,
+                             Product_Name,
+                             Product_Description,
+                             Quantity,
+                             Reserve_Price,
+                             Max_bids,
+                             Status
+                      FROM Auction_Listings
+                      WHERE Seller_Email = ?
+                        AND Listing_ID = ?''', (seller_email, listing_id))
+    item = cursor.fetchone()
+
+    # 2. Get the count of current bids for this specific listing
+    cursor.execute('''SELECT COUNT(*)
+                      FROM Bids
+                      WHERE listing_id = ?''', (listing_id,))
+    current_bid_count = cursor.fetchone()[0]
+    # 3. Get the highest bid price (to show current price vs reserve)
+    cursor.execute('''SELECT MAX(Bid_price)
+                      FROM Bids
+                      WHERE listing_id = ?''', (listing_id,))
+    highest_bid = cursor.fetchone()[0] or 0  # Default to 0 if no bids yet
+
+    connection.close()
+
+    return render_template('listing-details.html',
+                           item=item,
+                           bid_count=current_bid_count,
+                           current_price=highest_bid)
 if __name__ == "__main__":
     app.run()
