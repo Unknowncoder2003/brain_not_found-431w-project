@@ -22,6 +22,31 @@ Technologies:
 
 # Database Setup 
 
+The project uses SQLite as the database management system.
+The database file is named `database.db`.
+
+The database is populated using the provided CSV dataset from Canvas,
+specifically the `users.csv` file for login functionality.
+
+Instead of using a Python script, the data was imported manually using
+PyCharm’s built-in “Import Data” feature. The CSV file was mapped to the
+Users table, and the records were inserted directly into the database.
+
+Before insertion, passwords were securely processed:
+- Passwords are NOT stored in plain text
+- A unique salt is associated with each user
+- The password is combined with the salt and hashed using SHA256
+- The hashed password and salt are stored in the Users table
+
+The Users table includes the following attributes:
+- email (PRIMARY KEY)
+- password (hashed password)
+- salt
+
+To verify that the database has been populated correctly, the following
+SQL query can be used:
+
+SELECT * FROM Users;
 # Password Hashing
 Passwords are NOT stored in plain text.
 
@@ -59,33 +84,56 @@ HelpDesk:
 email: cantonacci6p@lsu.edu
 password: vKQmcc1y
 
+# Features Implemented for Progress Review
+Implemented Features:
+
+- User Login System
+- Secure password hashing (SHA256 + salt)
+- Database population from CSV / script
+- Role-based login:
+  - Bidder → bidder.html
+  - Seller → seller.html
+  - HelpDesk → helpdesk.html
+- Error handling for invalid login
+
+# Known Limitations 
+Limitations:
+
+- Search functionality is not fully implemented
+- Listings are currently static (not database-driven yet)
+- UI is still under development
+
 # File Structure 
-/dataset\
-   -Address.csv\
-   -Auction_Listings.csv\
-   -Bidders.csv\
-   -Bids.csv\
-   -Categories.csv\
-   -Clean_Action_listining.csv\
-   -Credit_Cards.csv\
-   -HashedUsers.csv\
-   -Helpdesk.csv\
-   -Local_Venders.csv\
-   -Ratings.csv\
-   -Requests.csv\
-   -Sellers.csv\
-   -Transactions.csv\
-   -Users.csv\
-   -Zipcoe_Info.csv\
-/temples\
-   -bidder.html\
-   -helpdesk.html\
-   -index.html\
-   -login.html\
-   -seller.html\
-app.py\
-CleanAuction_Listing.py\
-database.db\
-passwordHasher.py\
-README.md\
-test.py\
+
+**/dataset**
+- Address.csv  
+- Auction_Listings.csv  
+- Bidders.csv  
+- Bids.csv  
+- Categories.csv  
+- Clean_Auction_listing.csv  
+- Credit_Cards.csv  
+- HashedUsers.csv  
+- Helpdesk.csv  
+- Local_Vendors.csv  
+- Ratings.csv  
+- Requests.csv  
+- Sellers.csv  
+- Transactions.csv  
+- Users.csv  
+- Zipcode_Info.csv  
+
+**/templates**
+- bidder.html  
+- helpdesk.html  
+- index.html  
+- login.html  
+- seller.html  
+
+**Files**
+- app.py  
+- CleanAuction_Listing.py  
+- database.db  
+- passwordHasher.py  
+- README.md  
+- test.py  
