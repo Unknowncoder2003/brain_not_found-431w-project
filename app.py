@@ -270,3 +270,27 @@ def edit_listing(seller_email, listing_id):
     return render_template('edit-listing.html', item=item)
 if __name__ == "__main__":
     app.run()
+
+
+
+#the categories that are apart of root
+def categories():
+    connection = sql.connect('database.db')
+    top_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category = "Root"')
+
+    #sub_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category in top_category')
+    #sub_categories =
+    print(top_category.fetchall())
+    #print(sub_category.fetchall())
+    return None
+
+def get_items(category_name):
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    #get the items
+    #check for subcategories first
+    #then select all of the items
+    items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE category_name = ?', (category_name,))
+    return cursor.fetchall()
+
+categories()
