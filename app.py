@@ -139,5 +139,9 @@ def helpdesk():
         #the user is not a helpdesk staff, abort
         return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
     return render_template('helpdesk.html', email=user_email)
+
+@app.route('/register', methods=['GET'])
+def register_page():
+    return render_template('register.html')
 if __name__ == "__main__":
     app.run()

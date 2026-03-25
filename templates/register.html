@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NittanyAuction Register</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+        }
+
+        .register-wrapper {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 0;
+        }
+
+        .register-container {
+            width: 550px;
+        }
+
+        .brand-title {
+            text-align: center;
+            font-size: 2.4rem;
+            font-weight: bold;
+            margin-bottom: 22px;
+        }
+
+        .brand-title .nittany {
+            color: #1e4fa1;
+        }
+
+        .brand-title .auction {
+            color: #28a745;
+        }
+
+        .register-card {
+            background: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            background-color: #f7f7f7;
+        }
+
+        .tab {
+            width: 50%;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: #666;
+            border-right: 1px solid #ddd;
+        }
+
+        .tab:last-child {
+            border-right: none;
+        }
+
+        .tab.active {
+            background-color: white;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-section {
+            padding: 24px 20px 20px 20px;
+        }
+
+        .btn-register {
+            width: 100%;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .helper-text {
+            margin-top: 14px;
+            color: #666;
+            font-size: 0.92rem;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .bottom-links {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .role-section {
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .role-section h5 {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="register-wrapper">
+    <div class="register-container">
+        <div class="brand-title">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </div>
+
+        <div class="register-card">
+            <div class="tab-header">
+                <a href="/login" class="tab">Sign In</a>
+                <div class="tab active">Register</div>
+            </div>
+
+            <div class="form-section">
+                <form action="/register" method="POST">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email"
+                               placeholder="Enter your email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Register As</label>
+                        <select class="form-control" id="role" name="role" required onchange="toggleRoleFields()">
+                            <option value="">Select account type</option>
+                            <option value="bidder">Bidder</option>
+                            <option value="seller">Seller</option>
+                        </select>
+                    </div>
+
+                    <div id="bidder-fields" class="role-section" style="display: none;">
+                        <h5>Bidder Information</h5>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="first_name">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name"
+                                       placeholder="First name">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="last_name">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name"
+                                       placeholder="Last name">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="age">Age</label>
+                            <input type="number" class="form-control" id="age" name="age"
+                                   placeholder="Enter your age">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="home_address_id">Home Address ID</label>
+                            <input type="text" class="form-control" id="home_address_id" name="home_address_id"
+                                   placeholder="Enter home address ID">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="major">Major</label>
+                            <input type="text" class="form-control" id="major" name="major"
+                                   placeholder="Enter your major">
+                        </div>
+                    </div>
+
+                    <div id="seller-fields" class="role-section" style="display: none;">
+                        <h5>Seller Information</h5>
+
+                        <div class="form-group">
+                            <label for="bank_routing_number">Bank Routing Number</label>
+                            <input type="text" class="form-control" id="bank_routing_number" name="bank_routing_number"
+                                   placeholder="Enter bank routing number">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bank_account_number">Bank Account Number</label>
+                            <input type="text" class="form-control" id="bank_account_number" name="bank_account_number"
+                                   placeholder="Enter bank account number">
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="password">Create Password</label>
+                        <input type="password" class="form-control" id="password" name="password"
+                               placeholder="Create a password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                               placeholder="Re-enter your password" required>
+                    </div>
+
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    {% if success %}
+                    <div class="alert alert-success" role="alert">
+                        {{ success }}
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-success btn-register">Create Account</button>
+
+                    <div class="helper-text">
+                        New users may register as a Bidder or Seller. HelpDesk accounts are created internally.
+                    </div>
+
+                    <div class="bottom-links">
+                        <a href="/login">Back to Sign In</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleRoleFields() {
+        const role = document.getElementById("role").value;
+        const bidderFields = document.getElementById("bidder-fields");
+        const sellerFields = document.getElementById("seller-fields");
+
+        const bidderInputs = bidderFields.querySelectorAll("input");
+        const sellerInputs = sellerFields.querySelectorAll("input");
+
+        bidderFields.style.display = "none";
+        sellerFields.style.display = "none";
+
+        bidderInputs.forEach(input => input.required = false);
+        sellerInputs.forEach(input => input.required = false);
+
+        if (role === "bidder") {
+            bidderFields.style.display = "block";
+            bidderInputs.forEach(input => input.required = true);
+        } else if (role === "seller") {
+            sellerFields.style.display = "block";
+            sellerInputs.forEach(input => input.required = true);
+        }
+    }
+</script>
+
+</body>
+</html>
