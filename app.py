@@ -153,8 +153,7 @@ def my_listing():
 def listing_details(seller_email, listing_id):
     connection = sql.connect('database.db')
     cursor = connection.cursor()
-
-    # 1. Get the Auction Listing details
+    #Get the Auction Listing details
     cursor.execute('''SELECT Seller_Email,
                              Listing_ID,
                              Category,
@@ -169,23 +168,96 @@ def listing_details(seller_email, listing_id):
                       WHERE Seller_Email = ?
                         AND Listing_ID = ?''', (seller_email, listing_id))
     item = cursor.fetchone()
-
-    # 2. Get the count of current bids for this specific listing
+    #Get the count of current bids for this specific listing
     cursor.execute('''SELECT COUNT(*)
                       FROM Bids
                       WHERE listing_id = ?''', (listing_id,))
     current_bid_count = cursor.fetchone()[0]
-    # 3. Get the highest bid price (to show current price vs reserve)
+    #Get the highest bid price to show current price vs reserve
     cursor.execute('''SELECT MAX(Bid_price)
                       FROM Bids
                       WHERE listing_id = ?''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0  # Default to 0 if no bids yet
-
     connection.close()
-
+    print(current_bid_count)
     return render_template('listing-details.html',
                            item=item,
                            bid_count=current_bid_count,
                            current_price=highest_bid)
+
+
+@app.route('/deactivate-listing/<seller_email>/<int:listing_id>', methods=['POST'])
+def deactivate_listing(seller_email, listing_id):
+    #making sure the user is logged in
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('login'))
+    #making sure the user owns this product
+    if user_email != seller_email:
+        return redirect(url_for('my_listing', error = 'You do not have access to the deactivate listing'))
+    try:
+        connection = sql.connect('database.db')
+        cursor = connection.cursor()
+
+        # 3. Execute the Update: Set status to 0 (Inactive)
+        cursor.execute('''
+                       UPDATE Auction_Listings
+                       SET Status = 0
+                       WHERE Seller_Email = ?
+                         AND Listing_ID = ?
+                       ''', (seller_email, listing_id))
+        connection.commit()
+        connection.close()
+    except Exception as e:
+        print(f"Error updating status: {e}")
+    #redirect back to the previous page
+    return redirect(request.referrer)
+
+
+@app.route('/edit-listing/<seller_email>/<int:listing_id>', methods=['GET', 'POST'])
+def edit_listing(seller_email, listing_id):
+    user_email = session.get('email')
+
+    #Security Check
+    if not user_email or user_email != seller_email:
+        return redirect(url_for('login'))
+
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    #Handle the Form Submission
+    if request.method == 'POST':
+        #Retrieve data from form fields
+        title = request.form['auction_title']
+        prod_name = request.form['product_name']
+        cat = request.form['category']
+        desc = request.form['description']
+        qty = request.form['quantity']
+        reserve = request.form['reserve']
+        max_b = request.form['max_bids']
+
+        cursor.execute('''
+                       UPDATE Auction_Listings
+                       SET Auction_Title       = ?,
+                           Product_Name        = ?,
+                           Category            = ?,
+                           Product_Description = ?,
+                           Quantity            = ?,
+                           Reserve_Price       = ?,
+                           Max_bids            = ?
+                       WHERE Seller_Email = ?
+                         AND Listing_ID = ?
+                       ''', (title, prod_name, cat, desc, qty, reserve, max_b, seller_email, listing_id))
+        connection.commit()
+        connection.close()
+        #Go back to the details page
+        return redirect(url_for('listing_details', seller_email=seller_email, listing_id=listing_id))
+    #Handle the Initial Load
+    cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?',
+                   (seller_email, listing_id))
+    item = cursor.fetchone()
+    connection.close()
+    if not item:
+        return "Listing not found", 404
+    return render_template('edit-listing.html', item=item)
 if __name__ == "__main__":
     app.run()
