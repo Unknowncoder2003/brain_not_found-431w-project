@@ -13,14 +13,21 @@
 
     .navbar {
             background-color: white;
-            border-bottom: 2px solid #1e4fa1;
-            margin-bottom: 30px;
+
         }
+    .bottom-navbar {
+        background-color: white;
+        border-bottom: 2px solid #1e4fa1;
+        margin-bottom: 30px;
+
+    }
+
+
 
     .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
     .brand-text .auction { color: #28a745; font-weight: bold; }
 
-        .dashboard-card {
+    .dashboard-card {
             background: white;
             border-radius: 6px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -54,7 +61,7 @@
                     <a class="nav-link" href="/bidder">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/my-listings">My Listings</a>
+                    <a class="nav-link" href="/my-listings">My Bids</a>
                 </li>
                 <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="exampleDropdown"
@@ -82,6 +89,49 @@
         </div>
     </div>
 </nav>
+
+<!-- searchbar and categories-->
+<nav class="navbar navbar-expand-lg navbar-light bottom-navbar"> <!-- trying to make it the same template as the other pages-->
+    <div class="container">
+        <a class="navbar-brand brand-text" href="/bidder">
+        </a>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="searchNavbar">
+
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="example2Dropdown"
+                   role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    All...
+                </a>
+                <div class="dropdown-menu" aria-labelledby="exampleDropdown">
+                    <a class="dropdown-item" href="/past">Past Bids</a>
+                    <a class="dropdown-item" href="/watchlist">Watch list</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/support">Contact HelpDesk</a>
+                </div>
+                </li>
+            </ul>
+
+            <form class="form-inline mr-auto">
+                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+
+
+
+
+
+
+
 
 <div class="container">
     <div class="row justify-content-center">
