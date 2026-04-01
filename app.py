@@ -144,6 +144,24 @@ def helpdesk():
         return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
     return render_template('helpdesk.html', email=user_email)
 
+@app.route('/profile', methods=['GET','POST'])
+def profile():
+
+    user_email = session.get('email')
+
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+
+    # 获取用户信息
+    cursor.execute("SELECT * FROM Users WHERE email = ?", (user_email,))
+    user = cursor.fetchone()
+
+    connection.close()
+
+    return render_template('profile.html', user=user)
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
     error = None

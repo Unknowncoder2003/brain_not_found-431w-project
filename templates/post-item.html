@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Post New Item | NittanyAuction</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f2f2f2; }
+        .navbar { background-color: white; border-bottom: 2px solid #1e4fa1; margin-bottom: 30px; }
+        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
+        .brand-text .auction { color: #28a745; font-weight: bold; }
+        .post-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            margin-bottom: 50px;
+        }
+        .form-section-title {
+            color: #1e4fa1;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .form-group label { font-weight: 600; color: #555; }
+        .btn-post { background-color: #28a745; border: none; color: white; font-weight: bold; }
+        .btn-post:hover { background-color: #218838; color: white; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand brand-text" href="/seller">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 post-card">
+            <h2 class="mb-4">Post a New Auction</h2>
+
+            <form action="/post-item" method="POST">
+
+                <div class="form-section-title">Product Information</div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label>Auction Title</label>
+                            <input type="text" name="auction_title" class="form-control" placeholder="e.g., Apple MacBook Pro 2026 M5 chip" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select name="category" class="form-control" required>
+                                <option value="" disabled selected>-- Choose a Category --</option>
+
+                                {% for parent in parent_category %}
+                                    {# 1. Create a group for the Parent #}
+                                    <optgroup label="{{ parent }}">
+
+                                        {# 2. Loop through all categories to find the ones belonging to this parent #}
+                                        {% for cat in categories %}
+                                            {% if cat[1] == parent %}
+                                                <option value="{{ cat[0] }}">{{ cat[0] }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label>Product Name</label>
+                            <input type="text" name="product_name" class="form-control" placeholder="The formal name of the item" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" name="quantity" class="form-control" min="1" value="1" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Product Description</label>
+                    <textarea name="description" class="form-control" rows="4" placeholder="Describe the condition, history, or features..." required></textarea>
+                </div>
+
+                <div class="form-section-title mt-4">Auction Settings</div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Reserve Price ($)</label>
+                            <input type="number" step="0.01" name="reserve" class="form-control" placeholder="0.00" required>
+                            <small class="text-muted">Minimum price you are willing to accept.</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Max Bids</label>
+                            <input type="number" name="max_bids" class="form-control" placeholder="e.g., 50" required>
+                            <small class="text-muted">Auction ends once this number of bids is reached.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="/seller" class="text-muted">Cancel and Exit</a>
+                    <button type="submit" class="btn btn-post px-5 py-2">Launch Auction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>
