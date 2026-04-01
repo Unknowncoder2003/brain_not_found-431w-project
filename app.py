@@ -121,7 +121,19 @@ def bidder():
     else:
         fname = "Bidder"  # Fallback name
     # SEND THE DATA TO HTML
-    return render_template('bidder.html', first_name=fname)
+    cate = categories()
+    return render_template('bidder.html', first_name=fname, categories = cate)
+#the categories that are apart of root
+def categories():
+    connection = sql.connect('database.db')
+    top_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category = "Root"')
+    #sub_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category in top_category')
+    #sub_categories =
+    top_categories = top_category.fetchall()
+    #print(sub_category.fetchall())
+    connection.close()
+    return top_categories
+
 @app.route('/helpdesk', methods=['POST', 'GET'])
 def helpdesk():
     #security check: if a user is not a helpdesk, they will get aborted to the login page.
@@ -140,6 +152,24 @@ def helpdesk():
         return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
     return render_template('helpdesk.html', email=user_email)
 
+@app.route('/profile', methods=['GET','POST'])
+def profile():
+
+    user_email = session.get('email')
+
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+
+    # 获取用户信息
+    cursor.execute("SELECT * FROM Users WHERE email = ?", (user_email,))
+    user = cursor.fetchone()
+
+    connection.close()
+
+    return render_template('profile.html', user=user)
 @app.route('/register', methods=['GET'])
 def register_page():
     return render_template('register.html')
@@ -311,3 +341,17 @@ def post_item():
     return render_template('post-item.html',categories=categories, parent_category=sorted(parent_category))
 if __name__ == "__main__":
     app.run()
+
+
+
+
+
+def get_items(category_name):
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    #get the items
+    #check for subcategories first
+    #then select all of the items
+    items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE category_name = ?', (category_name,))
+    return cursor.fetchall()
+
