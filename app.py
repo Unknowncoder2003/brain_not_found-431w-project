@@ -140,24 +140,54 @@ def helpdesk():
         return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
     return render_template('helpdesk.html', email=user_email)
 
-@app.route('/profile', methods=['GET','POST'])
+@app.route('/profile', methods=['GET'])
 def profile():
-
     user_email = session.get('email')
-
     if not user_email:
         return redirect(url_for('authenticate'))
 
+    edit = request.args.get("edit")
+    edit_basic = edit == "basic"
+    edit_address = edit == "address"
+    edit_card = edit == "card"
+
     connection = sql.connect('database.db')
+    connection.row_factory = sql.Row
     cursor = connection.cursor()
 
-    # 获取用户信息
-    cursor.execute("SELECT * FROM Users WHERE email = ?", (user_email,))
+    cursor.execute("""
+        SELECT
+            B.email,
+            B.first_name,
+            B.last_name,
+            B.age,
+            B.major,
+            (A.street_num || ' ' || A.street_name) AS street,
+            A.zipcode AS zipcode,
+            C.card_type AS card_type,
+            C.credit_card_num AS card_number,
+            (C.expire_month || '/' || C.expire_year) AS card_exp
+        FROM Bidders B
+        LEFT JOIN Address A
+            ON B.home_address_id = A.address_id
+        LEFT JOIN Credit_Cards C
+            ON B.email = C.Owner_email
+        WHERE B.email = ?
+    """, (user_email,))
+
     user = cursor.fetchone()
+
+    print("DEBUG user =", dict(user) if user else None)
 
     connection.close()
 
-    return render_template('profile.html', user=user)
+    return render_template(
+        'profile.html',
+        user=user,
+        edit_basic=edit_basic,
+        edit_address=edit_address,
+        edit_card=edit_card
+    )
 @app.route('/register', methods=['GET'])
 def register_page():
     return render_template('register.html')

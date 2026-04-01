@@ -1,295 +1,412 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Update User Profile | NittanyAuction</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User Profile | NittanyAuction</title>
     <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
     <style>
         body {
             background-color: #f2f2f2;
         }
 
-        .profile-card {
-            max-width: 750px;
-            margin: 50px auto;
-            background: white;
-            padding: 35px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
         }
 
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
+        .brand-text .nittany {
             color: #1e4fa1;
+            font-weight: bold;
+        }
+
+        .brand-text .auction {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 50px;
+        }
+
+        .section-header {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        .section-subtitle {
+            color: #1e4fa1;
+            font-weight: 600;
             margin-top: 25px;
             margin-bottom: 15px;
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .note-box {
+        .profile-table thead th {
+            border-top: none;
+            color: #1e4fa1;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .readonly-value {
+            padding-top: 6px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .table td, .table th {
+            vertical-align: middle;
+        }
+
+        .info-note {
             background-color: #f8f9fa;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #1e4fa1;
             padding: 12px 15px;
             margin-bottom: 20px;
             font-size: 14px;
         }
 
-        .readonly-box {
-            background-color: #e9ecef;
+        .section-actions {
+            margin-top: 15px;
         }
 
-        .btn-primary {
-            background-color: #1e4fa1;
-            border-color: #1e4fa1;
-        }
-
-        .btn-primary:hover {
-            background-color: #163d7a;
-            border-color: #163d7a;
-        }
-
-        .helpdesk-link {
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-        .required-star {
-            color: red;
+        .form-control-sm-custom {
+            max-width: 400px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="profile-card">
-        <h3 class="text-center mb-4">Update User Profile</h3>
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand brand-text" href="/bidder">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </a>
 
-        {% if message %}
-            <div class="alert alert-info">{{ message }}</div>
-        {% endif %}
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#profileNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-        <div class="note-box">
-            <strong>Important Rules:</strong><br>
-            1. User ID (email address) cannot be modified directly.<br>
-            2. To change your registered email, a formal request must be submitted to the HelpDesk team.<br>
-            3. If password is updated, the old password must be provided first.<br>
-            4. New password will be stored securely using hashing and salt.<br>
-            5. Sensitive information such as payment details should be protected appropriately in the backend.
+        <div class="collapse navbar-collapse" id="profileNavbar">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/bidder">Dashboard</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/profile">My Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/support">Contact HelpDesk</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <span class="nav-link text-muted">
+                        Bidder: <strong>{{ user['first_name'] if user and user['first_name'] else '' }}</strong>
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                </li>
+            </ul>
         </div>
+    </div>
+</nav>
 
-        <form method="POST" action="/profile/update">
-            <!-- Account Information -->
-            <div class="section-title">Account Information</div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-11 dashboard-card">
 
-            <div class="form-group">
-                <label>User ID (Email)</label>
-                <input type="email"
-                       class="form-control readonly-box"
-                       value="{{ user['email'] }}"
-                       readonly>
+            <div class="section-header">
+                <h2>User Profile</h2>
             </div>
 
-            <div class="helpdesk-link">
-                Need to change your email?
-                <a href="/helpdesk">Submit a request to HelpDesk</a>
+            {% if message %}
+                <div class="alert alert-info">{{ message }}</div>
+            {% endif %}
+
+            <div class="info-note">
+                <strong>Profile Rules:</strong><br>
+                Email cannot be edited directly. To update your email, please contact HelpDesk.
+            </div>
+
+            <!-- Account Information -->
+            <div class="section-subtitle">
+                <span>Account Information</span>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-hover profile-table">
+                    <thead>
+                    <tr>
+                        <th style="width: 35%;">Field</th>
+                        <th style="width: 65%;">Value</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Email</td>
+                        <td>
+                            <div class="readonly-value">
+                                {{ user['email'] if user and user['email'] else 'N/A' }}
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
 
             <!-- Basic Personal Information -->
-            <div class="section-title">Basic Personal Information</div>
-
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label>First Name <span class="required-star">*</span></label>
-                    <input type="text"
-                           class="form-control"
-                           name="first_name"
-                           value="{{ user['first_name'] }}"
-                           required>
-                </div>
-
-                <div class="form-group col-md-6">
-                    <label>Last Name <span class="required-star">*</span></label>
-                    <input type="text"
-                           class="form-control"
-                           name="last_name"
-                           value="{{ user['last_name'] }}"
-                           required>
-                </div>
+            <div class="section-subtitle">
+                <span>Basic Personal Information</span>
+                {% if not edit_basic %}
+                    <a href="/profile?edit=basic" class="btn btn-sm btn-outline-primary">Edit</a>
+                {% endif %}
             </div>
 
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label>Phone Number</label>
-                    <input type="text"
-                           class="form-control"
-                           name="phone"
-                           value="{{ user['phone'] if user['phone'] else '' }}"
-                           placeholder="Enter your phone number">
+            <form method="POST" action="/profile/update_basic">
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover profile-table">
+                        <thead>
+                        <tr>
+                            <th style="width: 35%;">Field</th>
+                            <th style="width: 65%;">Value</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>First Name</td>
+                            <td>
+                                {% if edit_basic %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="first_name"
+                                           value="{{ user['first_name'] if user and user['first_name'] else '' }}"
+                                           required>
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['first_name'] if user and user['first_name'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Last Name</td>
+                            <td>
+                                {% if edit_basic %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="last_name"
+                                           value="{{ user['last_name'] if user and user['last_name'] else '' }}"
+                                           required>
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['last_name'] if user and user['last_name'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Age</td>
+                            <td>
+                                {% if edit_basic %}
+                                    <input type="number"
+                                           class="form-control form-control-sm-custom"
+                                           name="age"
+                                           value="{{ user['age'] if user and user['age'] else '' }}"
+                                           min="0">
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['age'] if user and user['age'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Major</td>
+                            <td>
+                                {% if edit_basic %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="major"
+                                           value="{{ user['major'] if user and user['major'] else '' }}">
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['major'] if user and user['major'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="form-group col-md-3">
-                    <label>Age</label>
-                    <input type="number"
-                           class="form-control"
-                           name="age"
-                           value="{{ user['age'] if user['age'] else '' }}"
-                           min="0"
-                           placeholder="Age">
-                </div>
-
-                <div class="form-group col-md-3">
-                    <label>Annual Income</label>
-                    <input type="number"
-                           class="form-control"
-                           name="annual_income"
-                           value="{{ user['annual_income'] if user['annual_income'] else '' }}"
-                           min="0"
-                           step="0.01"
-                           placeholder="Income">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Major / Occupation</label>
-                <input type="text"
-                       class="form-control"
-                       name="major"
-                       value="{{ user['major'] if user['major'] else '' }}"
-                       placeholder="Enter your major or occupation">
-            </div>
+                {% if edit_basic %}
+                    <div class="section-actions">
+                        <button type="submit" class="btn btn-success">Save</button>
+                        <a href="/profile" class="btn btn-secondary">Cancel</a>
+                    </div>
+                {% endif %}
+            </form>
 
             <!-- Address Information -->
-            <div class="section-title">Address Information</div>
-
-            <div class="form-group">
-                <label>Street Address</label>
-                <input type="text"
-                       class="form-control"
-                       name="street"
-                       value="{{ user['street'] if user['street'] else '' }}"
-                       placeholder="Street address">
+            <div class="section-subtitle">
+                <span>Address Information</span>
+                {% if not edit_address %}
+                    <a href="/profile?edit=address" class="btn btn-sm btn-outline-primary">Edit</a>
+                {% endif %}
             </div>
 
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label>City</label>
-                    <input type="text"
-                           class="form-control"
-                           name="city"
-                           value="{{ user['city'] if user['city'] else '' }}"
-                           placeholder="City">
+            <form method="POST" action="/profile/update_address">
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover profile-table">
+                        <thead>
+                        <tr>
+                            <th style="width: 35%;">Field</th>
+                            <th style="width: 65%;">Value</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>Street Address</td>
+                            <td>
+                                {% if edit_address %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="street"
+                                           value="{{ user['street'] if user and user['street'] else '' }}">
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['street'] if user and user['street'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Zip Code</td>
+                            <td>
+                                {% if edit_address %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="zipcode"
+                                           value="{{ user['zipcode'] if user and user['zipcode'] else '' }}">
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['zipcode'] if user and user['zipcode'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="form-group col-md-4">
-                    <label>State</label>
-                    <input type="text"
-                           class="form-control"
-                           name="state"
-                           value="{{ user['state'] if user['state'] else '' }}"
-                           placeholder="State">
-                </div>
+                {% if edit_address %}
+                    <div class="section-actions">
+                        <button type="submit" class="btn btn-success">Save</button>
+                        <a href="/profile" class="btn btn-secondary">Cancel</a>
+                    </div>
+                {% endif %}
+            </form>
 
-                <div class="form-group col-md-4">
-                    <label>Zip Code</label>
-                    <input type="text"
-                           class="form-control"
-                           name="zipcode"
-                           value="{{ user['zipcode'] if user['zipcode'] else '' }}"
-                           placeholder="Zip code">
-                </div>
+            <!-- Credit Card Information -->
+            <div class="section-subtitle">
+                <span>Credit Card Information</span>
+                {% if not edit_card %}
+                    <a href="/profile?edit=card" class="btn btn-sm btn-outline-primary">Edit</a>
+                {% endif %}
             </div>
 
-            <!-- Payment Information -->
-            <div class="section-title">Payment Information</div>
-
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label>Credit Card Type</label>
-                    <select class="form-control" name="card_type">
-                        <option value="">Select Card Type</option>
-                        <option value="Visa"
-                            {% if user['card_type'] == 'Visa' %}selected{% endif %}>
-                            Visa
-                        </option>
-                        <option value="MasterCard"
-                            {% if user['card_type'] == 'MasterCard' %}selected{% endif %}>
-                            MasterCard
-                        </option>
-                        <option value="American Express"
-                            {% if user['card_type'] == 'American Express' %}selected{% endif %}>
-                            American Express
-                        </option>
-                        <option value="Discover"
-                            {% if user['card_type'] == 'Discover' %}selected{% endif %}>
-                            Discover
-                        </option>
-                    </select>
+            <form method="POST" action="/profile/update_card">
+                <div class="table-responsive">
+                    <table class="table table-hover profile-table">
+                        <thead>
+                        <tr>
+                            <th style="width: 35%;">Field</th>
+                            <th style="width: 65%;">Value</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>Card Type</td>
+                            <td>
+                                {% if edit_card %}
+                                    <select class="form-control form-control-sm-custom" name="card_type">
+                                        <option value="Visa" {% if user and user['card_type'] == 'Visa' %}selected{% endif %}>Visa</option>
+                                        <option value="Master" {% if user and user['card_type'] == 'Master' %}selected{% endif %}>Master</option>
+                                        <option value="American Express" {% if user and user['card_type'] == 'American Express' %}selected{% endif %}>American Express</option>
+                                        <option value="Discover" {% if user and user['card_type'] == 'Discover' %}selected{% endif %}>Discover</option>
+                                    </select>
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['card_type'] if user and user['card_type'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Card Number</td>
+                            <td>
+                                {% if edit_card %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="card_number"
+                                           value="{{ user['card_number'] if user and user['card_number'] else '' }}">
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['card_number'] if user and user['card_number'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Expiration</td>
+                            <td>
+                                {% if edit_card %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="card_exp"
+                                           value="{{ user['card_exp'] if user and user['card_exp'] else '' }}"
+                                           placeholder="MM/YYYY">
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['card_exp'] if user and user['card_exp'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="form-group col-md-5">
-                    <label>Credit Card Number</label>
-                    <input type="text"
-                           class="form-control"
-                           name="card_number"
-                           value="{{ user['card_number'] if user['card_number'] else '' }}"
-                           placeholder="Enter credit card number">
-                </div>
+                {% if edit_card %}
+                    <div class="section-actions">
+                        <button type="submit" class="btn btn-success">Save</button>
+                        <a href="/profile" class="btn btn-secondary">Cancel</a>
+                    </div>
+                {% endif %}
+            </form>
 
-                <div class="form-group col-md-3">
-                    <label>Expiration Date</label>
-                    <input type="month"
-                           class="form-control"
-                           name="card_exp"
-                           value="{{ user['card_exp'] if user['card_exp'] else '' }}">
-                </div>
-            </div>
-
-            <!-- Security -->
-            <div class="section-title">Security Settings</div>
-
-            <div class="form-group">
-                <label>Old Password</label>
-                <input type="password"
-                       class="form-control"
-                       name="old_password"
-                       placeholder="Enter your current password">
-            </div>
-
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label>New Password</label>
-                    <input type="password"
-                           class="form-control"
-                           name="new_password"
-                           placeholder="Enter a new password">
-                </div>
-
-                <div class="form-group col-md-6">
-                    <label>Confirm New Password</label>
-                    <input type="password"
-                           class="form-control"
-                           name="confirm_new_password"
-                           placeholder="Re-enter the new password">
-                </div>
-            </div>
-
-            <!-- Buttons -->
-            <div class="mt-4">
-                <button type="submit" class="btn btn-primary btn-block">
-                    Save Changes
-                </button>
-
-                <a href="/" class="btn btn-secondary btn-block">
-                    Back to Home
-                </a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 </body>
 </html>
