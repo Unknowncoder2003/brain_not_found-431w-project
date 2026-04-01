@@ -212,8 +212,7 @@ def deactivate_listing(seller_email, listing_id):
         cursor.execute('''
                        UPDATE Auction_Listings
                        SET Status = 0
-                       WHERE Seller_Email = ?
-                         AND Listing_ID = ?
+                       WHERE Seller_Email = ? AND Listing_ID = ?
                        ''', (seller_email, listing_id))
         connection.commit()
         connection.close()
@@ -246,15 +245,8 @@ def edit_listing(seller_email, listing_id):
 
         cursor.execute('''
                        UPDATE Auction_Listings
-                       SET Auction_Title       = ?,
-                           Product_Name        = ?,
-                           Category            = ?,
-                           Product_Description = ?,
-                           Quantity            = ?,
-                           Reserve_Price       = ?,
-                           Max_bids            = ?
-                       WHERE Seller_Email = ?
-                         AND Listing_ID = ?
+                       SET Auction_Title=?,Product_Name=?,Category= ?,Product_Description= ?,Quantity= ?,Reserve_Price= ?,Max_bids= ?
+                       WHERE Seller_Email= ? AND Listing_ID = ?
                        ''', (title, prod_name, cat, desc, qty, reserve, max_b, seller_email, listing_id))
         connection.commit()
         connection.close()
@@ -268,5 +260,54 @@ def edit_listing(seller_email, listing_id):
     if not item:
         return "Listing not found", 404
     return render_template('edit-listing.html', item=item)
+
+
+@app.route('/post-item', methods=['GET', 'POST'])
+def post_item():
+    user_email = session.get('email')
+    # check for user login
+    if not user_email:
+        return redirect(url_for('login'))
+
+    #when receiving a post, handle the request forms and load it into the database
+    if request.method == 'POST':
+        title = request.form['auction_title']
+        p_name = request.form['product_name']
+        cat = request.form['category']
+        desc = request.form['description']
+        qty = request.form['quantity']
+        reserve = request.form['reserve']
+        max_b = request.form['max_bids']
+        #Generate the next Listing_ID
+        connection = sql.connect('database.db')
+        cursor = connection.cursor()
+        cursor.execute('SELECT MAX(Listing_ID) FROM Auction_Listings WHERE Seller_Email = ?',(user_email, ))
+        last_id = cursor.fetchone()[0]
+        if not last_id:
+            next_id = 1
+        else:
+            next_id = last_id + 1
+        cursor.execute('''
+                       INSERT INTO Auction_Listings (Seller_Email, Listing_ID, Category, Auction_Title, Product_Name,Product_Description, Quantity, Reserve_Price, Max_bids, Status)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                       ''', (user_email, next_id, cat, title, p_name, desc, qty, reserve, max_b))
+        connection.commit()
+        connection.close()
+        return redirect(url_for('my_listing'))
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    #grabs the category names that the seller can choose for their new listing
+    cursor.execute('''SELECT category_name, parent_category
+                      FROM Categories 
+                      ORDER BY category_name
+                   ''')
+    categories = cursor.fetchall()
+    connection.close()
+    print(categories)
+    parent_category = set()
+    for category in categories:
+        parent_category.add(category[1])
+    print(parent_category)
+    return render_template('post-item.html',categories=categories, parent_category=sorted(parent_category))
 if __name__ == "__main__":
     app.run()
