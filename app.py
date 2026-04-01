@@ -192,8 +192,6 @@ def profile():
         edit_address=edit_address,
         edit_card=edit_card
     )
-@app.route('/register', methods=['GET'])
-    return render_template('profile.html', user=user)
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
     error = None
