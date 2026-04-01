@@ -109,10 +109,11 @@
                     All...
                 </a>
                 <div class="dropdown-menu" aria-labelledby="exampleDropdown">
-                    <a class="dropdown-item" href="/past">Past Bids</a>
-                    <a class="dropdown-item" href="/watchlist">Watch list</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="/support">Contact HelpDesk</a>
+                    {% for cate in categories %}
+                    <a class="dropdown-item" href="/bidder">
+                    {{ cate[0] }}
+                    </a>
+                    {% endfor %}
                 </div>
                 </li>
             </ul>
