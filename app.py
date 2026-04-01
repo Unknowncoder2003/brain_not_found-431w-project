@@ -1,9 +1,13 @@
 import email
 import hashlib
+import secrets
+from string import hexdigits
 from unittest import result
 
 from flask import Flask, render_template, request,redirect, url_for,session
 import sqlite3 as sql
+
+from passwordHasher import hashed_password
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_nittany_key_that_nobody_will_know' #for the session (the memory) to work
@@ -140,8 +144,68 @@ def helpdesk():
         return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
     return render_template('helpdesk.html', email=user_email)
 
-@app.route('/register', methods=['GET'])
+@app.route('/register', methods=['GET', 'POST'])
 def register_page():
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        email = request.form['email']
+        role = request.form['role']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if password != confirm_password:
+            error = "Passwords do not match"
+            return render_template('register.html', error=error)
+
+        connection = sql.connect('database.db')
+        cursor = connection.cursor()
+
+        cursor.execute('SELECT email FROM Users WHERE email = ?', (email,))
+        if cursor.fetchone():
+            connection.close()
+            error = "Email already exists."
+            return render_template('register.html', error=error)
+
+        salt = secrets.token_urlsafe(16)
+        hashed_password = hashlib.sha256((password.strip() + salt).encode('utf-8')).hexdigest()
+
+        cursor.execute(
+            "INSERT INTO Users (email, password, salt) VALUES (?, ?, ?)",
+            (email, hashed_password, salt)
+        )
+
+        if role == "bidder":
+            cursor.execute("""
+                INSERT INTO Bidders (email, first_name, last_name, age, home_address_id, major)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                email,
+                request.form['first_name'],
+                request.form['last_name'],
+                request.form['age'],
+                request.form['home_address_id'],
+                request.form['major']
+            ))
+
+        elif role == "seller":
+            cursor.execute("""
+                INSERT INTO Sellers (email, bank_routing_number, bank_account_number, balance)
+                VALUES (?, ?, ?, ?)
+            """, (
+                email,
+                request.form['bank_routing_number'],
+                request.form['bank_account_number'],
+                0
+            ))
+
+        connection.commit()
+        connection.close()
+
+        success = "Account created! You can now log in."
+        return render_template('register.html', success=success)
+
     return render_template('register.html')
 
 @app.route('/my-listings', methods=['POST', 'GET'])
