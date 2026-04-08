@@ -353,10 +353,9 @@ def edit_listing(seller_email, listing_id):
     #Security Check
     if not user_email or user_email != seller_email:
         return redirect(url_for('login'))
-
-    connection = sql.connect('database.db')
-    cursor = connection.cursor()
     if request.method == 'POST':
+        connection = sql.connect('database.db')
+        cursor = connection.cursor()
         title = request.form['auction_title']
         prod_name = request.form['product_name']
         cat = request.form['category']
@@ -364,7 +363,9 @@ def edit_listing(seller_email, listing_id):
         qty = request.form['quantity']
         reserve = request.form['reserve']
         max_b = request.form['max_bids']
-
+        cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
+        if not cursor.fetchone():
+            return "Error: Category does not exist.", 400
         cursor.execute('''
                        UPDATE Auction_Listings
                        SET Auction_Title       = ?,
@@ -381,14 +382,15 @@ def edit_listing(seller_email, listing_id):
         connection.close()
         #Go back to the details page
         return redirect(url_for('listing_details', seller_email=seller_email, listing_id=listing_id))
-    #Handle the Initial Load
-    cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?',
-                   (seller_email, listing_id))
-    item = cursor.fetchone()
-    connection.close()
-    if not item:
-        return "Listing not found", 404
-    return render_template('edit-listing.html', item=item)
+    if request.method == 'GET':
+        connection = sql.connect('database.db')
+        cursor = connection.cursor()
+        cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?',
+                       (seller_email, listing_id))
+        item = cursor.fetchone()
+        connection.close()
+        category_tree = get_category_tree()
+        return render_template('edit-listing.html', item=item, category_tree=category_tree)
 
 
 def get_category_tree():
@@ -430,21 +432,23 @@ def post_item():
         qty = int(request.form.get('quantity'))
         reserve = float(request.form.get('reserve'))
         max_b = int(request.form.get('max_bids'))
+        # Server-side safety check
+        data = [title, p_name, cat, desc, qty, reserve, max_b]
+        if any(v is None or v == "" for v in data):
+            return "All fields are required!", 400
 
         connection = sql.connect('database.db')
         cursor = connection.cursor()
 
-        # 3. Integrity Check: Ensure the category actually exists
+        #integrity Check: Ensure the category actually exists
         cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
         if not cursor.fetchone():
             connection.close()
             return "Invalid Category selected", 400
-
-        # 4. Composite Key Logic: Generate the next ID for THIS specific seller
+        #composite Key Logic: Generate the next ID for THIS specific seller
         cursor.execute('SELECT MAX(Listing_ID) FROM Auction_Listings WHERE Seller_Email = ?', (user_email,))
         result = cursor.fetchone()[0]
         next_id = 1 if result is None else result + 1
-        # 5. Database Insertion (Status 1 = Active)
         try:
             cursor.execute('''
                            INSERT INTO Auction_Listings (Seller_Email, Listing_ID, Category, Auction_Title,
@@ -463,7 +467,7 @@ def post_item():
             return "An error occurred while posting your item.", 500
     #build the tree for the dropdown
     category_tree = get_category_tree()
-    print(category_tree)
+    #print(category_tree)
     return render_template('post-item.html', category_tree=category_tree)
 if __name__ == "__main__":
     app.run()
