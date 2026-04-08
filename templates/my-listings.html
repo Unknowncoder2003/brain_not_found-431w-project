@@ -125,7 +125,7 @@
 
                           <td>{{ row[2] }}</td>
 
-                          <td><strong>${{ "{:,.2f}".format(row[3]) }}</strong></td>
+                          <td><strong>${{ "{:,.2f}".format(row[3] | float) }}</strong></td>
 
                           <td>{{ row[4] }} bids</td>
 

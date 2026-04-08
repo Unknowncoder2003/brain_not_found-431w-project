@@ -356,9 +356,7 @@ def edit_listing(seller_email, listing_id):
 
     connection = sql.connect('database.db')
     cursor = connection.cursor()
-    #Handle the Form Submission
     if request.method == 'POST':
-        #Retrieve data from form fields
         title = request.form['auction_title']
         prod_name = request.form['product_name']
         cat = request.form['category']
@@ -394,19 +392,18 @@ def edit_listing(seller_email, listing_id):
 
 
 def get_category_tree():
-    """Helper function to get the cotegory tree"""
+    """Helper function to get the category tree"""
     connection = sql.connect('database.db')
     cursor = connection.cursor()
     cursor.execute('SELECT category_name, parent_category FROM Categories')
     rows = cursor.fetchall()
     connection.close()
 
-    # 1. Create a dictionary of all categories
+    #Create a dictionary of all categories
     tree = {}
     for name, parent in rows:
         tree[name] = {'name': name, 'children': []}
 
-    # 2. Build the relationships
     roots = []
     for name, parent in rows:
         if parent == 'Root' or parent is None:
@@ -414,7 +411,60 @@ def get_category_tree():
         elif parent in tree:
             tree[parent]['children'].append(tree[name])
 
-    return roots
+    return sorted(roots, key=lambda x: x['name'])
+
+
+@app.route('/post-item', methods=['GET', 'POST'])
+def post_item():
+    #must be logged in
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        #collect form data
+        title = request.form.get('auction_title')
+        p_name = request.form.get('product_name')
+        cat = request.form.get('category')
+        desc = request.form.get('description')
+        qty = int(request.form.get('quantity'))
+        reserve = float(request.form.get('reserve'))
+        max_b = int(request.form.get('max_bids'))
+
+        connection = sql.connect('database.db')
+        cursor = connection.cursor()
+
+        # 3. Integrity Check: Ensure the category actually exists
+        cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
+        if not cursor.fetchone():
+            connection.close()
+            return "Invalid Category selected", 400
+
+        # 4. Composite Key Logic: Generate the next ID for THIS specific seller
+        cursor.execute('SELECT MAX(Listing_ID) FROM Auction_Listings WHERE Seller_Email = ?', (user_email,))
+        result = cursor.fetchone()[0]
+        next_id = 1 if result is None else result + 1
+        # 5. Database Insertion (Status 1 = Active)
+        try:
+            cursor.execute('''
+                           INSERT INTO Auction_Listings (Seller_Email, Listing_ID, Category, Auction_Title,
+                                                         Product_Name, Product_Description, Quantity,
+                                                         Reserve_Price, Max_bids, Status)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                           ''', (user_email, next_id, cat, title, p_name, desc, qty, reserve, max_b))
+
+            connection.commit()
+            connection.close()
+            return redirect(url_for('my_listing'))
+
+        except sql.Error as e:
+            connection.close()
+            print(f"Database error: {e}")
+            return "An error occurred while posting your item.", 500
+    #build the tree for the dropdown
+    category_tree = get_category_tree()
+    print(category_tree)
+    return render_template('post-item.html', category_tree=category_tree)
 if __name__ == "__main__":
     app.run()
 
