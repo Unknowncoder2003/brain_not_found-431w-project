@@ -110,7 +110,7 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="exampleDropdown">
                     {% for cate in categories %}
-                    <a class="dropdown-item" href="/bidder">
+                    <a class="dropdown-item" href="/bidder?category={{ cate[0] }}">
                     {{ cate[0] }}
                     </a>
                     {% endfor %}
@@ -179,6 +179,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="card">
                         <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
@@ -188,7 +189,18 @@
                         </div>
                     </div>
                 </div>
-
+                <!-- loop in order to get the items -->
+                {% for i in items %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <!-- img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
+                             class="card-img-top" alt="Toy Train" -->
+                        <div class="card-body text-center">
+                            <p class="card-text">{{ i[0] }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
 
         </div>

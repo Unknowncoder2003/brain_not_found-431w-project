@@ -106,7 +106,7 @@ def seller():
         # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
 
     return render_template('seller.html',email = user_email)
-@app.route('/bidder')
+@app.route('/bidder', methods=['GET'])
 def bidder():
     # Get the email of the person who just logged in
     user_email = session.get('email')
@@ -126,7 +126,14 @@ def bidder():
         fname = "Bidder"  # Fallback name
     # SEND THE DATA TO HTML
     cate = categories()
-    return render_template('bidder.html', first_name=fname, categories=cate)
+
+    category = request.args.get('category')
+    if category:
+        # filter data based on category
+        items = get_items(category)
+    else:
+        items = get_all_items()
+    return render_template('bidder.html', first_name=fname, categories=cate, items = items)
 #the categories that are apart of root
 def categories():
     connection = sql.connect('database.db')
@@ -137,6 +144,20 @@ def categories():
     #print(sub_category.fetchall())
     connection.close()
     return top_categories
+
+def get_items(category_name):
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    #get the items
+    #check for subcategories first
+    #then select all of the items
+    items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE Category = ?', (category_name,))
+    return items.fetchall()
+def get_all_items():
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    items = cursor.execute('SELECT DISTINCT Auction_Title FROM Auction_Listings')
+    return items.fetchall()
 @app.route('/helpdesk', methods=['POST', 'GET'])
 def helpdesk():
     #security check: if a user is not a helpdesk, they will get aborted to the login page.
@@ -398,13 +419,6 @@ if __name__ == "__main__":
 
 
 
-def get_items(category_name):
-    connection = sql.connect('database.db')
-    cursor = connection.cursor()
-    #get the items
-    #check for subcategories first
-    #then select all of the items
-    items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE category_name = ?', (category_name,))
-    return cursor.fetchall()
+
 
 #categories()
