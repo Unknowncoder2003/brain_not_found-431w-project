@@ -380,6 +380,30 @@ def edit_listing(seller_email, listing_id):
     if not item:
         return "Listing not found", 404
     return render_template('edit-listing.html', item=item)
+
+
+def get_category_tree():
+    """Helper function to get the cotegory tree"""
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT category_name, parent_category FROM Categories')
+    rows = cursor.fetchall()
+    connection.close()
+
+    # 1. Create a dictionary of all categories
+    tree = {}
+    for name, parent in rows:
+        tree[name] = {'name': name, 'children': []}
+
+    # 2. Build the relationships
+    roots = []
+    for name, parent in rows:
+        if parent == 'Root' or parent is None:
+            roots.append(tree[name])
+        elif parent in tree:
+            tree[parent]['children'].append(tree[name])
+
+    return roots
 if __name__ == "__main__":
     app.run()
 
