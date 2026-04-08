@@ -125,7 +125,18 @@ def bidder():
     else:
         fname = "Bidder"  # Fallback name
     # SEND THE DATA TO HTML
-    return render_template('bidder.html', first_name=fname)
+    cate = categories()
+    return render_template('bidder.html', first_name=fname, categories=cate)
+#the categories that are apart of root
+def categories():
+    connection = sql.connect('database.db')
+    top_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category = "Root"')
+    #sub_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category in top_category')
+    #sub_categories =
+    top_categories = top_category.fetchall()
+    #print(sub_category.fetchall())
+    connection.close()
+    return top_categories
 @app.route('/helpdesk', methods=['POST', 'GET'])
 def helpdesk():
     #security check: if a user is not a helpdesk, they will get aborted to the login page.
@@ -409,16 +420,7 @@ if __name__ == "__main__":
 
 
 
-#the categories that are apart of root
-def categories():
-    connection = sql.connect('database.db')
-    top_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category = "Root"')
 
-    #sub_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category in top_category')
-    #sub_categories =
-    print(top_category.fetchall())
-    #print(sub_category.fetchall())
-    return None
 
 def get_items(category_name):
     connection = sql.connect('database.db')
@@ -429,4 +431,4 @@ def get_items(category_name):
     items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE category_name = ?', (category_name,))
     return cursor.fetchall()
 
-categories()
+#categories()
