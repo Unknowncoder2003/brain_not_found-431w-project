@@ -277,9 +277,18 @@ def register_page():
                 email,
                 request.form['bank_routing_number'],
                 request.form['bank_account_number'],
-                0
+                request.form['balance']
             ))
-
+            if 'is_local_vendor' in request.form:
+                cursor.execute("""
+                               INSERT INTO Local_Vendors (email, business_name, business_address_id,customer_service_phone_number)
+                               VALUES (?, ?, ?, ?)
+                               """, (
+                                   email,
+                                   request.form['business_name'],
+                                   request.form['business_address_id'],
+                                   request.form['customer_service_phone_number']
+                               ))
         connection.commit()
         connection.close()
 

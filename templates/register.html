@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+<!DOC<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NittanyAuction Register</title>
     <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          crossorigin="anonymous">
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
     <style>
         body {
             background-color: #f2f2f2;
@@ -29,21 +29,16 @@
             text-align: center;
             font-size: 2.4rem;
             font-weight: bold;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
 
-        .brand-title .nittany {
-            color: #1e4fa1;
-        }
-
-        .brand-title .auction {
-            color: #28a745;
-        }
+        .brand-title .nittany { color: #1e4fa1; }
+        .brand-title .auction { color: #28a745; }
 
         .register-card {
             background: white;
             border: 1px solid #d9d9d9;
-            border-radius: 4px;
+            border-radius: 6px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             overflow: hidden;
         }
@@ -57,40 +52,44 @@
         .tab {
             width: 50%;
             text-align: center;
-            padding: 14px 0;
-            font-size: 1.1rem;
-            font-weight: 500;
+            padding: 14px;
             text-decoration: none;
             color: #666;
             border-right: 1px solid #ddd;
         }
 
-        .tab:last-child {
-            border-right: none;
-        }
+        .tab:last-child { border-right: none; }
 
         .tab.active {
             background-color: white;
-            color: #333;
             font-weight: 600;
+            color: #333;
         }
 
         .form-section {
-            padding: 24px 20px 20px 20px;
+            padding: 25px;
+        }
+
+        .role-section {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .nested-section {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
 
         .btn-register {
             width: 100%;
+            margin-top: 15px;
             font-weight: 600;
-            margin-top: 10px;
-        }
-
-        .helper-text {
-            margin-top: 14px;
-            color: #666;
-            font-size: 0.92rem;
-            line-height: 1.4;
-            text-align: center;
         }
 
         .bottom-links {
@@ -98,35 +97,33 @@
             text-align: center;
         }
 
-        .role-section {
-            margin-top: 10px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .role-section h5 {
-            margin-bottom: 15px;
+        .hint-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 4px;
         }
     </style>
 </head>
+
 <body>
 
 <div class="register-wrapper">
     <div class="register-container">
+
         <div class="brand-title">
             <span class="nittany">Nittany</span><span class="auction">Auction</span>
         </div>
 
         <div class="register-card">
+
             <div class="tab-header">
                 <a href="/login" class="tab">Sign In</a>
                 <div class="tab active">Register</div>
             </div>
 
             <div class="form-section">
-                <form action="/register" method="POST">
+                <form action="/register" method="POST" id="register-form">
+
                     <div class="form-group">
                         <label for="email">Email Address</label>
                         <input type="email" class="form-control" id="email" name="email"
@@ -142,7 +139,7 @@
                         </select>
                     </div>
 
-                    <div id="bidder-fields" class="role-section" style="display: none;">
+                    <div id="bidder-fields" class="role-section" style="display:none;">
                         <h5>Bidder Information</h5>
 
                         <div class="form-row">
@@ -160,7 +157,7 @@
 
                         <div class="form-group">
                             <label for="age">Age</label>
-                            <input type="number" class="form-control" id="age" name="age"
+                            <input type="number" min="1" class="form-control" id="age" name="age"
                                    placeholder="Enter your age">
                         </div>
 
@@ -177,55 +174,88 @@
                         </div>
                     </div>
 
-                    <div id="seller-fields" class="role-section" style="display: none;">
+                    <div id="seller-fields" class="role-section" style="display:none;">
                         <h5>Seller Information</h5>
 
                         <div class="form-group">
                             <label for="bank_routing_number">Bank Routing Number</label>
                             <input type="text" class="form-control" id="bank_routing_number" name="bank_routing_number"
-                                   placeholder="Enter bank routing number">
+                                   placeholder="0011-4959-0"
+                                   inputmode="numeric" maxlength="11">
+                            <div class="hint-text">Format: 0011-4959-0</div>
                         </div>
 
                         <div class="form-group">
                             <label for="bank_account_number">Bank Account Number</label>
                             <input type="text" class="form-control" id="bank_account_number" name="bank_account_number"
-                                   placeholder="Enter bank account number">
+                                   placeholder="Enter bank account number" inputmode="numeric">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="balance">Initial Account Balance</label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="balance" name="balance"
+                                   placeholder="Enter starting balance">
+                        </div>
+
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="is_local_vendor"
+                                   name="is_local_vendor" onchange="toggleVendorFields()">
+                            <label class="form-check-label" for="is_local_vendor">
+                                I am a Local Vendor
+                            </label>
+                        </div>
+
+                        <div id="vendor-fields" class="nested-section" style="display:none;">
+                            <h6>Local Vendor Information</h6>
+
+                            <div class="form-group">
+                                <label for="business_name">Business Name</label>
+                                <input type="text" class="form-control" id="business_name" name="business_name"
+                                       placeholder="Enter business name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="business_address_id">Business Address ID</label>
+                                <input type="text" class="form-control" id="business_address_id" name="business_address_id"
+                                       placeholder="Enter business address ID">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="customer_service_phone_number">Customer Service Phone Number</label>
+                                <input type="text" class="form-control" id="customer_service_phone_number"
+                                       name="customer_service_phone_number"
+                                       placeholder="555-123-4567" inputmode="numeric" maxlength="12">
+                                <div class="hint-text">Format: 555-123-4567</div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-group mt-3">
-                        <label for="password">Create Password</label>
-                        <input type="password" class="form-control" id="password" name="password"
-                               placeholder="Create a password" required>
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
                     </div>
 
                     <div class="form-group">
                         <label for="confirm_password">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password"
-                               placeholder="Re-enter your password" required>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                     </div>
 
                     {% if error %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ error }}
-                    </div>
+                    <div class="alert alert-danger">{{ error }}</div>
                     {% endif %}
 
                     {% if success %}
-                    <div class="alert alert-success" role="alert">
-                        {{ success }}
-                    </div>
+                    <div class="alert alert-success">{{ success }}</div>
                     {% endif %}
 
-                    <button type="submit" class="btn btn-success btn-register">Create Account</button>
-
-                    <div class="helper-text">
-                        New users may register as a Bidder or Seller. HelpDesk accounts are created internally.
-                    </div>
+                    <button type="submit" class="btn btn-success btn-register">
+                        Create Account
+                    </button>
 
                     <div class="bottom-links">
                         <a href="/login">Back to Sign In</a>
                     </div>
+
                 </form>
             </div>
         </div>
@@ -233,28 +263,103 @@
 </div>
 
 <script>
-    function toggleRoleFields() {
-        const role = document.getElementById("role").value;
-        const bidderFields = document.getElementById("bidder-fields");
-        const sellerFields = document.getElementById("seller-fields");
+function setRequired(inputs, isRequired) {
+    inputs.forEach(input => {
+        input.required = isRequired;
+    });
+}
 
-        const bidderInputs = bidderFields.querySelectorAll("input");
-        const sellerInputs = sellerFields.querySelectorAll("input");
+function toggleRoleFields() {
+    const role = document.getElementById("role").value;
 
-        bidderFields.style.display = "none";
-        sellerFields.style.display = "none";
+    const bidder = document.getElementById("bidder-fields");
+    const seller = document.getElementById("seller-fields");
+    const vendor = document.getElementById("vendor-fields");
+    const vendorCheckbox = document.getElementById("is_local_vendor");
 
-        bidderInputs.forEach(input => input.required = false);
-        sellerInputs.forEach(input => input.required = false);
+    const bidderInputs = bidder.querySelectorAll("input");
+    const sellerInputs = seller.querySelectorAll("input");
+    const vendorInputs = vendor.querySelectorAll("input");
 
-        if (role === "bidder") {
-            bidderFields.style.display = "block";
-            bidderInputs.forEach(input => input.required = true);
-        } else if (role === "seller") {
-            sellerFields.style.display = "block";
-            sellerInputs.forEach(input => input.required = true);
-        }
+    bidder.style.display = "none";
+    seller.style.display = "none";
+    vendor.style.display = "none";
+    vendorCheckbox.checked = false;
+
+    setRequired(bidderInputs, false);
+    setRequired(sellerInputs, false);
+    setRequired(vendorInputs, false);
+
+    if (role === "bidder") {
+        bidder.style.display = "block";
+        setRequired(bidderInputs, true);
+    } else if (role === "seller") {
+        seller.style.display = "block";
+        document.getElementById("bank_routing_number").required = true;
+        document.getElementById("bank_account_number").required = true;
+        document.getElementById("balance").required = true;
     }
+}
+
+function toggleVendorFields() {
+    const checkbox = document.getElementById("is_local_vendor");
+    const vendor = document.getElementById("vendor-fields");
+    const vendorInputs = vendor.querySelectorAll("input");
+
+    if (checkbox.checked) {
+        vendor.style.display = "block";
+        setRequired(vendorInputs, true);
+    } else {
+        vendor.style.display = "none";
+        setRequired(vendorInputs, false);
+    }
+}
+
+function formatPhoneNumber(value) {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
+    return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+}
+
+function formatRoutingNumber(value) {
+    const digits = value.replace(/\D/g, '').slice(0, 9);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 8) return digits.slice(0, 4) + '-' + digits.slice(4);
+    return digits.slice(0, 4) + '-' + digits.slice(4, 8) + '-' + digits.slice(8);
+}
+
+document.getElementById("customer_service_phone_number").addEventListener("input", function(e) {
+    e.target.value = formatPhoneNumber(e.target.value);
+});
+
+document.getElementById("bank_routing_number").addEventListener("input", function(e) {
+    e.target.value = formatRoutingNumber(e.target.value);
+});
+
+document.getElementById("bank_account_number").addEventListener("input", function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '');
+});
+
+document.getElementById("register-form").addEventListener("submit", function(e) {
+    const role = document.getElementById("role").value;
+    const isLocalVendor = document.getElementById("is_local_vendor").checked;
+    const routing = document.getElementById("bank_routing_number").value;
+    const phone = document.getElementById("customer_service_phone_number").value;
+
+    const routingDigits = routing.replace(/\D/g, '');
+
+    if (role === "seller" && routingDigits.length !== 9) {
+        e.preventDefault();
+        alert("Routing number must contain exactly 9 digits in the format 0011-4959-0.");
+        return;
+    }
+
+    if (role === "seller" && isLocalVendor && phone.length !== 12) {
+        e.preventDefault();
+        alert("Customer service phone number must be in the format XXX-XXX-XXXX.");
+    }
+});
 </script>
 
 </body>
