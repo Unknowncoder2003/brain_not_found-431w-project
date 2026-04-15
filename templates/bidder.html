@@ -103,14 +103,18 @@
                 </li>
             </ul>
 
-            <ul class="navbar-nav ml-auto"> <!-- navbar class from bootstraps, ml-auto = pushed it to the far right -->
-                <li class="nav-item">
-                    <span class="nav-link text-muted">Bidder: <strong>{{ first_name }}</strong></span>
+            <ul class="navbar-nav ml-auto align-items-center">
+                <li class="nav-item mr-2">
+                    <a class="btn btn-sm btn-outline-primary" href="/profile">
+                        User Profile
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                    <span class="nav-link text-muted mb-0">Bidder: <strong>{{ first_name }}</strong></span>
                 </li>
-
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
+                </li>
             </ul>
         </div>
     </div>
