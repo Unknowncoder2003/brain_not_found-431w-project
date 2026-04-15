@@ -398,7 +398,7 @@ def item_bid():
 
     print(current_bid_count)
     return render_template(
-        'listing-details.html',
+        'listing-details-bidder.html',
         item=item,
         bid_count=current_bid_count,
         current_price=highest_bid,
