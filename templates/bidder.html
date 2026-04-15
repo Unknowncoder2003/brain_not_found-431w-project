@@ -40,7 +40,33 @@
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
+    /* Custom CSS for hierarchical sub-menus */
+    .dropdown-submenu {
+        position: relative;
+    }
 
+    .dropdown-submenu .dropdown-menu {
+        top: 0;
+        left: 100%;
+        margin-top: -1px;
+        display: none; /* Hidden by default */
+    }
+
+    .dropdown-submenu:hover > .dropdown-menu {
+        display: block; /* Show on hover */
+    }
+
+    /* Adds a small arrow to items that have children */
+    .dropdown-submenu > .dropdown-toggle::after {
+        display: inline-block;
+        margin-left: 0.5em;
+        vertical-align: 0.255em;
+        content: "";
+        border-top: 0.3em solid transparent;
+        border-right: 0;
+        border-bottom: 0.3em solid transparent;
+        border-left: 0.3em solid;
+    }
     </style>
 </head>
 <body>
@@ -77,49 +103,59 @@
                 </li>
             </ul>
 
-            <ul class="navbar-nav ml-auto"> <!-- navbar class from bootstraps, ml-auto = pushed it to the far right -->
-                <li class="nav-item">
-                    <span class="nav-link text-muted">Bidder: <strong>{{ first_name }}</strong></span>
+            <ul class="navbar-nav ml-auto align-items-center">
+                <li class="nav-item mr-2">
+                    <a class="btn btn-sm btn-outline-primary" href="/profile">
+                        User Profile
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                    <span class="nav-link text-muted mb-0">Bidder: <strong>{{ first_name }}</strong></span>
                 </li>
-
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
+                </li>
             </ul>
         </div>
     </div>
 </nav>
 
-<!-- searchbar and categories-->
-<nav class="navbar navbar-expand-lg navbar-light bottom-navbar"> <!-- trying to make it the same template as the other pages-->
+<nav class="navbar navbar-expand-lg navbar-light bottom-navbar">
     <div class="container">
-        <a class="navbar-brand brand-text" href="/bidder">
-        </a>
-
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
         <div class="collapse navbar-collapse" id="searchNavbar">
+
+            {% macro render_category(category) %}
+                <li class="dropdown-submenu">
+                    <a class="dropdown-item {% if category.children %}dropdown-toggle{% endif %}"
+                       href="/bidder?category={{ category.name }}">
+                        {{ category.name }}
+                    </a>
+                    {% if category.children %}
+                        <ul class="dropdown-menu">
+                            {% for child in category.children %}
+                                {{ render_category(child) }}
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endmacro %}
 
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="example2Dropdown"
-                   role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    All...
-                </a>
-                <div class="dropdown-menu" aria-labelledby="exampleDropdown">
-                    {% for cate in categories %}
-                    <a class="dropdown-item" href="/bidder?category={{ cate[0] }}">
-                    {{ cate[0] }}
+                    <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown"
+                       role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        All...
                     </a>
-                    {% endfor %}
-                </div>
+                    <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                        {% for cate in categories %}
+                            {{ render_category(cate) }}
+                        {% endfor %}
+                    </ul>
                 </li>
             </ul>
 
-            <form class="form-inline mr-auto">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <form class="form-inline mr-auto" action="/bidder" method="GET">
+                <input class="form-control mr-sm-2" type="search" name="search" placeholder="Search" aria-label="Search">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
             </form>
         </div>
@@ -128,12 +164,7 @@
 
 
 
-
-
-
-
-
-
+<!-- welcom information -->
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10 dashboard-card">
@@ -145,50 +176,14 @@
     </div>
 </div>
 
-
+<!--place to display the items -->
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-10 dashboard-card">
             <h4 class="mb-3">Items</h4> <!-- mb- indicates the bottom margin -->
 
             <div class="row">
-                <div class="col-md-4"> <!-- col-md- controls how wide the column is -->
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
                 <!-- loop in order to get the items -->
                 {% for i in items %}
                 <div class="col-md-4">
@@ -197,6 +192,12 @@
                              class="card-img-top" alt="Toy Train" -->
                         <div class="card-body text-center">
                             <p class="card-text">{{ i[0] }}</p>
+                            <form action="/item-details" method="GET">
+                                <input type="hidden" name="item" value="{{ i[0] }}">
+                                <button type="submit" class="btn btn-primary">
+                                    {{ i[0] }}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

@@ -6,25 +6,127 @@
     <title>Seller Profile | NittanyAuction</title>
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f2f2f2;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 2rem;
+        }
+
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .info-row {
+            margin-bottom: 10px;
+        }
+
+        .stat-box {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e4fa1;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95rem;
+        }
+    </style>
 </head>
-<body style="background-color:#f2f2f2;">
+<body>
 
 <div class="container mt-5">
-    <div class="card shadow-sm p-4">
-        <h2>Seller Profile</h2>
-        <hr>
-        <p><strong>Email:</strong> {{ email }}</p>
-        <p>
-            <strong>Average Rating:</strong>
-            {% if avg_rating is not none %}
-                {{ avg_rating }} / 5
-            {% else %}
-                No ratings yet
-            {% endif %}
-        </p>
-        <p><strong>Total Ratings:</strong> {{ rating_count }}</p>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="profile-card">
 
-        <a href="/seller" class="btn btn-outline-primary">Back to Dashboard</a>
+                <h2>Seller Profile</h2>
+
+                <div class="section-title">Account Information</div>
+                <p class="info-row"><strong>Email:</strong> {{ email }}</p>
+                <p class="info-row">
+                    <strong>Average Rating:</strong>
+                    {% if avg_rating is not none %}
+                        {{ avg_rating }} / 5
+                    {% else %}
+                        No ratings yet
+                    {% endif %}
+                </p>
+                <p class="info-row"><strong>Total Ratings:</strong> {{ rating_count }}</p>
+                <p class="info-row"><strong>Current Balance:</strong>
+                    {% if balance is not none %}
+                        ${{ balance }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+
+                <div class="section-title">Listing Summary</div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stat-box">
+                            <div class="stat-number">{{ active_count }}</div>
+                            <div class="stat-label">Active Listings</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-box">
+                            <div class="stat-number">{{ inactive_count }}</div>
+                            <div class="stat-label">Inactive Listings</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-box">
+                            <div class="stat-number">{{ sold_count }}</div>
+                            <div class="stat-label">Sold Listings</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Business Information</div>
+                <p class="info-row"><strong>Business Name:</strong>
+                    {{ business_name if business_name else 'N/A' }}
+                </p>
+                <p class="info-row"><strong>Customer Service Phone:</strong>
+                    {{ customer_service_phone_number if customer_service_phone_number else 'N/A' }}
+                </p>
+
+                <div class="section-title">Bank Information</div>
+                <p class="info-row"><strong>Bank Routing Number:</strong>
+                    {{ masked_routing if masked_routing else 'N/A' }}
+                </p>
+                <p class="info-row"><strong>Bank Account Number:</strong>
+                    {{ masked_account if masked_account else 'N/A' }}
+                </p>
+
+                <div class="mt-4">
+                    <a href="{{ url_for('my_listing') }}" class="btn btn-primary">Manage My Listings</a>
+                    <a href="{{ url_for('post_item') }}" class="btn btn-success">Post New Item</a>
+                    <a href="{{ url_for('seller') }}" class="btn btn-outline-primary">Back to Dashboard</a>
+                </div>
+
+            </div>
+        </div>
     </div>
 </div>
 
