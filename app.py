@@ -10,7 +10,6 @@ import uuid
 
 from passwordHasher import hashed_password
 
-# 统一别名，兼容你原来大量使用的 sql.connect(...)
 sql = sqlite3
 
 app = Flask(__name__)
@@ -306,6 +305,7 @@ def bidder():
     category = request.args.get('category')
     if category:
         items = get_items(category)
+
     else:
         items = get_all_items()
 
@@ -320,14 +320,47 @@ def categories():
     return top_categories
 
 
-def get_items(category_name):
+def get_all_subcategories(target_category):
+    """
+    Finds the target category and all its children/grandchildren
+    to create a full list of category names for filtering.
+    """
     connection = get_connection()
     cursor = connection.cursor()
-    items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE Category = ?', (category_name,))
-    data = items.fetchall()
+    cursor.execute('SELECT category_name, parent_category FROM Categories')
+    rows = cursor.fetchall()
+    connection.close()
+    # Build a simple mapping of Parent -> [Children]
+    adj_list = {}
+    for name, parent in rows:
+        if parent not in adj_list:
+            adj_list[parent] = []
+        adj_list[parent].append(name)
+    # BFS to find all subcategories
+    all_names = [target_category]
+    queue = [target_category]
+    while queue:
+        current = queue.pop(0)
+        if current in adj_list:
+            for child in adj_list[current]:
+                all_names.append(child)
+                queue.append(child)
+    print(f"debug {all_names}")
+    return all_names
+
+
+def get_items(category_name):
+    """fetch items from the selected category AND all subcategories."""
+    # Get the full list of related categories
+    category_list = get_all_subcategories(category_name)
+    connection = get_connection()
+    cursor = connection.cursor()
+    placeholders = ', '.join(['?'] * len(category_list))
+    query = f'SELECT Auction_Title FROM Auction_Listings WHERE Category IN ({placeholders})'
+    cursor.execute(query, category_list)
+    data = cursor.fetchall()
     connection.close()
     return data
-
 
 def get_all_items():
     connection = get_connection()

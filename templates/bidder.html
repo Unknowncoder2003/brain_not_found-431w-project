@@ -127,7 +127,7 @@
             {% macro render_category(category) %}
                 <li class="dropdown-submenu">
                     <a class="dropdown-item {% if category.children %}dropdown-toggle{% endif %}"
-                       href="/bidder?category={{ category.name }}">
+                       href="/bidder?category={{ category.name | urlencode }}">
                         {{ category.name }}
                     </a>
                     {% if category.children %}
