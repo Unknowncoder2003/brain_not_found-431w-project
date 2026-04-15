@@ -88,6 +88,12 @@ def authenticate():
     return render_template('login.html', error=error)
 
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('authenticate'))
+
+
 def password_to_hash_checker(email, password):
     """Helper function for checking the user entered password and verify it against the database"""
     connection = get_connection()
@@ -133,25 +139,22 @@ def find_user_html(email):
 def seller():
     user_email = session.get('email')
     if not user_email:
-        user_email = 'place_holder@lsu.edu'
+        return redirect(url_for('authenticate'))
 
     avg_rating = None
     rating_count = 0
 
     try:
-        ensure_seller_ratings_table()
-
         conn = get_connection()
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
         cur.execute("""
-            SELECT AVG(rating) AS avg_rating, COUNT(*) AS rating_count
-            FROM seller_ratings
-            WHERE seller_email = ?
+            SELECT AVG(Rating) AS avg_rating, COUNT(*) AS rating_count
+            FROM Rating
+            WHERE Seller_Email = ?
         """, (user_email,))
         result = cur.fetchone()
-        conn.close()
 
         if result:
             avg_rating = result['avg_rating']
@@ -159,6 +162,8 @@ def seller():
 
             if avg_rating is not None:
                 avg_rating = round(avg_rating, 2)
+
+        conn.close()
 
     except Exception as e:
         print("ERROR in /seller:", e)
@@ -171,11 +176,119 @@ def seller():
     )
 
 
+@app.route('/seller-profile', methods=['GET'])
+def seller_profile():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    avg_rating = None
+    rating_count = 0
+    balance = None
+    bank_routing_number = None
+    bank_account_number = None
+    business_name = None
+    customer_service_phone_number = None
+
+    active_count = 0
+    inactive_count = 0
+    sold_count = 0
+
+    try:
+        conn = get_connection()
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        # seller basic info
+        cur.execute("""
+            SELECT email, bank_routing_number, bank_account_number, balance
+            FROM Sellers
+            WHERE email = ?
+        """, (user_email,))
+        seller_row = cur.fetchone()
+
+        if seller_row:
+            balance = seller_row['balance']
+            bank_routing_number = seller_row['bank_routing_number']
+            bank_account_number = seller_row['bank_account_number']
+
+        # local vendor info
+        cur.execute("""
+            SELECT business_name, customer_service_phone_number
+            FROM Local_Vendors
+            WHERE email = ?
+        """, (user_email,))
+        vendor_row = cur.fetchone()
+
+        if vendor_row:
+            business_name = vendor_row['business_name']
+            customer_service_phone_number = vendor_row['customer_service_phone_number']
+
+        # rating info from Rating table
+        cur.execute("""
+            SELECT AVG(Rating) AS avg_rating, COUNT(*) AS rating_count
+            FROM Rating
+            WHERE Seller_Email = ?
+        """, (user_email,))
+        rating_row = cur.fetchone()
+
+        if rating_row:
+            avg_rating = rating_row['avg_rating']
+            rating_count = rating_row['rating_count']
+            if avg_rating is not None:
+                avg_rating = round(avg_rating, 2)
+
+        # listing counts
+        cur.execute("""
+            SELECT
+                SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active_count,
+                SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) AS inactive_count,
+                SUM(CASE WHEN Status = 2 THEN 1 ELSE 0 END) AS sold_count
+            FROM Auction_Listings
+            WHERE Seller_Email = ?
+        """, (user_email,))
+        listing_row = cur.fetchone()
+
+        if listing_row:
+            active_count = listing_row['active_count'] or 0
+            inactive_count = listing_row['inactive_count'] or 0
+            sold_count = listing_row['sold_count'] or 0
+
+        conn.close()
+
+    except Exception as e:
+        print("ERROR in /seller-profile:", e)
+
+    masked_routing = None
+    masked_account = None
+
+    if bank_routing_number:
+        bank_routing_number = str(bank_routing_number)
+        masked_routing = '*' * max(0, len(bank_routing_number) - 4) + bank_routing_number[-4:]
+
+    if bank_account_number:
+        bank_account_number = str(bank_account_number)
+        masked_account = '*' * max(0, len(bank_account_number) - 4) + bank_account_number[-4:]
+
+    return render_template(
+        'seller_profile.html',
+        email=user_email,
+        avg_rating=avg_rating,
+        rating_count=rating_count,
+        balance=balance,
+        active_count=active_count,
+        inactive_count=inactive_count,
+        sold_count=sold_count,
+        business_name=business_name,
+        customer_service_phone_number=customer_service_phone_number,
+        masked_routing=masked_routing,
+        masked_account=masked_account
+    )
 @app.route('/bidder', methods=['GET'])
 def bidder():
     user_email = session.get('email')
     if not user_email:
-        pass
+        return redirect(url_for('authenticate'))
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -229,7 +342,7 @@ def get_all_items():
 def helpdesk():
     user_email = session.get('email')
     if not user_email:
-        pass
+        return redirect(url_for('authenticate'))
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -371,7 +484,7 @@ def register_page():
 def my_listing():
     user_email = session.get('email')
     if not user_email:
-        pass
+        return redirect(url_for('authenticate'))
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -422,7 +535,6 @@ def listing_details(seller_email, listing_id):
     ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
-    # 新增：查 seller 平均评分，方便详情页显示
     ensure_seller_ratings_table()
     cursor.execute("""
         SELECT AVG(rating), COUNT(*)
@@ -441,7 +553,6 @@ def listing_details(seller_email, listing_id):
 
     connection.close()
 
-    print(current_bid_count)
     return render_template(
         'listing-details.html',
         item=item,
@@ -459,7 +570,7 @@ def deactivate_listing(seller_email, listing_id):
         return redirect(url_for('authenticate'))
 
     if user_email != seller_email:
-        return redirect(url_for('my_listing', error='You do not have access to the deactivate listing'))
+        return redirect(url_for('my_listing'))
 
     try:
         connection = get_connection()
