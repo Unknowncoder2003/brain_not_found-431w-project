@@ -577,21 +577,62 @@ def register_page():
 
     return render_template('register.html')
 
-@app.route('/my-bids', methods=['GET', 'POST'])
+
+@app.route('/my-bids', methods=['GET'])
 def my_bid_page():
     user_email = session.get('email')
     if not user_email:
-        pass
+        return redirect(url_for('authenticate'))
+
     connection = get_connection()
+    # Use sqlite3.Row to access columns by their database names
+    connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
+
+    # This query retrieves the user's bid alongside the current highest bid for that item
     cursor.execute('''
-        SELECT A.Auction_Title, A.Product_Name, B.bid_price
-        FROM Auction_Listings A, Bids B
-        WHERE B.bidder_email = ? AND B.listing_id = A.Listing_ID''', (user_email,))
-    result = cursor.fetchall()
+                   SELECT A.Auction_Title,
+                          A.Product_Name,
+                          B.Bid_Price,
+                          A.Status                              AS Auction_Status,
+                          (SELECT MAX(Bid_Price)
+                           FROM Bids
+                           WHERE Listing_ID = B.Listing_ID
+                             AND Seller_Email = B.Seller_Email) AS Current_High_Bid
+                   FROM Bids B
+                            JOIN Auction_Listings A ON B.Listing_ID = A.Listing_ID AND B.Seller_Email = A.Seller_Email
+                   WHERE B.Bidder_Email = ?
+                   ORDER BY B.Bid_ID DESC
+                   ''', (user_email,))
+
+    raw_results = cursor.fetchall()
     connection.close()
-    print(result)
-    return render_template('my-bids.html', email=user_email, listings=result)
+
+    # Determine the status label for each bid
+    processed_bids = []
+    for row in raw_results:
+        bid = dict(row)
+        user_price = bid['Bid_Price']
+        max_price = bid['Current_High_Bid']
+        auction_status = bid['Auction_Status']
+
+        if user_price < max_price:
+            bid['display_status'] = "Outbid"
+            bid['status_color'] = "text-danger"
+        elif user_price == max_price:
+            if auction_status == 1:
+                bid['display_status'] = "Leading"
+                bid['status_color'] = "text-success"
+            elif auction_status == 2:
+                bid['display_status'] = "Won"
+                bid['status_color'] = "text-primary"
+            else:
+                bid['display_status'] = "Auction Ended"
+                bid['status_color'] = "text-muted"
+
+        processed_bids.append(bid)
+
+    return render_template('my-bids.html', email=user_email, listings=processed_bids)
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
