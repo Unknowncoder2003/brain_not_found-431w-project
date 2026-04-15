@@ -9,7 +9,7 @@ import sqlite3
 
 from passwordHasher import hashed_password
 
-# 统一别名，兼容你原来大量使用的 sql.connect(...)
+# Alias for sqlite3 to preserve existing sql.connect(...) usage
 sql = sqlite3
 
 app = Flask(__name__)
@@ -26,8 +26,8 @@ def get_connection():
 
 def ensure_seller_ratings_table():
     """
-    确保 seller_ratings 表存在。
-    用 auction_id UNIQUE 防止同一笔交易重复评分。
+    Ensure the seller_ratings table exists.
+    auction_id is UNIQUE to prevent duplicate ratings for the same transaction.
     """
     connection = get_connection()
     cursor = connection.cursor()
@@ -95,7 +95,7 @@ def logout():
 
 
 def password_to_hash_checker(email, password):
-    """Helper function for checking the user entered password and verify it against the database"""
+    """Check the entered password against the stored hash and salt."""
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT password, salt FROM Users WHERE email = ?', (email,))
@@ -199,7 +199,7 @@ def seller_profile():
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
-        # seller basic info
+        # Seller basic information
         cur.execute("""
             SELECT email, bank_routing_number, bank_account_number, balance
             FROM Sellers
@@ -212,7 +212,7 @@ def seller_profile():
             bank_routing_number = seller_row['bank_routing_number']
             bank_account_number = seller_row['bank_account_number']
 
-        # local vendor info
+        # Local vendor information
         cur.execute("""
             SELECT business_name, customer_service_phone_number
             FROM Local_Vendors
@@ -224,7 +224,7 @@ def seller_profile():
             business_name = vendor_row['business_name']
             customer_service_phone_number = vendor_row['customer_service_phone_number']
 
-        # rating info from Rating table
+        # Rating information from the Rating table
         cur.execute("""
             SELECT AVG(Rating) AS avg_rating, COUNT(*) AS rating_count
             FROM Rating
@@ -238,7 +238,7 @@ def seller_profile():
             if avg_rating is not None:
                 avg_rating = round(avg_rating, 2)
 
-        # listing counts
+        # Listing counts by status
         cur.execute("""
             SELECT
                 SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active_count,
@@ -284,6 +284,8 @@ def seller_profile():
         masked_routing=masked_routing,
         masked_account=masked_account
     )
+
+
 @app.route('/bidder', methods=['GET'])
 def bidder():
     user_email = session.get('email')
@@ -337,11 +339,14 @@ def get_all_items():
     connection.close()
     return data
 
+
 @app.route('/item-details', methods=['POST', 'GET'])
 def item_details():
     item = request.args.get('item')
     item = item_bid(item)
-    return render_template('listing-details.html', item = item)
+    return render_template('listing-details.html', item=item)
+
+
 def item_bid(item_name):
     connection = get_connection()
     cursor = connection.cursor()
@@ -359,11 +364,9 @@ def item_bid(item_name):
                           Status
                    FROM Auction_Listings
                    WHERE Auction_Title = ?
-            
                    ''', (item_name,))
     item = cursor.fetchone()
     return item
-
 
 
 @app.route('/helpdesk', methods=['POST', 'GET'])
@@ -563,11 +566,10 @@ def listing_details(seller_email, listing_id):
     ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
-    ensure_seller_ratings_table()
     cursor.execute("""
-        SELECT AVG(rating), COUNT(*)
-        FROM seller_ratings
-        WHERE seller_email = ?
+        SELECT AVG(Rating), COUNT(*)
+        FROM Rating
+        WHERE Seller_Email = ?
     """, (seller_email,))
     rating_row = cursor.fetchone()
 
@@ -677,7 +679,7 @@ def edit_listing(seller_email, listing_id):
 
 
 def get_category_tree():
-    """Helper function to get the category tree"""
+    """Helper function to get the category tree."""
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT category_name, parent_category FROM Categories')
