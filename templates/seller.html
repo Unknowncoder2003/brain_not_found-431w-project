@@ -60,7 +60,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-light">
     <div class="container">
-        <a class="navbar-brand brand-text" href="/seller">
+        <a class="navbar-brand brand-text" href="{{ url_for('seller') }}">
             <span class="nittany">Nittany</span><span class="auction">Auction</span>
         </a>
 
@@ -71,13 +71,13 @@
         <div class="collapse navbar-collapse" id="sellerNavbar">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item active">
-                    <a class="nav-link" href="/seller">Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('seller') }}">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/my-listings">My Listings</a>
+                    <a class="nav-link" href="{{ url_for('my_listing') }}">My Listings</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/post-item">Post New Item</a>
+                    <a class="nav-link" href="{{ url_for('post_item') }}">Post New Item</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="settings"
@@ -85,20 +85,25 @@
                         Seller Tools
                     </a>
                     <div class="dropdown-menu" aria-labelledby="settings">
-                        <a class="dropdown-item" href="/seller-profile">View Seller Profile</a>
-                        <a class="dropdown-item" href="/seller-listing-history">View Listing History</a>
+                        <a class="dropdown-item" href="{{ url_for('seller_profile') }}">View Seller Profile</a>
+                        <a class="dropdown-item" href="{{ url_for('my_listing') }}">View Listing History</a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="/support">Contact HelpDesk</a>
+                        <a class="dropdown-item" href="{{ url_for('helpdesk') }}">Contact HelpDesk</a>
                     </div>
                 </li>
             </ul>
 
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <span class="nav-link text-muted">Seller: <strong>{{ email }}</strong></span>
+            <ul class="navbar-nav ml-auto align-items-center">
+                <li class="nav-item mr-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('seller_profile') }}">
+                        View Seller Profile
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                    <span class="nav-link text-muted mb-0">Seller: <strong>{{ email }}</strong></span>
+                </li>
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-danger ml-2" href="{{ url_for('logout') }}">Logout</a>
                 </li>
             </ul>
         </div>
@@ -135,13 +140,12 @@
                 </p>
 
                 <div class="quick-actions mt-4">
-                    <a href="/my-listings" class="btn btn-primary">Manage My Listings</a>
-                    <a href="/post-item" class="btn btn-success">Post New Item</a>
-                    <a href="/seller-profile" class="btn btn-outline-primary">View Seller Profile</a>
+                    <a href="{{ url_for('my_listing') }}" class="btn btn-primary">Manage My Listings</a>
+                    <a href="{{ url_for('post_item') }}" class="btn btn-success">Post New Item</a>
                 </div>
 
                 <div class="mt-4">
-                    <a href="/login" class="btn btn-outline-secondary">Logout</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">Logout</a>
                 </div>
             </div>
         </div>
