@@ -366,7 +366,21 @@ def register_page():
 
     return render_template('register.html')
 
-
+@app.route('/my-bids', methods=['GET', 'POST'])
+def my_bid_page():
+    user_email = session.get('email')
+    if not user_email:
+        pass
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT A.Auction_Title, A.Product_Name, B.bid_price
+        FROM Auction_Listings A, Bids B
+        WHERE B.bidder_email = ? AND B.listing_id = A.Listing_ID''', (user_email,))
+    result = cursor.fetchall()
+    connection.close()
+    print(result)
+    return render_template('my-bids.html', email=user_email, listings=result)
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
