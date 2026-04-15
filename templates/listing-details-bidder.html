@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Listing Details | NittanyAuction</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
+    <style>
+        body { background-color: #f2f2f2; }
+        .navbar { background-color: white; border-bottom: 2px solid #1e4fa1; margin-bottom: 30px; }
+        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
+        .brand-text .auction { color: #28a745; font-weight: bold; }
+
+        .details-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            margin-bottom: 50px;
+        }
+
+        .item-header {
+            border-bottom: 2px solid #f8f9fa;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .label-text {
+            color: #1e4fa1;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .data-value { color: #333; font-size: 1.1rem; margin-bottom: 25px; }
+        .description-box {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #1e4fa1;
+            margin-bottom: 25px;
+        }
+
+        .status-pill {
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+        .status-1 { background-color: #d4edda; color: #28a745; border: 1px solid #28a745; } /* Active */
+        .status-0 { background-color: #e2e3e5; color: #6c757d; border: 1px solid #6c757d; } /* Inactive */
+        .status-2 { background-color: #d1ecf1; color: #1e4fa1; border: 1px solid #1e4fa1; } /* Sold */
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand brand-text" href="/seller">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 details-card">
+
+            <div class="item-header d-flex justify-content-between align-items-start">
+                <div>
+                    <a href="/my-listings" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1;">&larr; Back to My Listings</a>
+                    <h1 class="h3 mb-1">{{ item[3] }}</h1> <p class="text-muted">Listing ID: #{{ item[1] }} | Seller: {{ item[0] }}</p>
+                </div>
+
+                <div class="text-right">
+                    {% if item[9] == 1 %}
+                        <span class="status-pill status-1">ACTIVE</span>
+                    {% elif item[9] == 0 %}
+                        <span class="status-pill status-0">INACTIVE</span>
+                    {% elif item[9] == 2 %}
+                        <span class="status-pill status-2">SOLD</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-7">
+                    <div class="label-text">Product Name</div>
+                    <div class="data-value font-weight-bold">{{ item[4] }}</div>
+
+                    <div class="label-text">Description</div>
+                    <div class="description-box">
+                        {{ item[5] }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="label-text">Category</div>
+                            <div class="data-value">{{ item[2] }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="label-text">Quantity</div>
+                            <div class="data-value">{{ item[6] }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5 border-left">
+                    <div class="pl-md-3">
+                        <div class="label-text">Current High Bid</div>
+                        <div class="data-value h4 font-weight-bold text-primary">
+                            ${{ "{:,.2f}".format(current_price) }}
+
+                            {% if current_price < item[7] %}
+                                <span class="badge badge-warning ml-1" style="font-size: 0.7rem; vertical-align: middle;">RESERVE NOT MET</span>
+                            {% else %}
+                                <span class="badge badge-success ml-1" style="font-size: 0.7rem; vertical-align: middle;">RESERVE MET</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="label-text">Reserve Price</div>
+                        <div class="data-value text-muted font-weight-bold">${{ "{:,.2f}".format(item[7]) }}</div>
+
+                        <div class="label-text">Auction Progress</div>
+                        <div class="progress mb-2" style="height: 12px; border-radius: 10px;">
+                            {% set percent = (bid_count / item[8]) * 100 %}
+                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ percent }}%;"></div>
+                        </div>
+                        <div class="data-value">{{ bid_count }} / {{ item[8] }} Max Bids reached</div>
+
+                        <hr>
+
+                        <div class="mt-4">
+                            {% if item[9] == 1 %}
+                                {% if item[9] == 1 %}
+                                    <button type="button" class="btn btn-block btn-outline-danger" data-toggle="modal" data-target="#confirmDeactivate">
+                                        Bid
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+
+                            <a href="/item-details" class="btn btn-block btn-outline-primary mt-2">Watch List</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="confirmDeactivate" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel" style="color: #1e4fa1;">Confirm Action</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to take <strong>"{{ item[3] }}"</strong> off the market?
+        <br><br>
+          <p class="text-muted small">This will change the status to <strong>Inactive</strong>. You are <strong>not</strong> allowed to change it back to <strong>Active</strong>. You can relist it later from your dashboard.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+
+        <form action="/deactivate-listing/{{ item[0] }}/{{ item[1] }}" method="POST">
+            <button type="submit" class="btn btn-danger">Yes, Take Off Market</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>
