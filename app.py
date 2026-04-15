@@ -94,7 +94,7 @@ def logout():
 
 
 def password_to_hash_checker(email, password):
-    """Check the entered password against the stored hash and salt."""
+    """Helper function for checking the user entered password and verify it against the database"""
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT password, salt FROM Users WHERE email = ?', (email,))
@@ -198,7 +198,7 @@ def seller_profile():
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
-        # Seller basic information
+        # seller basic info
         cur.execute("""
             SELECT email, bank_routing_number, bank_account_number, balance
             FROM Sellers
@@ -211,7 +211,7 @@ def seller_profile():
             bank_routing_number = seller_row['bank_routing_number']
             bank_account_number = seller_row['bank_account_number']
 
-        # Local vendor information
+        # local vendor info
         cur.execute("""
             SELECT business_name, customer_service_phone_number
             FROM Local_Vendors
@@ -223,7 +223,7 @@ def seller_profile():
             business_name = vendor_row['business_name']
             customer_service_phone_number = vendor_row['customer_service_phone_number']
 
-        # Seller rating summary
+        # rating info from Rating table
         cur.execute("""
             SELECT AVG(Rating) AS avg_rating, COUNT(*) AS rating_count
             FROM Rating
@@ -237,7 +237,7 @@ def seller_profile():
             if avg_rating is not None:
                 avg_rating = round(avg_rating, 2)
 
-        # Listing counts by status
+        # listing counts
         cur.execute("""
             SELECT
                 SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active_count,
@@ -283,8 +283,6 @@ def seller_profile():
         masked_routing=masked_routing,
         masked_account=masked_account
     )
-
-
 @app.route('/bidder', methods=['GET'])
 def bidder():
     user_email = session.get('email')
@@ -302,7 +300,7 @@ def bidder():
     else:
         fname = "Bidder"
 
-    cate = categories()
+    cate = get_category_tree()
 
     category = request.args.get('category')
     search_term = request.args.get('search')
@@ -371,13 +369,9 @@ def search_items(search_term):
     return data
 
 @app.route('/item-details', methods=['POST', 'GET'])
-def item_details():
-    item = request.args.get('item')
-    item = item_bid(item)
-    return render_template('listing-details.html', item=item)
 
-
-def item_bid(item_name):
+def item_bid():
+    item_name = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -394,10 +388,55 @@ def item_bid(item_name):
                           Status
                    FROM Auction_Listings
                    WHERE Auction_Title = ?
+            
                    ''', (item_name,))
     item = cursor.fetchone()
+    listing_id = item[1]
+    seller_email = item[0]
+
+    cursor.execute('''
+                   SELECT COUNT(*)
+                   FROM Bids
+                   WHERE listing_id = ?
+                   ''', (listing_id,))
+    current_bid_count = cursor.fetchone()[0]
+
+    cursor.execute('''
+                   SELECT MAX(Bid_price)
+                   FROM Bids
+                   WHERE listing_id = ?
+                   ''', (listing_id,))
+    highest_bid = cursor.fetchone()[0] or 0
+
+    # 新增：查 seller 平均评分，方便详情页显示
+    ensure_seller_ratings_table()
+    cursor.execute("""
+                   SELECT AVG(rating), COUNT(*)
+                   FROM seller_ratings
+                   WHERE seller_email = ?
+                   """, (seller_email,))
+    rating_row = cursor.fetchone()
+
+    avg_rating = None
+    rating_count = 0
+    if rating_row:
+        avg_rating = rating_row[0]
+        rating_count = rating_row[1]
+        if avg_rating is not None:
+            avg_rating = round(avg_rating, 2)
+
     connection.close()
-    return item
+
+    print(current_bid_count)
+    return render_template(
+        'listing-details-bidder.html',
+        item=item,
+        bid_count=current_bid_count,
+        current_price=highest_bid,
+        avg_rating=avg_rating,
+        rating_count=rating_count
+    )
+
 
 
 @app.route('/helpdesk', methods=['POST', 'GET'])
@@ -465,6 +504,8 @@ def profile():
         edit_card=edit_card
     )
 
+def generate_address_id():
+    return uuid.uuid4().hex[:24]
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
@@ -499,6 +540,19 @@ def register_page():
         )
 
         if role == "bidder":
+
+            home_address_id = generate_address_id()
+
+            cursor.execute("""
+                           INSERT INTO Address (address_id, zipcode, street_num, street_name)
+                           VALUES (?, ?, ?, ?)
+                           """, (
+                               home_address_id,
+                               request.form['home_zipcode'],
+                               request.form['home_street_num'],
+                               request.form['home_street_name']
+                           ))
+
             cursor.execute("""
                 INSERT INTO Bidders (email, first_name, last_name, age, home_address_id, major)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -519,17 +573,30 @@ def register_page():
                 email,
                 request.form['bank_routing_number'],
                 request.form['bank_account_number'],
-                request.form['balance']
+                #request.form['balance']
+                0
             ))
 
             if 'is_local_vendor' in request.form:
+                business_address_id = generate_address_id()
+
+                cursor.execute("""
+                               INSERT INTO Address (address_id, zipcode, street_num, street_name)
+                               VALUES (?, ?, ?, ?)
+                               """, (
+                                   business_address_id,
+                                   request.form['business_zipcode'],
+                                   request.form['business_street_num'],
+                                   request.form['business_street_name']
+                               ))
+
                 cursor.execute("""
                     INSERT INTO Local_Vendors (email, business_name, business_address_id, customer_service_phone_number)
                     VALUES (?, ?, ?, ?)
                 """, (
                     email,
                     request.form['business_name'],
-                    request.form['business_address_id'],
+                    business_address_id,
                     request.form['customer_service_phone_number']
                 ))
 
@@ -542,6 +609,61 @@ def register_page():
     return render_template('register.html')
 
 
+@app.route('/my-bids', methods=['GET'])
+def my_bid_page():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    # Use sqlite3.Row to access columns by their database names
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    # This query retrieves the user's bid alongside the current highest bid for that item
+    cursor.execute('''
+                   SELECT A.Auction_Title,
+                          A.Product_Name,
+                          B.Bid_Price,
+                          A.Status                              AS Auction_Status,
+                          (SELECT MAX(Bid_Price)
+                           FROM Bids
+                           WHERE Listing_ID = B.Listing_ID
+                             AND Seller_Email = B.Seller_Email) AS Current_High_Bid
+                   FROM Bids B
+                            JOIN Auction_Listings A ON B.Listing_ID = A.Listing_ID AND B.Seller_Email = A.Seller_Email
+                   WHERE B.Bidder_Email = ?
+                   ORDER BY B.Bid_ID DESC
+                   ''', (user_email,))
+
+    raw_results = cursor.fetchall()
+    connection.close()
+
+    # Determine the status label for each bid
+    processed_bids = []
+    for row in raw_results:
+        bid = dict(row)
+        user_price = bid['Bid_Price']
+        max_price = bid['Current_High_Bid']
+        auction_status = bid['Auction_Status']
+
+        if user_price < max_price:
+            bid['display_status'] = "Outbid"
+            bid['status_color'] = "text-danger"
+        elif user_price == max_price:
+            if auction_status == 1:
+                bid['display_status'] = "Leading"
+                bid['status_color'] = "text-success"
+            elif auction_status == 2:
+                bid['display_status'] = "Won"
+                bid['status_color'] = "text-primary"
+            else:
+                bid['display_status'] = "Auction Ended"
+                bid['status_color'] = "text-muted"
+
+        processed_bids.append(bid)
+
+    return render_template('my-bids.html', email=user_email, listings=processed_bids)
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
@@ -597,10 +719,11 @@ def listing_details(seller_email, listing_id):
     ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
+    ensure_seller_ratings_table()
     cursor.execute("""
-        SELECT AVG(Rating), COUNT(*)
-        FROM Rating
-        WHERE Seller_Email = ?
+        SELECT AVG(rating), COUNT(*)
+        FROM seller_ratings
+        WHERE seller_email = ?
     """, (seller_email,))
     rating_row = cursor.fetchone()
 
@@ -710,7 +833,7 @@ def edit_listing(seller_email, listing_id):
 
 
 def get_category_tree():
-    """Return the hierarchical category tree from the Categories table."""
+    """Helper function to get the category tree"""
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT category_name, parent_category FROM Categories')
