@@ -188,7 +188,7 @@ def bidder():
     else:
         fname = "Bidder"
 
-    cate = categories()
+    cate = get_category_tree()
 
     category = request.args.get('category')
     if category:
