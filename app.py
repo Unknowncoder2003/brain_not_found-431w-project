@@ -25,10 +25,6 @@ def get_connection():
 
 
 def ensure_seller_ratings_table():
-    """
-    确保 seller_ratings 表存在。
-    用 auction_id UNIQUE 防止同一笔交易重复评分。
-    """
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute("""
