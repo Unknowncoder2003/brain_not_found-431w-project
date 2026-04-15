@@ -179,43 +179,7 @@
             <h4 class="mb-3">Items</h4> <!-- mb- indicates the bottom margin -->
 
             <div class="row">
-                <div class="col-md-4"> <!-- col-md- controls how wide the column is -->
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
                 <!-- loop in order to get the items -->
                 {% for i in items %}
                 <div class="col-md-4">
@@ -224,6 +188,12 @@
                              class="card-img-top" alt="Toy Train" -->
                         <div class="card-body text-center">
                             <p class="card-text">{{ i[0] }}</p>
+                            <form action="/listing-details/" method="GET">
+                                <input type="hidden" name="item" value="{{ i[0] }}">
+                                <button type="submit" class="btn btn-primary">
+                                    {{ i[0] }}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

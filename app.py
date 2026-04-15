@@ -224,6 +224,34 @@ def get_all_items():
     connection.close()
     return data
 
+@app.route('/item-details', methods=['POST', 'GET'])
+def item_details():
+    item = request.args.get('item')
+    item = item_bid(item)
+    return render_template('listing-details.html', item = item)
+def item_bid(item_name):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('''
+                   SELECT Seller_Email,
+                          Listing_ID,
+                          Category,
+                          Auction_Title,
+                          Product_Name,
+                          Product_Description,
+                          Quantity,
+                          Reserve_Price,
+                          Max_bids,
+                          Status
+                   FROM Auction_Listings
+                   WHERE Auction_Title = ?
+            
+                   ''', (item_name,))
+    item = cursor.fetchone()
+    return item
+
+
 
 @app.route('/helpdesk', methods=['POST', 'GET'])
 def helpdesk():
