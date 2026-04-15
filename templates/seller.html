@@ -8,7 +8,9 @@
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           crossorigin="anonymous">
     <style>
-        body { background-color: #f2f2f2; }
+        body {
+            background-color: #f2f2f2;
+        }
 
         .navbar {
             background-color: white;
@@ -16,8 +18,15 @@
             margin-bottom: 30px;
         }
 
-        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
-        .brand-text .auction { color: #28a745; font-weight: bold; }
+        .brand-text .nittany {
+            color: #1e4fa1;
+            font-weight: bold;
+        }
+
+        .brand-text .auction {
+            color: #28a745;
+            font-weight: bold;
+        }
 
         .dashboard-card {
             background: white;
@@ -31,6 +40,19 @@
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
             margin-bottom: 20px;
+        }
+
+        .rating-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .quick-actions .btn {
+            margin-right: 10px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -58,16 +80,16 @@
                     <a class="nav-link" href="/post-item">Post New Item</a>
                 </li>
                 <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="settings"
-                   role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Seller Tools
-                </a>
-                <div class="dropdown-menu" aria-labelledby="settings">
-                    <a class="dropdown-item" href="/seller-information">View Seller Information</a>
-                    <a class="dropdown-item" href="/seller-listing-history">View Listing History</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="/support">Contact HelpDesk</a>
-                </div>
+                    <a class="nav-link dropdown-toggle" href="#" id="settings"
+                       role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Seller Tools
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="settings">
+                        <a class="dropdown-item" href="/seller-profile">View Seller Profile</a>
+                        <a class="dropdown-item" href="/seller-listing-history">View Listing History</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="/support">Contact HelpDesk</a>
+                    </div>
                 </li>
             </ul>
 
@@ -78,7 +100,6 @@
                 <li class="nav-item">
                     <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
                 </li>
-
             </ul>
         </div>
     </div>
@@ -86,21 +107,49 @@
 
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-10 dashboard-card">
-            <h2 class="welcome-header">Hi, {{ email }}!</h2>
+        <div class="col-md-10">
+            <div class="dashboard-card">
+                <h2 class="welcome-header">Hi, {{ email }}!</h2>
 
-            <p class="lead">Welcome to your seller dashboard. Here you can manage your listings and view current bids.</p>
+                <div class="rating-box">
+                    <p class="mb-1">
+                        <strong>Seller Rating:</strong>
+                        {% if avg_rating is not none %}
+                            {{ avg_rating }}/5
+                        {% else %}
+                            No ratings yet
+                        {% endif %}
+                    </p>
 
-            <div class="mt-4">
-                <a href="/login" class="btn btn-outline-secondary">Logout</a>
+                    <p class="mb-0 text-muted">
+                        {% if avg_rating is not none %}
+                            Based on {{ rating_count }} rating{% if rating_count != 1 %}s{% endif %}.
+                        {% else %}
+                            Your average rating will appear here after bidders complete paid auctions and leave ratings.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <p class="lead">
+                    Welcome to your seller dashboard. Here you can manage your listings and view current bids.
+                </p>
+
+                <div class="quick-actions mt-4">
+                    <a href="/my-listings" class="btn btn-primary">Manage My Listings</a>
+                    <a href="/post-item" class="btn btn-success">Post New Item</a>
+                    <a href="/seller-profile" class="btn btn-outline-primary">View Seller Profile</a>
+                </div>
+
+                <div class="mt-4">
+                    <a href="/login" class="btn btn-outline-secondary">Logout</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 </body>
 </html>

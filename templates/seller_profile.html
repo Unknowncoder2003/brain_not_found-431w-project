@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Seller Profile | NittanyAuction</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+</head>
+<body style="background-color:#f2f2f2;">
+
+<div class="container mt-5">
+    <div class="card shadow-sm p-4">
+        <h2>Seller Profile</h2>
+        <hr>
+        <p><strong>Email:</strong> {{ email }}</p>
+        <p>
+            <strong>Average Rating:</strong>
+            {% if avg_rating is not none %}
+                {{ avg_rating }} / 5
+            {% else %}
+                No ratings yet
+            {% endif %}
+        </p>
+        <p><strong>Total Ratings:</strong> {{ rating_count }}</p>
+
+        <a href="/seller" class="btn btn-outline-primary">Back to Dashboard</a>
+    </div>
+</div>
+
+</body>
+</html>

@@ -4,19 +4,50 @@ import secrets
 from string import hexdigits
 from unittest import result
 
-from flask import Flask, render_template, request,redirect, url_for,session
-import sqlite3 as sql
+from flask import Flask, render_template, request, redirect, url_for, session
+import sqlite3
 
 from passwordHasher import hashed_password
 
-app = Flask(__name__)
-app.secret_key = 'super_secret_nittany_key_that_nobody_will_know' #for the session (the memory) to work
+# 统一别名，兼容你原来大量使用的 sql.connect(...)
+sql = sqlite3
 
+app = Flask(__name__)
+app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the session (the memory) to work
+
+DB_NAME = 'database.db'
 host = 'http://127.0.0.1:5000/'
+
+
+def get_connection():
+    conn = sql.connect(DB_NAME)
+    return conn
+
+
+def ensure_seller_ratings_table():
+    """
+    确保 seller_ratings 表存在。
+    用 auction_id UNIQUE 防止同一笔交易重复评分。
+    """
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS seller_ratings (
+            rating_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            auction_id INTEGER NOT NULL UNIQUE,
+            seller_email TEXT NOT NULL,
+            bidder_email TEXT NOT NULL,
+            rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    connection.commit()
+    connection.close()
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
-
 
 
 '''
@@ -29,152 +60,188 @@ def valid_name(first_name, last_name):
     return cursor.fetchall()
 '''
 
+
 def valid_email_password(email, password):
-    connection = sql.connect('database.db')
+    connection = get_connection()
     Email = connection.execute('SELECT email FROM Users;')
     Password = connection.execute('SELECT password FROM Users;')
+    connection.close()
     return None
 
 
 @app.route('/login', methods=['POST', 'GET'])
 def authenticate():
     error = None
-    # Look for 'error' in the URL parameters
     error = request.args.get('error')
 
-    #when click the login button the authenticate stuff occur
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         result = password_to_hash_checker(email, password)
         if result:
-            # if result is true go to the user front page
             session['email'] = email
             return redirect(url_for(find_user_html(email)))
-        # if not match stay in the same page and have error message or go to another html?
         else:
             error = 'Invalid username or password.'
             return render_template('login.html', error=error)
 
     return render_template('login.html', error=error)
 
+
 def password_to_hash_checker(email, password):
     """Helper function for checking the user entered password and verify it against the database"""
-    connection = sql.connect('database.db')
+    connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute('SELECT password, salt FROM Users WHERE email = ?', (email,)) #finds the hashed password for the provided username
+    cursor.execute('SELECT password, salt FROM Users WHERE email = ?', (email,))
     result = cursor.fetchone()
     connection.close()
+
     if result is None:
-        #the username is incorrect or not in the database
-            print("No matching user.")
-            return False
+        print("No matching user.")
+        return False
+
     stored_hash, salt = result
-    salt = salt
-    stored_hash = stored_hash
     password_and_salt = (password.strip() + salt).encode('utf-8')
     user_input_hash = hashlib.sha256(password_and_salt).hexdigest()
     return user_input_hash == stored_hash
+
+
 def find_user_html(email):
-    connection = sql.connect('database.db')
+    connection = get_connection()
     cursor = connection.cursor()
-    #Check if the user is Helpdesk staff
+
     cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (email,))
     if cursor.fetchone():
         connection.close()
         return "helpdesk"
-    #Check if the user is a Seller
+
     cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (email,))
     if cursor.fetchone():
         connection.close()
         return "seller"
-    #Check if the user is a Bidder
+
     cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (email,))
     if cursor.fetchone():
         connection.close()
         return "bidder"
-    # Default fallback if email is not found in any role table
+
     connection.close()
     return "index"
 
+
 @app.route('/seller', methods=['POST', 'GET'])
 def seller():
-    # Get the email of the person who just logged in
     user_email = session.get('email')
     if not user_email:
-        user_email = 'place_holder@lsu.edu'  # not returning to authenticate for debugging purpose
-        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
+        user_email = 'place_holder@lsu.edu'
 
-    return render_template('seller.html',email = user_email)
+    avg_rating = None
+    rating_count = 0
+
+    try:
+        ensure_seller_ratings_table()
+
+        conn = get_connection()
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT AVG(rating) AS avg_rating, COUNT(*) AS rating_count
+            FROM seller_ratings
+            WHERE seller_email = ?
+        """, (user_email,))
+        result = cur.fetchone()
+        conn.close()
+
+        if result:
+            avg_rating = result['avg_rating']
+            rating_count = result['rating_count']
+
+            if avg_rating is not None:
+                avg_rating = round(avg_rating, 2)
+
+    except Exception as e:
+        print("ERROR in /seller:", e)
+
+    return render_template(
+        'seller.html',
+        email=user_email,
+        avg_rating=avg_rating,
+        rating_count=rating_count
+    )
+
+
 @app.route('/bidder', methods=['GET'])
 def bidder():
-    # Get the email of the person who just logged in
     user_email = session.get('email')
     if not user_email:
-        pass  # not showing for debugging purpose
-        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
-    # Connect to DB and get the First Name
-    connection = sql.connect('database.db')
+        pass
+
+    connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
     result = cursor.fetchone()
     connection.close()
-    # Handle the result
+
     if result:
         fname = result[0]
     else:
-        fname = "Bidder"  # Fallback name
-    # SEND THE DATA TO HTML
+        fname = "Bidder"
+
     cate = categories()
 
     category = request.args.get('category')
     if category:
-        # filter data based on category
         items = get_items(category)
     else:
         items = get_all_items()
-    return render_template('bidder.html', first_name=fname, categories=cate, items = items)
-#the categories that are apart of root
+
+    return render_template('bidder.html', first_name=fname, categories=cate, items=items)
+
+
 def categories():
-    connection = sql.connect('database.db')
+    connection = get_connection()
     top_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category = "Root"')
-    #sub_category = connection.execute('SELECT category_name FROM Categories WHERE parent_category in top_category')
-    #sub_categories =
     top_categories = top_category.fetchall()
-    #print(sub_category.fetchall())
     connection.close()
     return top_categories
 
+
 def get_items(category_name):
-    connection = sql.connect('database.db')
+    connection = get_connection()
     cursor = connection.cursor()
-    #get the items
-    #check for subcategories first
-    #then select all of the items
     items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE Category = ?', (category_name,))
-    return items.fetchall()
+    data = items.fetchall()
+    connection.close()
+    return data
+
+
 def get_all_items():
-    connection = sql.connect('database.db')
+    connection = get_connection()
     cursor = connection.cursor()
     items = cursor.execute('SELECT DISTINCT Auction_Title FROM Auction_Listings')
-    return items.fetchall()
+    data = items.fetchall()
+    connection.close()
+    return data
+
+
 @app.route('/helpdesk', methods=['POST', 'GET'])
 def helpdesk():
-    #security check: if a user is not a helpdesk, they will get aborted to the login page.
-    # Get the email of the person who just logged in
     user_email = session.get('email')
     if not user_email:
-        pass  # not showing for debugging purpose
-        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
-    connection = sql.connect('database.db')
+        pass
+
+    connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
     result = cursor.fetchone()
     connection.close()
+
     if not result:
-        #the user is not a helpdesk staff, abort
-        return redirect(url_for('authenticate', error = 'You do not have access to the help desk'))
+        return redirect(url_for('authenticate', error='You do not have access to the help desk'))
+
     return render_template('helpdesk.html', email=user_email)
+
 
 @app.route('/profile', methods=['GET'])
 def profile():
@@ -187,7 +254,7 @@ def profile():
     edit_address = edit == "address"
     edit_card = edit == "card"
 
-    connection = sql.connect('database.db')
+    connection = get_connection()
     connection.row_factory = sql.Row
     cursor = connection.cursor()
 
@@ -212,9 +279,7 @@ def profile():
     """, (user_email,))
 
     user = cursor.fetchone()
-
     print("DEBUG user =", dict(user) if user else None)
-
     connection.close()
 
     return render_template(
@@ -224,6 +289,8 @@ def profile():
         edit_address=edit_address,
         edit_card=edit_card
     )
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
     error = None
@@ -239,7 +306,7 @@ def register_page():
             error = "Passwords do not match"
             return render_template('register.html', error=error)
 
-        connection = sql.connect('database.db')
+        connection = get_connection()
         cursor = connection.cursor()
 
         cursor.execute('SELECT email FROM Users WHERE email = ?', (email,))
@@ -249,11 +316,11 @@ def register_page():
             return render_template('register.html', error=error)
 
         salt = secrets.token_urlsafe(16)
-        hashed_password = hashlib.sha256((password.strip() + salt).encode('utf-8')).hexdigest()
+        hashed_pw = hashlib.sha256((password.strip() + salt).encode('utf-8')).hexdigest()
 
         cursor.execute(
             "INSERT INTO Users (email, password, salt) VALUES (?, ?, ?)",
-            (email, hashed_password, salt)
+            (email, hashed_pw, salt)
         )
 
         if role == "bidder":
@@ -279,16 +346,18 @@ def register_page():
                 request.form['bank_account_number'],
                 request.form['balance']
             ))
+
             if 'is_local_vendor' in request.form:
                 cursor.execute("""
-                               INSERT INTO Local_Vendors (email, business_name, business_address_id,customer_service_phone_number)
-                               VALUES (?, ?, ?, ?)
-                               """, (
-                                   email,
-                                   request.form['business_name'],
-                                   request.form['business_address_id'],
-                                   request.form['customer_service_phone_number']
-                               ))
+                    INSERT INTO Local_Vendors (email, business_name, business_address_id, customer_service_phone_number)
+                    VALUES (?, ?, ?, ?)
+                """, (
+                    email,
+                    request.form['business_name'],
+                    request.form['business_address_id'],
+                    request.form['customer_service_phone_number']
+                ))
+
         connection.commit()
         connection.close()
 
@@ -297,82 +366,118 @@ def register_page():
 
     return render_template('register.html')
 
+
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
     if not user_email:
-        pass  # not showing for debugging purpose
-        # return redirect(url_for('authenticate'))  # Redirect to login if they aren't logged in
-    connection = sql.connect('database.db')
+        pass
+
+    connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute('SELECT A.Listing_ID, A.Auction_Title, A.Category, A.Reserve_Price, A.Max_bids, A.Status FROM Auction_Listings A WHERE A.Seller_Email = ?', (user_email,))
+    cursor.execute('''
+        SELECT A.Listing_ID, A.Auction_Title, A.Category, A.Reserve_Price, A.Max_bids, A.Status
+        FROM Auction_Listings A
+        WHERE A.Seller_Email = ?
+    ''', (user_email,))
     result = cursor.fetchall()
     connection.close()
+
     return render_template('my-listings.html', email=user_email, listings=result)
 
 
 @app.route('/listing-details/<seller_email>/<int:listing_id>')
 def listing_details(seller_email, listing_id):
-    connection = sql.connect('database.db')
+    connection = get_connection()
     cursor = connection.cursor()
-    #Get the Auction Listing details
-    cursor.execute('''SELECT Seller_Email,
-                             Listing_ID,
-                             Category,
-                             Auction_Title,
-                             Product_Name,
-                             Product_Description,
-                             Quantity,
-                             Reserve_Price,
-                             Max_bids,
-                             Status
-                      FROM Auction_Listings
-                      WHERE Seller_Email = ?
-                        AND Listing_ID = ?''', (seller_email, listing_id))
+
+    cursor.execute('''
+        SELECT Seller_Email,
+               Listing_ID,
+               Category,
+               Auction_Title,
+               Product_Name,
+               Product_Description,
+               Quantity,
+               Reserve_Price,
+               Max_bids,
+               Status
+        FROM Auction_Listings
+        WHERE Seller_Email = ?
+          AND Listing_ID = ?
+    ''', (seller_email, listing_id))
     item = cursor.fetchone()
-    #Get the count of current bids for this specific listing
-    cursor.execute('''SELECT COUNT(*)
-                      FROM Bids
-                      WHERE listing_id = ?''', (listing_id,))
+
+    cursor.execute('''
+        SELECT COUNT(*)
+        FROM Bids
+        WHERE listing_id = ?
+    ''', (listing_id,))
     current_bid_count = cursor.fetchone()[0]
-    #Get the highest bid price to show current price vs reserve
-    cursor.execute('''SELECT MAX(Bid_price)
-                      FROM Bids
-                      WHERE listing_id = ?''', (listing_id,))
-    highest_bid = cursor.fetchone()[0] or 0  # Default to 0 if no bids yet
+
+    cursor.execute('''
+        SELECT MAX(Bid_price)
+        FROM Bids
+        WHERE listing_id = ?
+    ''', (listing_id,))
+    highest_bid = cursor.fetchone()[0] or 0
+
+    # 新增：查 seller 平均评分，方便详情页显示
+    ensure_seller_ratings_table()
+    cursor.execute("""
+        SELECT AVG(rating), COUNT(*)
+        FROM seller_ratings
+        WHERE seller_email = ?
+    """, (seller_email,))
+    rating_row = cursor.fetchone()
+
+    avg_rating = None
+    rating_count = 0
+    if rating_row:
+        avg_rating = rating_row[0]
+        rating_count = rating_row[1]
+        if avg_rating is not None:
+            avg_rating = round(avg_rating, 2)
+
     connection.close()
+
     print(current_bid_count)
-    return render_template('listing-details.html',
-                           item=item,
-                           bid_count=current_bid_count,
-                           current_price=highest_bid)
+    return render_template(
+        'listing-details.html',
+        item=item,
+        bid_count=current_bid_count,
+        current_price=highest_bid,
+        avg_rating=avg_rating,
+        rating_count=rating_count
+    )
 
 
 @app.route('/deactivate-listing/<seller_email>/<int:listing_id>', methods=['POST'])
 def deactivate_listing(seller_email, listing_id):
-    #making sure the user is logged in
     user_email = session.get('email')
     if not user_email:
-        return redirect(url_for('login'))
-    #making sure the user owns this product
+        return redirect(url_for('authenticate'))
+
     if user_email != seller_email:
-        return redirect(url_for('my_listing', error = 'You do not have access to the deactivate listing'))
+        return redirect(url_for('my_listing', error='You do not have access to the deactivate listing'))
+
     try:
-        connection = sql.connect('database.db')
+        connection = get_connection()
         cursor = connection.cursor()
 
-        # 3. Execute the Update: Set status to 0 (Inactive)
         cursor.execute('''
-                       UPDATE Auction_Listings
-                       SET Status = 0
-                       WHERE Seller_Email = ?
-                         AND Listing_ID = ?
-                       ''', (seller_email, listing_id))
+            UPDATE Auction_Listings
+            SET Status = 0
+            WHERE Seller_Email = ?
+              AND Listing_ID = ?
+        ''', (seller_email, listing_id))
+
         connection.commit()
         connection.close()
+
     except Exception as e:
         print(f"Error updating status: {e}")
-    #redirect back to the previous page
+
     return redirect(request.referrer)
 
 
@@ -380,12 +485,13 @@ def deactivate_listing(seller_email, listing_id):
 def edit_listing(seller_email, listing_id):
     user_email = session.get('email')
 
-    #Security Check
     if not user_email or user_email != seller_email:
-        return redirect(url_for('login'))
+        return redirect(url_for('authenticate'))
+
     if request.method == 'POST':
-        connection = sql.connect('database.db')
+        connection = get_connection()
         cursor = connection.cursor()
+
         title = request.form['auction_title']
         prod_name = request.form['product_name']
         cat = request.form['category']
@@ -393,45 +499,52 @@ def edit_listing(seller_email, listing_id):
         qty = request.form['quantity']
         reserve = request.form['reserve']
         max_b = request.form['max_bids']
+
         cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
         if not cursor.fetchone():
+            connection.close()
             return "Error: Category does not exist.", 400
+
         cursor.execute('''
-                       UPDATE Auction_Listings
-                       SET Auction_Title       = ?,
-                           Product_Name        = ?,
-                           Category            = ?,
-                           Product_Description = ?,
-                           Quantity            = ?,
-                           Reserve_Price       = ?,
-                           Max_bids            = ?
-                       WHERE Seller_Email = ?
-                         AND Listing_ID = ?
-                       ''', (title, prod_name, cat, desc, qty, reserve, max_b, seller_email, listing_id))
+            UPDATE Auction_Listings
+            SET Auction_Title       = ?,
+                Product_Name        = ?,
+                Category            = ?,
+                Product_Description = ?,
+                Quantity            = ?,
+                Reserve_Price       = ?,
+                Max_bids            = ?
+            WHERE Seller_Email = ?
+              AND Listing_ID = ?
+        ''', (title, prod_name, cat, desc, qty, reserve, max_b, seller_email, listing_id))
+
         connection.commit()
         connection.close()
-        #Go back to the details page
+
         return redirect(url_for('listing_details', seller_email=seller_email, listing_id=listing_id))
+
     if request.method == 'GET':
-        connection = sql.connect('database.db')
+        connection = get_connection()
         cursor = connection.cursor()
-        cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?',
-                       (seller_email, listing_id))
+        cursor.execute(
+            'SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?',
+            (seller_email, listing_id)
+        )
         item = cursor.fetchone()
         connection.close()
+
         category_tree = get_category_tree()
         return render_template('edit-listing.html', item=item, category_tree=category_tree)
 
 
 def get_category_tree():
     """Helper function to get the category tree"""
-    connection = sql.connect('database.db')
+    connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT category_name, parent_category FROM Categories')
     rows = cursor.fetchall()
     connection.close()
 
-    #Create a dictionary of all categories
     tree = {}
     for name, parent in rows:
         tree[name] = {'name': name, 'children': []}
@@ -448,13 +561,11 @@ def get_category_tree():
 
 @app.route('/post-item', methods=['GET', 'POST'])
 def post_item():
-    #must be logged in
     user_email = session.get('email')
     if not user_email:
-        return redirect(url_for('login'))
+        return redirect(url_for('authenticate'))
 
     if request.method == 'POST':
-        #collect form data
         title = request.form.get('auction_title')
         p_name = request.form.get('product_name')
         cat = request.form.get('category')
@@ -462,30 +573,32 @@ def post_item():
         qty = int(request.form.get('quantity'))
         reserve = float(request.form.get('reserve'))
         max_b = int(request.form.get('max_bids'))
-        # Server-side safety check
+
         data = [title, p_name, cat, desc, qty, reserve, max_b]
         if any(v is None or v == "" for v in data):
             return "All fields are required!", 400
 
-        connection = sql.connect('database.db')
+        connection = get_connection()
         cursor = connection.cursor()
 
-        #integrity Check: Ensure the category actually exists
         cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
         if not cursor.fetchone():
             connection.close()
             return "Invalid Category selected", 400
-        #composite Key Logic: Generate the next ID for THIS specific seller
+
         cursor.execute('SELECT MAX(Listing_ID) FROM Auction_Listings WHERE Seller_Email = ?', (user_email,))
         result = cursor.fetchone()[0]
         next_id = 1 if result is None else result + 1
+
         try:
             cursor.execute('''
-                           INSERT INTO Auction_Listings (Seller_Email, Listing_ID, Category, Auction_Title,
-                                                         Product_Name, Product_Description, Quantity,
-                                                         Reserve_Price, Max_bids, Status)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-                           ''', (user_email, next_id, cat, title, p_name, desc, qty, reserve, max_b))
+                INSERT INTO Auction_Listings (
+                    Seller_Email, Listing_ID, Category, Auction_Title,
+                    Product_Name, Product_Description, Quantity,
+                    Reserve_Price, Max_bids, Status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            ''', (user_email, next_id, cat, title, p_name, desc, qty, reserve, max_b))
 
             connection.commit()
             connection.close()
@@ -495,17 +608,11 @@ def post_item():
             connection.close()
             print(f"Database error: {e}")
             return "An error occurred while posting your item.", 500
-    #build the tree for the dropdown
+
     category_tree = get_category_tree()
-    #print(category_tree)
     return render_template('post-item.html', category_tree=category_tree)
+
+
 if __name__ == "__main__":
+    ensure_seller_ratings_table()
     app.run()
-
-
-
-
-
-
-
-#categories()
