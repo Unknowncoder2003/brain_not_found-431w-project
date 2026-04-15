@@ -6,6 +6,7 @@ from unittest import result
 
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+import uuid
 
 from passwordHasher import hashed_password
 
@@ -43,7 +44,6 @@ def ensure_seller_ratings_table():
     """)
     connection.commit()
     connection.close()
-
 
 @app.route('/')
 def index():
@@ -290,6 +290,8 @@ def profile():
         edit_card=edit_card
     )
 
+def generate_address_id():
+    return uuid.uuid4().hex[:24]
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
@@ -324,6 +326,19 @@ def register_page():
         )
 
         if role == "bidder":
+
+            home_address_id = generate_address_id()
+
+            cursor.execute("""
+                           INSERT INTO Address (address_id, zipcode, street_num, street_name)
+                           VALUES (?, ?, ?, ?)
+                           """, (
+                               home_address_id,
+                               request.form['home_zipcode'],
+                               request.form['home_street_num'],
+                               request.form['home_street_name']
+                           ))
+
             cursor.execute("""
                 INSERT INTO Bidders (email, first_name, last_name, age, home_address_id, major)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -332,7 +347,7 @@ def register_page():
                 request.form['first_name'],
                 request.form['last_name'],
                 request.form['age'],
-                request.form['home_address_id'],
+                home_address_id,
                 request.form['major']
             ))
 
@@ -344,17 +359,30 @@ def register_page():
                 email,
                 request.form['bank_routing_number'],
                 request.form['bank_account_number'],
-                request.form['balance']
+                #request.form['balance']
+                0
             ))
 
             if 'is_local_vendor' in request.form:
+                business_address_id = generate_address_id()
+
+                cursor.execute("""
+                               INSERT INTO Address (address_id, zipcode, street_num, street_name)
+                               VALUES (?, ?, ?, ?)
+                               """, (
+                                   business_address_id,
+                                   request.form['business_zipcode'],
+                                   request.form['business_street_num'],
+                                   request.form['business_street_name']
+                               ))
+
                 cursor.execute("""
                     INSERT INTO Local_Vendors (email, business_name, business_address_id, customer_service_phone_number)
                     VALUES (?, ?, ?, ?)
                 """, (
                     email,
                     request.form['business_name'],
-                    request.form['business_address_id'],
+                    business_address_id,
                     request.form['customer_service_phone_number']
                 ))
 

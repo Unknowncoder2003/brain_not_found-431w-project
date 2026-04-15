@@ -1,4 +1,4 @@
-<!DOC<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -22,7 +22,7 @@
         }
 
         .register-container {
-            width: 550px;
+            width: 600px;
         }
 
         .brand-title {
@@ -58,7 +58,9 @@
             border-right: 1px solid #ddd;
         }
 
-        .tab:last-child { border-right: none; }
+        .tab:last-child {
+            border-right: none;
+        }
 
         .tab.active {
             background-color: white;
@@ -126,105 +128,195 @@
 
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email"
-                               placeholder="Enter your email" required>
+                        <input type="email"
+                               class="form-control"
+                               id="email"
+                               name="email"
+                               placeholder="Enter your email"
+                               required>
                     </div>
 
                     <div class="form-group">
                         <label for="role">Register As</label>
-                        <select class="form-control" id="role" name="role" required onchange="toggleRoleFields()">
+                        <select class="form-control"
+                                id="role"
+                                name="role"
+                                required
+                                onchange="toggleRoleFields()">
                             <option value="">Select account type</option>
                             <option value="bidder">Bidder</option>
                             <option value="seller">Seller</option>
                         </select>
                     </div>
 
+                    <!-- BIDDER -->
                     <div id="bidder-fields" class="role-section" style="display:none;">
                         <h5>Bidder Information</h5>
 
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label for="first_name">First Name</label>
-                                <input type="text" class="form-control" id="first_name" name="first_name"
+                                <input type="text"
+                                       class="form-control"
+                                       id="first_name"
+                                       name="first_name"
                                        placeholder="First name">
                             </div>
                             <div class="form-group col-md-6">
                                 <label for="last_name">Last Name</label>
-                                <input type="text" class="form-control" id="last_name" name="last_name"
+                                <input type="text"
+                                       class="form-control"
+                                       id="last_name"
+                                       name="last_name"
                                        placeholder="Last name">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="age">Age</label>
-                            <input type="number" min="1" class="form-control" id="age" name="age"
+                            <input type="number"
+                                   min="1"
+                                   class="form-control"
+                                   id="age"
+                                   name="age"
                                    placeholder="Enter your age">
                         </div>
 
-                        <div class="form-group">
-                            <label for="home_address_id">Home Address ID</label>
-                            <input type="text" class="form-control" id="home_address_id" name="home_address_id"
-                                   placeholder="Enter home address ID">
+                        <div class="nested-section">
+                            <h6>Home Address</h6>
+
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="home_zipcode">Zipcode</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="home_zipcode"
+                                           name="home_zipcode"
+                                           placeholder="Enter zipcode">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="home_street_num">Street Number</label>
+                                    <input type="number"
+                                           min="0"
+                                           class="form-control"
+                                           id="home_street_num"
+                                           name="home_street_num"
+                                           placeholder="Enter street number">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="home_street_name">Street Name</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="home_street_name"
+                                           name="home_street_name"
+                                           placeholder="Enter street name">
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group mt-3">
                             <label for="major">Major</label>
-                            <input type="text" class="form-control" id="major" name="major"
+                            <input type="text"
+                                   class="form-control"
+                                   id="major"
+                                   name="major"
                                    placeholder="Enter your major">
                         </div>
                     </div>
 
+                    <!-- SELLER -->
                     <div id="seller-fields" class="role-section" style="display:none;">
                         <h5>Seller Information</h5>
 
                         <div class="form-group">
                             <label for="bank_routing_number">Bank Routing Number</label>
-                            <input type="text" class="form-control" id="bank_routing_number" name="bank_routing_number"
+                            <input type="text"
+                                   class="form-control"
+                                   id="bank_routing_number"
+                                   name="bank_routing_number"
                                    placeholder="0011-4959-0"
-                                   inputmode="numeric" maxlength="11">
+                                   inputmode="numeric"
+                                   maxlength="11">
                             <div class="hint-text">Format: 0011-4959-0</div>
                         </div>
 
                         <div class="form-group">
                             <label for="bank_account_number">Bank Account Number</label>
-                            <input type="text" class="form-control" id="bank_account_number" name="bank_account_number"
-                                   placeholder="Enter bank account number" inputmode="numeric">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="balance">Initial Account Balance</label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="balance" name="balance"
-                                   placeholder="Enter starting balance">
+                            <input type="text"
+                                   class="form-control"
+                                   id="bank_account_number"
+                                   name="bank_account_number"
+                                   placeholder="Enter 8-digit account number"
+                                   inputmode="numeric"
+                                   maxlength="8">
+                            <div class="hint-text">Format: 8 digits, for example 31923667</div>
                         </div>
 
                         <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="is_local_vendor"
-                                   name="is_local_vendor" onchange="toggleVendorFields()">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="is_local_vendor"
+                                   name="is_local_vendor"
+                                   onchange="toggleVendorFields()">
                             <label class="form-check-label" for="is_local_vendor">
                                 I am a Local Vendor
                             </label>
                         </div>
 
+                        <!-- LOCAL VENDOR -->
                         <div id="vendor-fields" class="nested-section" style="display:none;">
                             <h6>Local Vendor Information</h6>
 
                             <div class="form-group">
                                 <label for="business_name">Business Name</label>
-                                <input type="text" class="form-control" id="business_name" name="business_name"
+                                <input type="text"
+                                       class="form-control"
+                                       id="business_name"
+                                       name="business_name"
                                        placeholder="Enter business name">
                             </div>
 
-                            <div class="form-group">
-                                <label for="business_address_id">Business Address ID</label>
-                                <input type="text" class="form-control" id="business_address_id" name="business_address_id"
-                                       placeholder="Enter business address ID">
+                            <div class="nested-section">
+                                <h6>Business Address</h6>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="business_zipcode">Zipcode</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="business_zipcode"
+                                               name="business_zipcode"
+                                               placeholder="Enter zipcode">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="business_street_num">Street Number</label>
+                                        <input type="number"
+                                               min="0"
+                                               class="form-control"
+                                               id="business_street_num"
+                                               name="business_street_num"
+                                               placeholder="Enter street number">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="business_street_name">Street Name</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="business_street_name"
+                                               name="business_street_name"
+                                               placeholder="Enter street name">
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group mt-3">
                                 <label for="customer_service_phone_number">Customer Service Phone Number</label>
-                                <input type="text" class="form-control" id="customer_service_phone_number"
+                                <input type="text"
+                                       class="form-control"
+                                       id="customer_service_phone_number"
                                        name="customer_service_phone_number"
-                                       placeholder="555-123-4567" inputmode="numeric" maxlength="12">
+                                       placeholder="555-123-4567"
+                                       inputmode="numeric"
+                                       maxlength="12">
                                 <div class="hint-text">Format: 555-123-4567</div>
                             </div>
                         </div>
@@ -232,12 +324,20 @@
 
                     <div class="form-group mt-3">
                         <label for="password">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password"
+                               class="form-control"
+                               id="password"
+                               name="password"
+                               required>
                     </div>
 
                     <div class="form-group">
                         <label for="confirm_password">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <input type="password"
+                               class="form-control"
+                               id="confirm_password"
+                               name="confirm_password"
+                               required>
                     </div>
 
                     {% if error %}
@@ -297,7 +397,6 @@ function toggleRoleFields() {
         seller.style.display = "block";
         document.getElementById("bank_routing_number").required = true;
         document.getElementById("bank_account_number").required = true;
-        document.getElementById("balance").required = true;
     }
 }
 
@@ -338,6 +437,14 @@ document.getElementById("bank_routing_number").addEventListener("input", functio
 });
 
 document.getElementById("bank_account_number").addEventListener("input", function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
+});
+
+document.getElementById("home_zipcode").addEventListener("input", function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '');
+});
+
+document.getElementById("business_zipcode").addEventListener("input", function(e) {
     e.target.value = e.target.value.replace(/\D/g, '');
 });
 
@@ -345,13 +452,19 @@ document.getElementById("register-form").addEventListener("submit", function(e) 
     const role = document.getElementById("role").value;
     const isLocalVendor = document.getElementById("is_local_vendor").checked;
     const routing = document.getElementById("bank_routing_number").value;
-    const phone = document.getElementById("customer_service_phone_number").value;
-
     const routingDigits = routing.replace(/\D/g, '');
+    const accountNumber = document.getElementById("bank_account_number").value;
+    const phone = document.getElementById("customer_service_phone_number").value;
 
     if (role === "seller" && routingDigits.length !== 9) {
         e.preventDefault();
         alert("Routing number must contain exactly 9 digits in the format 0011-4959-0.");
+        return;
+    }
+
+    if (role === "seller" && accountNumber.length !== 8) {
+        e.preventDefault();
+        alert("Bank account number must contain exactly 8 digits.");
         return;
     }
 
