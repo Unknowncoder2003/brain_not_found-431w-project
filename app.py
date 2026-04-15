@@ -225,11 +225,9 @@ def get_all_items():
     return data
 
 @app.route('/item-details', methods=['POST', 'GET'])
-def item_details():
-    item = request.args.get('item')
-    item = item_bid(item)
-    return render_template('listing-details.html', item = item)
-def item_bid(item_name):
+
+def item_bid():
+    item_name = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -249,7 +247,51 @@ def item_bid(item_name):
             
                    ''', (item_name,))
     item = cursor.fetchone()
-    return item
+    listing_id = item[1]
+    seller_email = item[0]
+
+    cursor.execute('''
+                   SELECT COUNT(*)
+                   FROM Bids
+                   WHERE listing_id = ?
+                   ''', (listing_id,))
+    current_bid_count = cursor.fetchone()[0]
+
+    cursor.execute('''
+                   SELECT MAX(Bid_price)
+                   FROM Bids
+                   WHERE listing_id = ?
+                   ''', (listing_id,))
+    highest_bid = cursor.fetchone()[0] or 0
+
+    # 新增：查 seller 平均评分，方便详情页显示
+    ensure_seller_ratings_table()
+    cursor.execute("""
+                   SELECT AVG(rating), COUNT(*)
+                   FROM seller_ratings
+                   WHERE seller_email = ?
+                   """, (seller_email,))
+    rating_row = cursor.fetchone()
+
+    avg_rating = None
+    rating_count = 0
+    if rating_row:
+        avg_rating = rating_row[0]
+        rating_count = rating_row[1]
+        if avg_rating is not None:
+            avg_rating = round(avg_rating, 2)
+
+    connection.close()
+
+    print(current_bid_count)
+    return render_template(
+        'listing-details.html',
+        item=item,
+        bid_count=current_bid_count,
+        current_price=highest_bid,
+        avg_rating=avg_rating,
+        rating_count=rating_count
+    )
 
 
 
