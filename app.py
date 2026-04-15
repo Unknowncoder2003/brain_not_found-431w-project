@@ -13,7 +13,7 @@ from passwordHasher import hashed_password
 sql = sqlite3
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the session (the memory) to work
+app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # Required for session support
 
 DB_NAME = 'database.db'
 host = 'http://127.0.0.1:5000/'
@@ -71,7 +71,6 @@ def valid_email_password(email, password):
 
 @app.route('/login', methods=['POST', 'GET'])
 def authenticate():
-    error = None
     error = request.args.get('error')
 
     if request.method == 'POST':
@@ -224,7 +223,7 @@ def seller_profile():
             business_name = vendor_row['business_name']
             customer_service_phone_number = vendor_row['customer_service_phone_number']
 
-        # Rating information from the Rating table
+        # Seller rating summary
         cur.execute("""
             SELECT AVG(Rating) AS avg_rating, COUNT(*) AS rating_count
             FROM Rating
@@ -303,15 +302,25 @@ def bidder():
     else:
         fname = "Bidder"
 
-    cate = get_category_tree()
+    cate = categories()
 
     category = request.args.get('category')
-    if category:
+    search_term = request.args.get('search')
+
+    if search_term:
+        items = search_items(search_term)
+    elif category:
         items = get_items(category)
     else:
         items = get_all_items()
 
-    return render_template('bidder.html', first_name=fname, categories=cate, items=items)
+    return render_template(
+        'bidder.html',
+        first_name=fname,
+        categories=cate,
+        items=items,
+        search_term=search_term if search_term else ""
+    )
 
 
 def categories():
@@ -340,6 +349,27 @@ def get_all_items():
     return data
 
 
+def search_items(search_term):
+    """Search items by auction title, product name, description, category, or seller email."""
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    keyword = f"%{search_term}%"
+
+    cursor.execute("""
+        SELECT DISTINCT Auction_Title
+        FROM Auction_Listings
+        WHERE Auction_Title LIKE ?
+           OR Product_Name LIKE ?
+           OR Product_Description LIKE ?
+           OR Category LIKE ?
+           OR Seller_Email LIKE ?
+    """, (keyword, keyword, keyword, keyword, keyword))
+
+    data = cursor.fetchall()
+    connection.close()
+    return data
+
 @app.route('/item-details', methods=['POST', 'GET'])
 def item_details():
     item = request.args.get('item')
@@ -366,6 +396,7 @@ def item_bid(item_name):
                    WHERE Auction_Title = ?
                    ''', (item_name,))
     item = cursor.fetchone()
+    connection.close()
     return item
 
 
@@ -679,7 +710,7 @@ def edit_listing(seller_email, listing_id):
 
 
 def get_category_tree():
-    """Helper function to get the category tree."""
+    """Return the hierarchical category tree from the Categories table."""
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT category_name, parent_category FROM Categories')

@@ -107,7 +107,6 @@
         </button>
 
         <div class="collapse navbar-collapse" id="searchNavbar">
-
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="example2Dropdown"
@@ -124,8 +123,13 @@
                 </li>
             </ul>
 
-            <form class="form-inline mr-auto">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <form class="form-inline mr-auto" action="/bidder" method="GET">
+                <input class="form-control mr-sm-2"
+                       type="search"
+                       name="search"
+                       placeholder="Search"
+                       aria-label="Search"
+                       value="{{ search_term }}">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
             </form>
         </div>
@@ -147,55 +151,29 @@
             <h4 class="mb-3">Items</h4>
 
             <div class="row">
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
+                {% if items %}
+                    {% for i in items %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <p class="card-text">{{ i[0] }}</p>
+                                <form action="/item-details" method="GET">
+                                    <input type="hidden" name="item" value="{{ i[0] }}">
+                                    <button type="submit" class="btn btn-primary">
+                                        View Item
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-warning text-center">
+                            No matching items found.
                         </div>
                     </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card">
-                        <img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train">
-                        <div class="card-body text-center">
-                            <p class="card-text">Toy Train</p>
-                        </div>
-                    </div>
-                </div>
-
-                {% for i in items %}
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <p class="card-text">{{ i[0] }}</p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+                {% endif %}
             </div>
 
         </div>
@@ -207,4 +185,4 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 
 </body>
-</html>vv
+</html>
