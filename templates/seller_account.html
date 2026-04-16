@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Seller Account Settings | NittanyAuction</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+        }
+
+        .page-wrapper {
+            min-height: 100vh;
+            padding: 30px 0;
+        }
+
+        .page-container {
+            width: 700px;
+            margin: 0 auto;
+        }
+
+        .brand-title {
+            text-align: center;
+            font-size: 2.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .brand-title .nittany { color: #1e4fa1; }
+        .brand-title .auction { color: #28a745; }
+
+        .settings-card {
+            background: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .section-box {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .nested-box {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .hint-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .readonly-note {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        input[readonly] {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+    <div class="page-container">
+
+        <div class="brand-title">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </div>
+
+        <div class="settings-card">
+            <h2>Seller Account Settings</h2>
+            <p class="readonly-note">Click Edit Information to make changes, then Confirm Changes to save them.</p>
+
+            <form action="/seller-account" method="POST" id="seller-account-form">
+
+                <div class="section-box">
+                    <h5>Login Information</h5>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" value="{{ email }}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new_password">New Password</label>
+                        <input type="password" class="form-control editable-field" id="new_password" name="new_password"
+                               placeholder="Leave blank to keep current password" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm New Password</label>
+                        <input type="password" class="form-control editable-field" id="confirm_password" name="confirm_password"
+                               placeholder="Re-enter new password" readonly>
+                    </div>
+                </div>
+
+                <div class="section-box">
+                    <h5>Seller Banking Information</h5>
+
+                    <div class="form-group">
+                        <label for="bank_routing_number">Bank Routing Number</label>
+                        <input type="text"
+                               class="form-control editable-field"
+                               id="bank_routing_number"
+                               name="bank_routing_number"
+                               value="{{ seller.bank_routing_number if seller else '' }}"
+                               placeholder="0011-4959-0"
+                               inputmode="numeric"
+                               maxlength="11"
+                               readonly>
+                        <div class="hint-text">Format: 0011-4959-0</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bank_account_number">Bank Account Number</label>
+                        <input type="text"
+                               class="form-control editable-field"
+                               id="bank_account_number"
+                               name="bank_account_number"
+                               value="{{ seller.bank_account_number if seller else '' }}"
+                               placeholder="Enter 8-digit account number"
+                               inputmode="numeric"
+                               maxlength="8"
+                               readonly>
+                        <div class="hint-text">Format: 8 digits, for example 31923667</div>
+                    </div>
+                </div>
+
+                <div class="section-box">
+                    <div class="form-check">
+                        <input type="checkbox"
+                               class="form-check-input editable-check"
+                               id="is_local_vendor"
+                               name="is_local_vendor"
+                               {% if local_vendor %}checked{% endif %}
+                               onchange="toggleVendorFields()"
+                               disabled>
+                        <label class="form-check-label" for="is_local_vendor">
+                            This seller is a Local Vendor
+                        </label>
+                    </div>
+
+                    <div id="vendor-fields" class="nested-box" style="display: {% if local_vendor %}block{% else %}none{% endif %};">
+                        <h5>Local Vendor Information</h5>
+
+                        <div class="form-group">
+                            <label for="business_name">Business Name</label>
+                            <input type="text"
+                                   class="form-control editable-field"
+                                   id="business_name"
+                                   name="business_name"
+                                   value="{{ local_vendor.business_name if local_vendor else '' }}"
+                                   placeholder="Enter business name"
+                                   readonly>
+                        </div>
+
+                        <div class="nested-box">
+                            <h6>Business Address</h6>
+
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="business_zipcode">Zipcode</label>
+                                    <input type="text"
+                                           class="form-control editable-field"
+                                           id="business_zipcode"
+                                           name="business_zipcode"
+                                           value="{{ business_address.zipcode if business_address else '' }}"
+                                           placeholder="Enter zipcode"
+                                           readonly>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="business_street_num">Street Number</label>
+                                    <input type="number"
+                                           min="0"
+                                           class="form-control editable-field"
+                                           id="business_street_num"
+                                           name="business_street_num"
+                                           value="{{ business_address.street_num if business_address else '' }}"
+                                           placeholder="Enter street number"
+                                           readonly>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="business_street_name">Street Name</label>
+                                    <input type="text"
+                                           class="form-control editable-field"
+                                           id="business_street_name"
+                                           name="business_street_name"
+                                           value="{{ business_address.street_name if business_address else '' }}"
+                                           placeholder="Enter street name"
+                                           readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="customer_service_phone_number">Customer Service Phone Number</label>
+                            <input type="text"
+                                   class="form-control editable-field"
+                                   id="customer_service_phone_number"
+                                   name="customer_service_phone_number"
+                                   value="{{ local_vendor.customer_service_phone_number if local_vendor else '' }}"
+                                   placeholder="555-123-4567"
+                                   inputmode="numeric"
+                                   maxlength="12"
+                                   readonly>
+                            <div class="hint-text">Format: 555-123-4567</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if error %}
+                <div class="alert alert-danger mt-3">{{ error }}</div>
+                {% endif %}
+
+                {% if success %}
+                <div class="alert alert-success mt-3">{{ success }}</div>
+                {% endif %}
+
+                <div class="button-row">
+                    <button type="button" class="btn btn-outline-primary" id="edit-btn" onclick="enableEditing()">
+                        Edit Information
+                    </button>
+
+                    <button type="submit" class="btn btn-primary" id="confirm-btn" style="display:none;">
+                        Confirm Changes
+                    </button>
+
+                    <button type="button" class="btn btn-outline-secondary" id="cancel-btn" style="display:none;" onclick="cancelEditing()">
+                        Cancel
+                    </button>
+                </div>
+
+                <a href="/seller" class="btn btn-outline-secondary btn-block mt-3">Back to Seller Dashboard</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVendorFields() {
+    const checkbox = document.getElementById("is_local_vendor");
+    const vendorFields = document.getElementById("vendor-fields");
+    vendorFields.style.display = checkbox.checked ? "block" : "none";
+}
+
+function enableEditing() {
+    document.querySelectorAll(".editable-field").forEach(field => {
+        field.removeAttribute("readonly");
+    });
+
+    document.querySelectorAll(".editable-check").forEach(field => {
+        field.disabled = false;
+    });
+
+    document.getElementById("edit-btn").style.display = "none";
+    document.getElementById("confirm-btn").style.display = "inline-block";
+    document.getElementById("cancel-btn").style.display = "inline-block";
+}
+
+function cancelEditing() {
+    window.location.reload();
+}
+
+function formatPhoneNumber(value) {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
+    return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+}
+
+function formatRoutingNumber(value) {
+    const digits = value.replace(/\D/g, '').slice(0, 9);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 8) return digits.slice(0, 4) + '-' + digits.slice(4);
+    return digits.slice(0, 4) + '-' + digits.slice(4, 8) + '-' + digits.slice(8);
+}
+
+document.getElementById("customer_service_phone_number").addEventListener("input", function(e) {
+    e.target.value = formatPhoneNumber(e.target.value);
+});
+
+document.getElementById("bank_routing_number").addEventListener("input", function(e) {
+    e.target.value = formatRoutingNumber(e.target.value);
+});
+
+document.getElementById("bank_account_number").addEventListener("input", function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
+});
+
+document.getElementById("business_zipcode").addEventListener("input", function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '');
+});
+</script>
+
+</body>
+</html>
