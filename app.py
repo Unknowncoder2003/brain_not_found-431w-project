@@ -687,6 +687,19 @@ def item_bid():
 
     connection.close()
 
+    #for adding a price to the bids
+    if request.method == 'POST':
+        bid_price = request.form.get('bid_price')
+        print("Bid:", bid_price)
+        return render_template(
+            'listing-details-bidder.html',
+            item=item,
+            bid_count=current_bid_count,
+            current_price=highest_bid,
+            avg_rating=avg_rating,
+            rating_count=rating_count
+        )
+
     print(current_bid_count)
     return render_template(
         'listing-details-bidder.html',
@@ -919,13 +932,6 @@ def update_password():
             message='Please fill in all password fields.'
         ))
 
-    if new_password != confirm_new_password:
-        return redirect(url_for(
-            'profile',
-            edit='password',
-            message='New passwords do not match.'
-        ))
-
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -955,6 +961,14 @@ def update_password():
             message='Old password is incorrect.'
         ))
 
+    if new_password != confirm_new_password:
+        connection.close()
+        return redirect(url_for(
+            'profile',
+            edit='password',
+            message='New passwords do not match.'
+        ))
+
     new_salt = secrets.token_urlsafe(16)
     new_password_hash = hashlib.sha256(
         (new_password + new_salt).encode('utf-8')
@@ -973,6 +987,7 @@ def update_password():
         'profile',
         message='Password updated successfully.'
     ))
+
 def generate_address_id():
     return uuid.uuid4().hex[:24]
 
