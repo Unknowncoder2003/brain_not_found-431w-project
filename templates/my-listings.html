@@ -78,10 +78,11 @@
                         Seller Tools
                     </a>
                     <div class="dropdown-menu" aria-labelledby="settings">
-                        <a class="dropdown-item" href="/seller-information">View Seller Information</a>
-                        <a class="dropdown-item" href="/seller-listing-history">View Listing History</a>
+                        <a class="dropdown-item" href="{{ url_for('seller_account') }}">Edit Account</a>
+                        <a class="dropdown-item" href="{{ url_for('seller_profile') }}">View Seller Profile</a>
+                        <a class="dropdown-item" href="{{ url_for('my_listing') }}">View Listing History</a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="/support">Contact HelpDesk</a>
+                        <a class="dropdown-item" href="{{ url_for('helpdesk') }}">Contact HelpDesk</a>
                     </div>
                 </li>
             </ul>
