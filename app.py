@@ -360,7 +360,7 @@ def get_items(category_name):
     connection = get_connection()
     cursor = connection.cursor()
     placeholders = ', '.join(['?'] * len(category_list))
-    query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
+    #query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
     query = f'''
         SELECT Seller_Email, Listing_ID, Auction_Title
         FROM Auction_Listings
@@ -374,8 +374,8 @@ def get_items(category_name):
 def get_all_items():
     connection = get_connection()
     cursor = connection.cursor()
-    items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
-    data = items.fetchall()
+    #items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
+    #data = items.fetchall()
     cursor.execute('''
         SELECT Seller_Email, Listing_ID, Auction_Title
         FROM Auction_Listings
@@ -402,9 +402,8 @@ def search_items(search_term):
     return data
 
 @app.route('/item-details', methods=['POST', 'GET'])
-
 def item_bid():
-    item_name = request.args.get('item')
+    listing_id = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -420,9 +419,9 @@ def item_bid():
                           Max_bids,
                           Status
                    FROM Auction_Listings
-                   WHERE Auction_Title = ?
+                   WHERE Listing_ID = ?
             
-                   ''', (item_name,))
+                   ''', (listing_id,))
     item = cursor.fetchone()
     listing_id = item[1]
     seller_email = item[0]

@@ -196,19 +196,12 @@
                         <div class="card h-100">
                              <div class="card-body text-center">
                                 <p class="card-text">{{ i[2] }}</p>
-                                <a href="/listing-details/{{ i[0] }}/{{ i[1] }}" class="btn btn-primary">
-                {% for i in items %}
-                <div class="col-md-4">
-                    <div class="card">
-                        <!-- img src="https://m.media-amazon.com/images/I/81gwsl+v-fL.jpg"
-                             class="card-img-top" alt="Toy Train" -->
-                        <div class="card-body text-center">
-                            <p class="card-text">{{ i[0] }}</p>
-                            <form action="/item-details" method="GET">
+                                <form action="/item-details" method="GET">
                                 <input type="hidden" name="item" value="{{ i[1] }}">
                                 <button type="submit" class="btn btn-primary">
                                     View Item
-                                </a>
+                                </button>
+                                </form>
                              </div>
                         </div>
                     </div>
