@@ -144,7 +144,15 @@ def seller():
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
-
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
+    result = cursor.fetchone()
+    connection.close()
+    if result:
+        first_name = result[0]
+    else:
+        first_name = 'Seller'
     avg_rating = None
     rating_count = 0
 
@@ -174,6 +182,7 @@ def seller():
 
     return render_template(
         'seller.html',
+        first_name=first_name,
         email=user_email,
         avg_rating=avg_rating,
         rating_count=rating_count
@@ -1233,7 +1242,7 @@ def post_item():
             return "An error occurred while posting your item.", 500
 
     category_tree = get_category_tree()
-    return render_template('post-item.html', category_tree=category_tree)
+    return render_template('post-item.html', category_tree=category_tree,email = user_email)
 
 
 if __name__ == "__main__":
