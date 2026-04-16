@@ -201,6 +201,7 @@ def seller_account():
     success = None
 
     if request.method == 'POST':
+        current_password = request.form.get('current_password', '').strip()
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
         bank_routing_number = request.form.get('bank_routing_number', '').strip()
@@ -213,13 +214,37 @@ def seller_account():
         elif not bank_account_number.isdigit() or len(bank_account_number) != 8:
             error = "Bank account number must contain exactly 8 digits."
         elif new_password or confirm_password:
-            if new_password != confirm_password:
+            if not current_password:
+                error = "You must enter your current password to change your password."
+            elif new_password != confirm_password:
                 error = "New passwords do not match."
+            else:
+                cursor.execute("""
+                    SELECT password, salt
+                    FROM Users
+                    WHERE email = ?
+                """, (user_email,))
+                result = cursor.fetchone()
+
+                if not result:
+                    error = "User account not found."
+                else:
+                    stored_hash, salt = result
+                    current_hash = hashlib.sha256((current_password + salt).encode('utf-8')).hexdigest()
+
+                    if current_hash != stored_hash:
+                        error = "Current password is incorrect."
 
         if not error:
+            # Update password only if user entered a new one
             if new_password:
-                cursor.execute("SELECT salt FROM Users WHERE email = ?", (user_email,))
+                cursor.execute("""
+                    SELECT salt
+                    FROM Users
+                    WHERE email = ?
+                """, (user_email,))
                 result = cursor.fetchone()
+
                 if result:
                     salt = result[0]
                     new_hash = hashlib.sha256((new_password + salt).encode('utf-8')).hexdigest()
@@ -229,6 +254,7 @@ def seller_account():
                         WHERE email = ?
                     """, (new_hash, user_email))
 
+            # Update seller info
             cursor.execute("""
                 UPDATE Sellers
                 SET bank_routing_number = ?, bank_account_number = ?
@@ -686,6 +712,7 @@ def profile():
     edit_basic = edit == "basic"
     edit_address = edit == "address"
     edit_card = edit == "card"
+    edit_password = edit == "password"
 
     connection = get_connection()
     connection.row_factory = sql.Row
@@ -712,6 +739,19 @@ def profile():
     """, (user_email,))
 
     user = cursor.fetchone()
+
+    if user:
+        user = dict(user)
+
+        card_number = user.get('card_number')
+        if card_number:
+            card_number = str(card_number)
+            if len(card_number) > 4:
+                user['masked_card_number'] = '*' * (len(card_number) - 4) + card_number[-4:]
+            else:
+                user['masked_card_number'] = card_number
+        else:
+            user['masked_card_number'] = None
     print("DEBUG user =", dict(user) if user else None)
     connection.close()
 
@@ -720,7 +760,8 @@ def profile():
         user=user,
         edit_basic=edit_basic,
         edit_address=edit_address,
-        edit_card=edit_card
+        edit_card=edit_card,
+        edit_password=edit_password
     )
 
 @app.route('/profile/update_basic', methods=['POST'])
@@ -843,6 +884,62 @@ def update_card():
 
     return redirect('/profile')
 
+@app.route('/profile/update_password', methods=['POST'])
+def update_password():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    old_password = request.form.get('old_password', '').strip()
+    new_password = request.form.get('new_password', '').strip()
+    confirm_new_password = request.form.get('confirm_new_password', '').strip()
+
+    if not old_password or not new_password or not confirm_new_password:
+        return redirect('/profile?edit=password')
+
+    if new_password != confirm_new_password:
+        return redirect('/profile?edit=password')
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT password, salt
+        FROM Users
+        WHERE email = ?
+    """, (user_email,))
+    result = cursor.fetchone()
+
+    if not result:
+        connection.close()
+        return redirect(url_for('authenticate'))
+
+    stored_hash = result[0]
+    stored_salt = result[1]
+
+    old_password_hash = hashlib.sha256(
+        (old_password + stored_salt).encode('utf-8')
+    ).hexdigest()
+
+    if old_password_hash != stored_hash:
+        connection.close()
+        return redirect('/profile?edit=password')
+
+    new_salt = secrets.token_urlsafe(16)
+    new_password_hash = hashlib.sha256(
+        (new_password + new_salt).encode('utf-8')
+    ).hexdigest()
+
+    cursor.execute("""
+        UPDATE Users
+        SET password = ?, salt = ?
+        WHERE email = ?
+    """, (new_password_hash, new_salt, user_email))
+
+    connection.commit()
+    connection.close()
+
+    return redirect('/profile')
 
 def generate_address_id():
     return uuid.uuid4().hex[:24]
