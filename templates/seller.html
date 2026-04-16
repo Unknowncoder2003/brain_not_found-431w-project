@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Seller Dashboard | NittanyAuction</title>
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
     <style>
         body {
             background-color: #f2f2f2;
@@ -31,7 +31,7 @@
         .dashboard-card {
             background: white;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             padding: 2rem;
         }
 
@@ -56,106 +56,108 @@
         }
     </style>
 </head>
+
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light">
-    <div class="container">
-        <a class="navbar-brand brand-text" href="{{ url_for('seller') }}">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </a>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-text" href="{{ url_for('seller') }}">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
 
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <div class="collapse navbar-collapse" id="sellerNavbar">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="{{ url_for('seller') }}">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('my_listing') }}">My Listings</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('post_item') }}">Post New Item</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="settings"
-                       role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Seller Tools
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="settings">
-                        <a class="dropdown-item" href="{{ url_for('seller_account') }}">Edit Account</a>
-                        <a class="dropdown-item" href="{{ url_for('seller_profile') }}">View Seller Profile</a>
-                        <a class="dropdown-item" href="{{ url_for('my_listing') }}">View Listing History</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{{ url_for('helpdesk') }}">Contact HelpDesk</a>
-                    </div>
-                </li>
-            </ul>
+            <div class="collapse navbar-collapse" id="sellerNavbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('seller') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('my_listing') }}">My Listings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('post_item') }}">Post New Item</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="settings" role="button" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                            Seller Tools
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="settings">
+                            <a class="dropdown-item" href="{{ url_for('seller_account') }}">Edit Account</a>
+                            <a class="dropdown-item" href="{{ url_for('seller_profile') }}">View Seller Profile</a>
+                            <a class="dropdown-item" href="{{ url_for('my_listing') }}">View Listing History</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{{ url_for('helpdesk') }}">Contact HelpDesk</a>
+                        </div>
+                    </li>
+                </ul>
 
-            <ul class="navbar-nav ml-auto align-items-center">
-                <li class="nav-item">
-                    <span class="nav-link text-muted mb-0">Seller: <strong>{{ email }}</strong></span>
-                </li>
-                {% if session.get('roles') and 'bidder' in session['roles'] %}
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-info ml-2" href="/bidder">Switch to Bidder</a>
-                </li>
-                {% endif %}
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="{{ url_for('logout') }}">Logout</a>
-                </li>
-            </ul>
+                <ul class="navbar-nav ml-auto align-items-center">
+                    <li class="nav-item">
+                        <span class="nav-link text-muted mb-0">Seller: <strong>{{ email }}</strong></span>
+                    </li>
+                    {% if session.get('roles') and 'bidder' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info ml-2" href="/bidder">Switch to Bidder</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-danger ml-2" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="dashboard-card">
-                <h2 class="welcome-header">Hi, {{ email }}!</h2>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="dashboard-card">
+                    <h2 class="welcome-header">Hi, {{ email }}!</h2>
 
-                <div class="rating-box">
-                    <p class="mb-1">
-                        <strong>Seller Rating:</strong>
-                        {% if avg_rating is not none %}
+                    <div class="rating-box">
+                        <p class="mb-1">
+                            <strong>Seller Rating:</strong>
+                            {% if avg_rating is not none %}
                             {{ avg_rating }}/5
-                        {% else %}
+                            {% else %}
                             No ratings yet
-                        {% endif %}
-                    </p>
+                            {% endif %}
+                        </p>
 
-                    <p class="mb-0 text-muted">
-                        {% if avg_rating is not none %}
+                        <p class="mb-0 text-muted">
+                            {% if avg_rating is not none %}
                             Based on {{ rating_count }} rating{% if rating_count != 1 %}s{% endif %}.
-                        {% else %}
+                            {% else %}
                             Your average rating will appear here after bidders complete paid auctions and leave ratings.
-                        {% endif %}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <p class="lead">
+                        Welcome to your seller dashboard. Here you can manage your listings and view current bids.
                     </p>
-                </div>
 
-                <p class="lead">
-                    Welcome to your seller dashboard. Here you can manage your listings and view current bids.
-                </p>
+                    <div class="quick-actions mt-4">
+                        <a href="{{ url_for('my_listing') }}" class="btn btn-primary">Manage My Listings</a>
+                        <a href="{{ url_for('post_item') }}" class="btn btn-success">Post New Item</a>
+                        <a href="{{ url_for('seller_account') }}" class="btn btn-outline-secondary">Edit Account</a>
+                    </div>
 
-                <div class="quick-actions mt-4">
-                    <a href="{{ url_for('my_listing') }}" class="btn btn-primary">Manage My Listings</a>
-                    <a href="{{ url_for('post_item') }}" class="btn btn-success">Post New Item</a>
-                    <a href="{{ url_for('seller_account') }}" class="btn btn-outline-secondary">Edit Account</a>
-                </div>
-
-                <div class="mt-4">
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">Logout</a>
+                    <div class="mt-4">
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">Logout</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 </body>
+
 </html>
