@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NittanyAuction Login</title>
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
 
     <style>
         body {
@@ -32,14 +32,19 @@
             margin-bottom: 20px;
         }
 
-        .brand-title .nittany { color: #1e4fa1; }
-        .brand-title .auction { color: #28a745; }
+        .brand-title .nittany {
+            color: #1e4fa1;
+        }
+
+        .brand-title .auction {
+            color: #28a745;
+        }
 
         .login-card {
             background: white;
             border: 1px solid #d9d9d9;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
@@ -87,61 +92,54 @@
 
 <body>
 
-<div class="login-wrapper">
-    <div class="login-container">
+    <div class="login-wrapper">
+        <div class="login-container">
 
-        <div class="brand-title">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </div>
-
-        <div class="login-card">
-
-            <div class="tab-header">
-                <div class="tab active">Sign In</div>
-                <a href="/register" class="tab">Register</a>
+            <div class="brand-title">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
             </div>
 
-            <div class="form-section">
-                <form action="/login" method="POST">
+            <div class="login-card">
 
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email"
-                               class="form-control"
-                               id="email"
-                               name="email"
-                               placeholder="Enter your email"
-                               required>
-                    </div>
+                <div class="tab-header">
+                    <div class="tab active">Sign In</div>
+                    <a href="/register" class="tab">Register</a>
+                </div>
 
-                    <div class="form-group mt-3">
-                        <label for="password">Password</label>
-                        <input type="password"
-                               class="form-control"
-                               id="password"
-                               name="password"
-                               placeholder="Enter your password"
-                               required>
-                    </div>
+                <div class="form-section">
+                    <form action="/login" method="POST">
 
-                    {% if error %}
-                    <div class="alert alert-danger mt-3" role="alert">
-                        {{ error }}
-                    </div>
-                    {% endif %}
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                placeholder="Enter your email" required>
+                        </div>
 
-                    <button type="submit" class="btn btn-primary btn-login">
-                        Sign In
-                    </button>
+                        <div class="form-group mt-3">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="password"
+                                placeholder="Enter your password" required>
+                        </div>
 
-                    <div class="bottom-links">
-                        <a href="/">Go Back</a>
-                    </div>
-                </form>
+                        {% if error %}
+                        <div class="alert alert-danger mt-3" role="alert">
+                            {{ error }}
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary btn-login">
+                            Sign In
+                        </button>
+
+                        <div class="bottom-links">
+                            <a href="/">Go Back</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 </body>
+
 </html>
