@@ -700,6 +700,8 @@ def profile():
         return redirect(url_for('authenticate'))
 
     edit = request.args.get("edit")
+    message = request.args.get("message")
+
     edit_basic = edit == "basic"
     edit_address = edit == "address"
     edit_card = edit == "card"
@@ -752,7 +754,8 @@ def profile():
         edit_basic=edit_basic,
         edit_address=edit_address,
         edit_card=edit_card,
-        edit_password=edit_password
+        edit_password=edit_password,
+        message=message
     )
 
 @app.route('/profile/update_basic', methods=['POST'])
@@ -886,10 +889,18 @@ def update_password():
     confirm_new_password = request.form.get('confirm_new_password', '').strip()
 
     if not old_password or not new_password or not confirm_new_password:
-        return redirect('/profile?edit=password')
+        return redirect(url_for(
+            'profile',
+            edit='password',
+            message='Please fill in all password fields.'
+        ))
 
     if new_password != confirm_new_password:
-        return redirect('/profile?edit=password')
+        return redirect(url_for(
+            'profile',
+            edit='password',
+            message='New passwords do not match.'
+        ))
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -914,7 +925,11 @@ def update_password():
 
     if old_password_hash != stored_hash:
         connection.close()
-        return redirect('/profile?edit=password')
+        return redirect(url_for(
+            'profile',
+            edit='password',
+            message='Old password is incorrect.'
+        ))
 
     new_salt = secrets.token_urlsafe(16)
     new_password_hash = hashlib.sha256(
@@ -930,8 +945,10 @@ def update_password():
     connection.commit()
     connection.close()
 
-    return redirect('/profile')
-
+    return redirect(url_for(
+        'profile',
+        message='Password updated successfully.'
+    ))
 def generate_address_id():
     return uuid.uuid4().hex[:24]
 
