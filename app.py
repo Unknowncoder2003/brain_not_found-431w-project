@@ -149,6 +149,20 @@ def seller():
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
     result = cursor.fetchone()
     connection.close()
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    # seller balanceinfo
+    cur.execute("""
+                SELECT email, bank_routing_number, bank_account_number, balance
+                FROM Sellers
+                WHERE email = ?
+                """, (user_email,))
+    seller_row = cur.fetchone()
+    if seller_row:
+        balance = seller_row['balance']
+    else:
+        balance = 0
     if result:
         first_name = result[0]
     else:
@@ -185,7 +199,8 @@ def seller():
         first_name=first_name,
         email=user_email,
         avg_rating=avg_rating,
-        rating_count=rating_count
+        rating_count=rating_count,
+        balance = balance
     )
 
 @app.route('/seller-account', methods=['GET', 'POST'])
