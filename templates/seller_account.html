@@ -104,15 +104,33 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="current_password">Current Password</label>
+                        <input type="password"
+                               class="form-control editable-field"
+                               id="current_password"
+                               name="current_password"
+                               placeholder="Enter current password to change password"
+                               readonly>
+                    </div>
+
+                    <div class="form-group">
                         <label for="new_password">New Password</label>
-                        <input type="password" class="form-control editable-field" id="new_password" name="new_password"
-                               placeholder="Leave blank to keep current password" readonly>
+                        <input type="password"
+                               class="form-control editable-field"
+                               id="new_password"
+                               name="new_password"
+                               placeholder="Leave blank to keep current password"
+                               readonly>
                     </div>
 
                     <div class="form-group">
                         <label for="confirm_password">Confirm New Password</label>
-                        <input type="password" class="form-control editable-field" id="confirm_password" name="confirm_password"
-                               placeholder="Re-enter new password" readonly>
+                        <input type="password"
+                               class="form-control editable-field"
+                               id="confirm_password"
+                               name="confirm_password"
+                               placeholder="Re-enter new password"
+                               readonly>
                     </div>
                 </div>
 
@@ -311,6 +329,49 @@ document.getElementById("bank_account_number").addEventListener("input", functio
 
 document.getElementById("business_zipcode").addEventListener("input", function(e) {
     e.target.value = e.target.value.replace(/\D/g, '');
+});
+
+document.getElementById("seller-account-form").addEventListener("submit", function(e) {
+    const current = document.getElementById("current_password").value.trim();
+    const newPass = document.getElementById("new_password").value.trim();
+    const confirm = document.getElementById("confirm_password").value.trim();
+
+    if (newPass || confirm) {
+        if (!current) {
+            e.preventDefault();
+            alert("You must enter your current password to change your password.");
+            return;
+        }
+
+        if (newPass !== confirm) {
+            e.preventDefault();
+            alert("New passwords do not match.");
+            return;
+        }
+    }
+
+    const isLocalVendor = document.getElementById("is_local_vendor").checked;
+    const routing = document.getElementById("bank_routing_number").value;
+    const routingDigits = routing.replace(/\D/g, '');
+    const accountNumber = document.getElementById("bank_account_number").value;
+    const phone = document.getElementById("customer_service_phone_number").value;
+
+    if (routingDigits.length !== 9) {
+        e.preventDefault();
+        alert("Routing number must contain exactly 9 digits in the format 0011-4959-0.");
+        return;
+    }
+
+    if (accountNumber.length !== 8) {
+        e.preventDefault();
+        alert("Bank account number must contain exactly 8 digits.");
+        return;
+    }
+
+    if (isLocalVendor && phone.length !== 12) {
+        e.preventDefault();
+        alert("Customer service phone number must be in the format XXX-XXX-XXXX.");
+    }
 });
 </script>
 

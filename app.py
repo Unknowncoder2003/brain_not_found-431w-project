@@ -192,6 +192,7 @@ def seller_account():
     success = None
 
     if request.method == 'POST':
+        current_password = request.form.get('current_password', '').strip()
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
         bank_routing_number = request.form.get('bank_routing_number', '').strip()
@@ -204,13 +205,37 @@ def seller_account():
         elif not bank_account_number.isdigit() or len(bank_account_number) != 8:
             error = "Bank account number must contain exactly 8 digits."
         elif new_password or confirm_password:
-            if new_password != confirm_password:
+            if not current_password:
+                error = "You must enter your current password to change your password."
+            elif new_password != confirm_password:
                 error = "New passwords do not match."
+            else:
+                cursor.execute("""
+                    SELECT password, salt
+                    FROM Users
+                    WHERE email = ?
+                """, (user_email,))
+                result = cursor.fetchone()
+
+                if not result:
+                    error = "User account not found."
+                else:
+                    stored_hash, salt = result
+                    current_hash = hashlib.sha256((current_password + salt).encode('utf-8')).hexdigest()
+
+                    if current_hash != stored_hash:
+                        error = "Current password is incorrect."
 
         if not error:
+            # Update password only if user entered a new one
             if new_password:
-                cursor.execute("SELECT salt FROM Users WHERE email = ?", (user_email,))
+                cursor.execute("""
+                    SELECT salt
+                    FROM Users
+                    WHERE email = ?
+                """, (user_email,))
                 result = cursor.fetchone()
+
                 if result:
                     salt = result[0]
                     new_hash = hashlib.sha256((new_password + salt).encode('utf-8')).hexdigest()
@@ -220,6 +245,7 @@ def seller_account():
                         WHERE email = ?
                     """, (new_hash, user_email))
 
+            # Update seller info
             cursor.execute("""
                 UPDATE Sellers
                 SET bank_routing_number = ?, bank_account_number = ?
