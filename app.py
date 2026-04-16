@@ -672,9 +672,23 @@ def item_bid():
 
     connection.close()
 
-    #for adding a price to the bids
+    #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
+        error = None
         bid_price = request.form.get('bid_price')
+        if int(bid_price) > highest_bid:
+            current_bid_count += 1
+            highest_bid = int(bid_price)
+            #Insert a new bid
+
+            #cursor.execute('''
+             #              INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
+              #             VALUES (?,?,?,?);
+               #            ''', ("asfaf"))
+
+        else:
+            error = "Your price is less than or equal to the current bid put in another one"
+
         print("Bid:", bid_price)
         return render_template(
             'listing-details-bidder.html',
@@ -682,7 +696,8 @@ def item_bid():
             bid_count=current_bid_count,
             current_price=highest_bid,
             avg_rating=avg_rating,
-            rating_count=rating_count
+            rating_count=rating_count,
+            error = error
         )
 
     print(current_bid_count)
