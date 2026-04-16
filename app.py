@@ -637,6 +637,19 @@ def item_bid():
 
     connection.close()
 
+    #for adding a price to the bids
+    if request.method == 'POST':
+        bid_price = request.form.get('bid_price')
+        print("Bid:", bid_price)
+        return render_template(
+            'listing-details-bidder.html',
+            item=item,
+            bid_count=current_bid_count,
+            current_price=highest_bid,
+            avg_rating=avg_rating,
+            rating_count=rating_count
+        )
+
     print(current_bid_count)
     return render_template(
         'listing-details-bidder.html',
