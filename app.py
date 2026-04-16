@@ -170,7 +170,177 @@ def seller():
         rating_count=rating_count
     )
 
+@app.route('/seller-account', methods=['GET', 'POST'])
+def seller_account():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
 
+    connection = sql.connect('database.db')
+    cursor = connection.cursor()
+
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        bank_routing_number = request.form.get('bank_routing_number', '').strip()
+        bank_account_number = request.form.get('bank_account_number', '').strip()
+
+        routing_digits = ''.join(ch for ch in bank_routing_number if ch.isdigit())
+
+        if len(routing_digits) != 9:
+            error = "Routing number must contain exactly 9 digits."
+        elif not bank_account_number.isdigit() or len(bank_account_number) != 8:
+            error = "Bank account number must contain exactly 8 digits."
+        elif new_password or confirm_password:
+            if new_password != confirm_password:
+                error = "New passwords do not match."
+
+        if not error:
+            if new_password:
+                cursor.execute("SELECT salt FROM Users WHERE email = ?", (user_email,))
+                result = cursor.fetchone()
+                if result:
+                    salt = result[0]
+                    new_hash = hashlib.sha256((new_password + salt).encode('utf-8')).hexdigest()
+                    cursor.execute("""
+                        UPDATE Users
+                        SET password = ?
+                        WHERE email = ?
+                    """, (new_hash, user_email))
+
+            cursor.execute("""
+                UPDATE Sellers
+                SET bank_routing_number = ?, bank_account_number = ?
+                WHERE email = ?
+            """, (bank_routing_number, bank_account_number, user_email))
+
+            is_local_vendor = 'is_local_vendor' in request.form
+
+            cursor.execute("""
+                SELECT business_address_id
+                FROM Local_Vendors
+                WHERE email = ?
+            """, (user_email,))
+            local_vendor_row = cursor.fetchone()
+
+            if is_local_vendor:
+                business_name = request.form.get('business_name', '').strip()
+                business_zipcode = request.form.get('business_zipcode', '').strip()
+                business_street_num = request.form.get('business_street_num', '').strip()
+                business_street_name = request.form.get('business_street_name', '').strip()
+                customer_service_phone_number = request.form.get('customer_service_phone_number', '').strip()
+
+                if not all([business_name, business_zipcode, business_street_num, business_street_name, customer_service_phone_number]):
+                    error = "All local vendor fields are required."
+                else:
+                    if local_vendor_row:
+                        business_address_id = local_vendor_row[0]
+
+                        cursor.execute("""
+                            UPDATE Address
+                            SET zipcode = ?, street_num = ?, street_name = ?
+                            WHERE address_id = ?
+                        """, (business_zipcode, business_street_num, business_street_name, business_address_id))
+
+                        cursor.execute("""
+                            UPDATE Local_Vendors
+                            SET business_name = ?, customer_service_phone_number = ?
+                            WHERE email = ?
+                        """, (business_name, customer_service_phone_number, user_email))
+                    else:
+                        import uuid
+                        business_address_id = uuid.uuid4().hex[:24]
+
+                        cursor.execute("""
+                            INSERT INTO Address (address_id, zipcode, street_num, street_name)
+                            VALUES (?, ?, ?, ?)
+                        """, (business_address_id, business_zipcode, business_street_num, business_street_name))
+
+                        cursor.execute("""
+                            INSERT INTO Local_Vendors (email, business_name, business_address_id, customer_service_phone_number)
+                            VALUES (?, ?, ?, ?)
+                        """, (user_email, business_name, business_address_id, customer_service_phone_number))
+
+            else:
+                if local_vendor_row:
+                    business_address_id = local_vendor_row[0]
+
+                    cursor.execute("""
+                        DELETE FROM Local_Vendors
+                        WHERE email = ?
+                    """, (user_email,))
+
+                    cursor.execute("""
+                        DELETE FROM Address
+                        WHERE address_id = ?
+                    """, (business_address_id,))
+
+            if not error:
+                connection.commit()
+                success = "Account information updated successfully."
+
+    cursor.execute("""
+        SELECT email, bank_routing_number, bank_account_number, balance
+        FROM Sellers
+        WHERE email = ?
+    """, (user_email,))
+    seller_row = cursor.fetchone()
+
+    seller = None
+    if seller_row:
+        seller = {
+            'email': seller_row[0],
+            'bank_routing_number': seller_row[1],
+            'bank_account_number': seller_row[2],
+            'balance': seller_row[3]
+        }
+
+    cursor.execute("""
+        SELECT email, business_name, business_address_id, customer_service_phone_number
+        FROM Local_Vendors
+        WHERE email = ?
+    """, (user_email,))
+    vendor_row = cursor.fetchone()
+
+    local_vendor = None
+    business_address = None
+
+    if vendor_row:
+        local_vendor = {
+            'email': vendor_row[0],
+            'business_name': vendor_row[1],
+            'business_address_id': vendor_row[2],
+            'customer_service_phone_number': vendor_row[3]
+        }
+
+        cursor.execute("""
+            SELECT zipcode, street_num, street_name
+            FROM Address
+            WHERE address_id = ?
+        """, (vendor_row[2],))
+        address_row = cursor.fetchone()
+
+        if address_row:
+            business_address = {
+                'zipcode': address_row[0],
+                'street_num': address_row[1],
+                'street_name': address_row[2]
+            }
+
+    connection.close()
+
+    return render_template(
+        'seller_account.html',
+        email=user_email,
+        seller=seller,
+        local_vendor=local_vendor,
+        business_address=business_address,
+        error=error,
+        success=success
+    )
 @app.route('/seller-profile', methods=['GET'])
 def seller_profile():
     user_email = session.get('email')
@@ -354,12 +524,15 @@ def get_all_subcategories(target_category):
 
 
 def get_items(category_name):
+    """fetch items from the selected category AND all subcategories."""
+    # Get the full list of related categories
     category_list = get_all_subcategories(category_name)
     connection = get_connection()
     cursor = connection.cursor()
     placeholders = ', '.join(['?'] * len(category_list))
+    #query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
     query = f'''
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
         WHERE Category IN ({placeholders})
     '''
@@ -371,8 +544,10 @@ def get_items(category_name):
 def get_all_items():
     connection = get_connection()
     cursor = connection.cursor()
+    #items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
+    #data = items.fetchall()
     cursor.execute('''
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
     ''')
     data = cursor.fetchall()
@@ -386,7 +561,7 @@ def search_items(search_term):
     keyword = f"%{search_term}%"
 
     cursor.execute("""
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
         WHERE Auction_Title LIKE ?
            OR Product_Name LIKE ?
@@ -397,9 +572,8 @@ def search_items(search_term):
     return data
 
 @app.route('/item-details', methods=['POST', 'GET'])
-
 def item_bid():
-    item_name = request.args.get('item')
+    listing_id = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -415,9 +589,9 @@ def item_bid():
                           Max_bids,
                           Status
                    FROM Auction_Listings
-                   WHERE Auction_Title = ?
+                   WHERE Listing_ID = ?
             
-                   ''', (item_name,))
+                   ''', (listing_id,))
     item = cursor.fetchone()
     listing_id = item[1]
     seller_email = item[0]
@@ -457,7 +631,7 @@ def item_bid():
 
     print(current_bid_count)
     return render_template(
-        'listing-details.html',
+        'listing-details-bidder.html',
         item=item,
         bid_count=current_bid_count,
         current_price=highest_bid,

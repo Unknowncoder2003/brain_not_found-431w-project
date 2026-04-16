@@ -188,10 +188,13 @@
                     <div class="col-md-4 mb-3">
                         <div class="card h-100">
                              <div class="card-body text-center">
-                                <p class="card-text">{{ i[2] }}</p>
-                                <a href="/listing-details/{{ i[0] }}/{{ i[1] }}" class="btn btn-primary">
+                                <p class="card-text">{{ i[2] }}, {{ i[3] }}</p>
+                                <form action="/item-details" method="GET">
+                                <input type="hidden" name="item" value="{{ i[1] }}">
+                                <button type="submit" class="btn btn-primary">
                                     View Item
-                                </a>
+                                </button>
+                                </form>
                              </div>
                         </div>
                     </div>
