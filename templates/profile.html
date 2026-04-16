@@ -105,11 +105,20 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/bidder">Dashboard</a>
                 </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="/profile">My Profile</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/my-bids">My Bids</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/support">Contact HelpDesk</a>
+                    <a class="nav-link" href="/watchlist">Watch list</a>
+                </li>
+
+                <li>
+                    <a class="nav-link active" href="/profile">
+                        User Profile
+                    </a>
+                </li>
+                                <li class="nav-item">
+                    <a class="nav-link" href="/helpdesk">Contact HelpDesk</a>
                 </li>
             </ul>
 
@@ -136,7 +145,11 @@
             </div>
 
             {% if message %}
-                <div class="alert alert-info">{{ message }}</div>
+                {% if 'successfully' in message %}
+                    <div class="alert alert-success">{{ message }}</div>
+                {% else %}
+                    <div class="alert alert-danger">{{ message }}</div>
+                {% endif %}
             {% endif %}
 
             <div class="info-note">
@@ -368,7 +381,7 @@
                                            value="{{ user['card_number'] if user and user['card_number'] else '' }}">
                                 {% else %}
                                     <div class="readonly-value">
-                                        {{ user['card_number'] if user and user['card_number'] else 'N/A' }}
+                                        {{ user['masked_card_number'] if user and user['masked_card_number'] else 'N/A' }}
                                     </div>
                                 {% endif %}
                             </td>
@@ -394,6 +407,78 @@
                 </div>
 
                 {% if edit_card %}
+                    <div class="section-actions">
+                        <button type="submit" class="btn btn-success">Save</button>
+                        <a href="/profile" class="btn btn-secondary">Cancel</a>
+                    </div>
+                {% endif %}
+            </form>
+
+            <!-- Password Information -->
+            <div class="section-subtitle">
+                <span>Password Information</span>
+                {% if not edit_password %}
+                    <a href="/profile?edit=password" class="btn btn-sm btn-outline-primary">Edit</a>
+                {% endif %}
+            </div>
+
+            <form method="POST" action="/profile/update_password">
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover profile-table">
+                        <thead>
+                        <tr>
+                            <th style="width: 35%;">Field</th>
+                            <th style="width: 65%;">Value</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>Current Password</td>
+                            <td>
+                                {% if edit_password %}
+                                    <input type="password"
+                                           class="form-control form-control-sm-custom"
+                                           name="old_password"
+                                           placeholder="Enter current password"
+                                           required>
+                                {% else %}
+                                    <div class="readonly-value">********</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>New Password</td>
+                            <td>
+                                {% if edit_password %}
+                                    <input type="password"
+                                           class="form-control form-control-sm-custom"
+                                           name="new_password"
+                                           placeholder="Enter new password"
+                                           required>
+                                {% else %}
+                                    <div class="readonly-value">********</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Confirm New Password</td>
+                            <td>
+                                {% if edit_password %}
+                                    <input type="password"
+                                           class="form-control form-control-sm-custom"
+                                           name="confirm_new_password"
+                                           placeholder="Re-enter new password"
+                                           required>
+                                {% else %}
+                                    <div class="readonly-value">********</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if edit_password %}
                     <div class="section-actions">
                         <button type="submit" class="btn btn-success">Save</button>
                         <a href="/profile" class="btn btn-secondary">Cancel</a>

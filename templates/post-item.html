@@ -36,12 +36,57 @@
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-light">
-    <div class="container">
-        <a class="navbar-brand brand-text" href="/seller">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </a>
-    </div>
-</nav>
+        <div class="container">
+            <a class="navbar-brand brand-text" href="{{ url_for('seller') }}">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="sellerNavbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('seller') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('my_listing') }}">My Listings</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ url_for('post_item') }}">Post New Item</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="settings" role="button" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                            Seller Tools
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="settings">
+                            <a class="dropdown-item" href="{{ url_for('seller_account') }}">Edit Account</a>
+                            <a class="dropdown-item" href="{{ url_for('seller_profile') }}">View Seller Profile</a>
+                            <a class="dropdown-item" href="{{ url_for('my_listing') }}">View Listing History</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{{ url_for('helpdesk') }}">Contact HelpDesk</a>
+                        </div>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav ml-auto align-items-center">
+                    <li class="nav-item">
+                        <span class="nav-link text-muted mb-0">Seller: <strong>{{ email }}</strong></span>
+                    </li>
+                    {% if session.get('roles') and 'bidder' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info ml-2" href="/bidder">Switch to Bidder</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-danger ml-2" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
 <div class="container">
     <div class="row justify-content-center">
