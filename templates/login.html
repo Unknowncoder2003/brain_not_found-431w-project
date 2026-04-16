@@ -1,37 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NittanyAuction Login</title>
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
     <style>
         body {
             background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
         }
+
         .login-wrapper {
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 30px 0;
         }
 
-        .login-card {
-            width: 420px;
-            background: white;
-            border: 1px solid #d9d9d9;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 30px;
+        .login-container {
+            width: 600px;
         }
 
         .brand-title {
             text-align: center;
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         .brand-title .nittany {
@@ -42,14 +40,46 @@
             color: #28a745;
         }
 
-        .subtitle {
+        .login-card {
+            background: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            background-color: #f7f7f7;
+        }
+
+        .tab {
+            width: 50%;
             text-align: center;
+            padding: 14px;
+            text-decoration: none;
             color: #666;
-            margin-bottom: 25px;
+            border-right: 1px solid #ddd;
+        }
+
+        .tab:last-child {
+            border-right: none;
+        }
+
+        .tab.active {
+            background-color: white;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-section {
+            padding: 25px;
         }
 
         .btn-login {
             width: 100%;
+            margin-top: 15px;
             font-weight: 600;
         }
 
@@ -59,49 +89,57 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="login-wrapper">
-    <div class="login-card">
-        <div class="brand-title">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+    <div class="login-wrapper">
+        <div class="login-container">
+
+            <div class="brand-title">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </div>
+
+            <div class="login-card">
+
+                <div class="tab-header">
+                    <div class="tab active">Sign In</div>
+                    <a href="/register" class="tab">Register</a>
+                </div>
+
+                <div class="form-section">
+                    <form action="/login" method="POST">
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                placeholder="Enter your email" required>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="password"
+                                placeholder="Enter your password" required>
+                        </div>
+
+                        {% if error %}
+                        <div class="alert alert-danger mt-3" role="alert">
+                            {{ error }}
+                        </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary btn-login">
+                            Sign In
+                        </button>
+
+                        <div class="bottom-links">
+                            <a href="/">Go Back</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <p class="subtitle">Sign in as Bidder, Seller, or HelpDesk</p>
-
-        <form action="/login" method="POST">
-            <div class="form-group">
-                <label for="email">Email address</label>
-                <input type="email" class="form-control" id="email" name="email"
-                       placeholder="Enter your email" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" class="form-control" id="password" name="password"
-                       placeholder="Enter your password" required>
-            </div>
-
-            {% if error %}
-            <div class="alert alert-danger" role="alert">
-                {{ error }}
-            </div>
-            {% endif %}
-
-            <button type="submit" class="btn btn-primary btn-login">Sign In</button>
-
-            <div class="text-center mt-3">
-                <p class="mb-1">New to NittanyAuction?</p>
-                <a href="/register" class="btn btn-outline-success btn-block">
-                    Create Account
-                </a>
-            </div>
-
-            <div class="bottom-links">
-                <a href="/">Go Back</a>
-            </div>
-        </form>
     </div>
-</div>
 
 </body>
+
 </html>

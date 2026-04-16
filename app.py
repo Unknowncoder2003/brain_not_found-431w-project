@@ -149,6 +149,20 @@ def seller():
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
     result = cursor.fetchone()
     connection.close()
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    # seller balanceinfo
+    cur.execute("""
+                SELECT email, bank_routing_number, bank_account_number, balance
+                FROM Sellers
+                WHERE email = ?
+                """, (user_email,))
+    seller_row = cur.fetchone()
+    if seller_row:
+        balance = seller_row['balance']
+    else:
+        balance = 0
     if result:
         first_name = result[0]
     else:
@@ -185,7 +199,8 @@ def seller():
         first_name=first_name,
         email=user_email,
         avg_rating=avg_rating,
-        rating_count=rating_count
+        rating_count=rating_count,
+        balance = balance
     )
 
 @app.route('/seller-account', methods=['GET', 'POST'])
@@ -932,13 +947,6 @@ def update_password():
             message='Please fill in all password fields.'
         ))
 
-    if new_password != confirm_new_password:
-        return redirect(url_for(
-            'profile',
-            edit='password',
-            message='New passwords do not match.'
-        ))
-
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -968,6 +976,14 @@ def update_password():
             message='Old password is incorrect.'
         ))
 
+    if new_password != confirm_new_password:
+        connection.close()
+        return redirect(url_for(
+            'profile',
+            edit='password',
+            message='New passwords do not match.'
+        ))
+
     new_salt = secrets.token_urlsafe(16)
     new_password_hash = hashlib.sha256(
         (new_password + new_salt).encode('utf-8')
@@ -986,6 +1002,7 @@ def update_password():
         'profile',
         message='Password updated successfully.'
     ))
+
 def generate_address_id():
     return uuid.uuid4().hex[:24]
 

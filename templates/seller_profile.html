@@ -75,7 +75,7 @@
                 <p class="info-row"><strong>Total Ratings:</strong> {{ rating_count }}</p>
                 <p class="info-row"><strong>Current Balance:</strong>
                     {% if balance is not none %}
-                        ${{ balance }}
+                        ${{ "{:,.2f}".format(balance) }}
                     {% else %}
                         N/A
                     {% endif %}
