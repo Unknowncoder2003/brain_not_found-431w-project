@@ -102,6 +102,11 @@
                 <li class="nav-item">
                     <span class="nav-link text-muted mb-0">Seller: <strong>{{ email }}</strong></span>
                 </li>
+                {% if session.get('roles') and 'bidder' in session['roles'] %}
+                <li class="nav-item">
+                    <a class="btn btn-sm btn-outline-info ml-2" href="/bidder">Switch to Bidder</a>
+                </li>
+                {% endif %}
                 <li class="nav-item">
                     <a class="btn btn-sm btn-outline-danger ml-2" href="{{ url_for('logout') }}">Logout</a>
                 </li>

@@ -111,22 +111,31 @@ def find_user_html(email):
     connection = get_connection()
     cursor = connection.cursor()
 
+    roles = []
+    
     cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (email,))
     if cursor.fetchone():
-        connection.close()
-        return "helpdesk"
+        roles.append('helpdesk')
 
     cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (email,))
     if cursor.fetchone():
-        connection.close()
-        return "seller"
+        roles.append('seller')
 
     cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (email,))
     if cursor.fetchone():
-        connection.close()
-        return "bidder"
+        roles.append('bidder')
 
     connection.close()
+    
+    session['roles'] = roles
+
+    if 'helpdesk' in roles:
+        return "helpdesk"
+    if 'seller' in roles:
+        return "seller"
+    if 'bidder' in roles:
+        return "bidder"
+        
     return "index"
 
 
@@ -440,7 +449,6 @@ def item_bid():
                    ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
-    # 新增：查 seller 平均评分，方便详情页显示
     ensure_seller_ratings_table()
     cursor.execute("""
                    SELECT AVG(rating), COUNT(*)
