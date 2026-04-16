@@ -362,7 +362,7 @@ def get_items(category_name):
     placeholders = ', '.join(['?'] * len(category_list))
     #query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
     query = f'''
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
         WHERE Category IN ({placeholders})
     '''
@@ -377,7 +377,7 @@ def get_all_items():
     #items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
     #data = items.fetchall()
     cursor.execute('''
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
     ''')
     data = cursor.fetchall()
@@ -391,7 +391,7 @@ def search_items(search_term):
     keyword = f"%{search_term}%"
 
     cursor.execute("""
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
         WHERE Auction_Title LIKE ?
            OR Product_Name LIKE ?
