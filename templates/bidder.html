@@ -89,17 +89,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/my-bids">My Bids</a>
                 </li>
-                <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="exampleDropdown"
-                   role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Bidder Tools
-                </a>
-                <div class="dropdown-menu" aria-labelledby="exampleDropdown">
-                    <a class="dropdown-item" href="/past">Past Bids</a>
-                    <a class="dropdown-item" href="/watchlist">Watch list</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="/support">Contact HelpDesk</a>
-                </div>
+                <li class="nav-item">
+                    <a class="nav-link" href="/watchlist">Watch list</a>
+                </li>
+                <li class="nav-item">
+                        <a class="nav-link" href="/support">Contact HelpDesk</a>
                 </li>
             </ul>
 
@@ -139,19 +133,17 @@
                     {% endif %}
                 </li>
             {% endmacro %}
-
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="/bidder">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/my-bids">My Bids</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/watchlist">Watch List</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/support">Contact HelpDesk</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown"
+                       role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        All...
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                        {% for cate in categories %}
+                            {{ render_category(cate) }}
+                        {% endfor %}
+                    </ul>
                 </li>
             </ul>
 
