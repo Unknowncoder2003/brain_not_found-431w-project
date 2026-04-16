@@ -608,7 +608,7 @@ def register_page():
 
 
 @app.route('/my-bids', methods=['GET'])
-def my_bid_page():
+def my_bids():
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
@@ -617,34 +617,30 @@ def my_bid_page():
     # Use sqlite3.Row to access columns by their database names
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
-
     # This query retrieves the user's bid alongside the current highest bid for that item
     cursor.execute('''
                    SELECT A.Auction_Title,
                           A.Product_Name,
-                          B.Bid_Price,
-                          A.Status                              AS Auction_Status,
+                          B.bid_price,
+                          A.Status AS Auction_Status,
                           (SELECT MAX(Bid_Price)
                            FROM Bids
-                           WHERE Listing_ID = B.Listing_ID
-                             AND Seller_Email = B.Seller_Email) AS Current_High_Bid
-                   FROM Bids B
-                            JOIN Auction_Listings A ON B.Listing_ID = A.Listing_ID AND B.Seller_Email = A.Seller_Email
-                   WHERE B.Bidder_Email = ?
-                   ORDER BY B.Bid_ID DESC
+                           WHERE Listing_ID = B.listing_id) AS Current_High_Bid
+                   FROM Bids B JOIN Auction_Listings A ON B.listing_id = A.Listing_ID
+                   WHERE B.bidder_email = ?
+                   ORDER BY B.bid_id DESC
                    ''', (user_email,))
 
     raw_results = cursor.fetchall()
     connection.close()
-
     # Determine the status label for each bid
     processed_bids = []
     for row in raw_results:
         bid = dict(row)
-        user_price = bid['Bid_Price']
+        user_price = bid['bid_price']
         max_price = bid['Current_High_Bid']
         auction_status = bid['Auction_Status']
-
+        print(user_price, max_price, auction_status)
         if user_price < max_price:
             bid['display_status'] = "Outbid"
             bid['status_color'] = "text-danger"
@@ -677,7 +673,6 @@ def my_listing():
     ''', (user_email,))
     result = cursor.fetchall()
     connection.close()
-
     return render_template('my-listings.html', email=user_email, listings=result)
 
 
