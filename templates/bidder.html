@@ -155,7 +155,12 @@
             </ul>
 
             <form class="form-inline mr-auto" action="/bidder" method="GET">
-                <input class="form-control mr-sm-2" type="search" name="search" placeholder="Search" aria-label="Search">
+                <input class="form-control mr-sm-2"
+                       type="search"
+                       name="search"
+                       placeholder="Search"
+                       aria-label="Search"
+                       value="{{ search_term }}">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
             </form>
         </div>
@@ -185,6 +190,13 @@
             <div class="row">
 
                 <!-- loop in order to get the items -->
+                {% if items %}
+                    {% for i in items %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                             <div class="card-body text-center">
+                                <p class="card-text">{{ i[2] }}</p>
+                                <a href="/listing-details/{{ i[0] }}/{{ i[1] }}" class="btn btn-primary">
                 {% for i in items %}
                 <div class="col-md-4">
                     <div class="card">
@@ -196,17 +208,20 @@
                                 <input type="hidden" name="item" value="{{ i[1] }}">
                                 <button type="submit" class="btn btn-primary">
                                     View Item
-                                </button>
-                            </form>
+                                </a>
+                             </div>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-warning text-center">
+                            No matching items found.
+                        </div>
+                    </div>
+                {% endif %}
 
-        </div>
-    </div>
-</div>
+
 
 <!-- script for dropdown settings and columns and stuff-->
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>

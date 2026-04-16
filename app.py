@@ -40,7 +40,6 @@ def ensure_seller_ratings_table():
     connection.commit()
     connection.close()
 
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -300,14 +299,22 @@ def bidder():
     cate = get_category_tree()
 
     category = request.args.get('category')
-    if category:
-        items = get_items(category)
+    search_term = request.args.get('search')
 
+    if search_term and search_term.strip():
+        items = search_items(search_term.strip())
+    elif category:
+        items = get_items(category)
     else:
         items = get_all_items()
 
-    return render_template('bidder.html', first_name=fname, categories=cate, items=items)
-
+    return render_template(
+        'bidder.html',
+        first_name=fname,
+        categories=cate,
+        items=items,
+        search_term=search_term if search_term else ""
+    )
 
 def categories():
     connection = get_connection()
@@ -354,24 +361,50 @@ def get_items(category_name):
     cursor = connection.cursor()
     placeholders = ', '.join(['?'] * len(category_list))
     query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
+    query = f'''
+        SELECT Seller_Email, Listing_ID, Auction_Title
+        FROM Auction_Listings
+        WHERE Category IN ({placeholders})
+    '''
     cursor.execute(query, category_list)
     data = cursor.fetchall()
     connection.close()
     return data
-
 
 def get_all_items():
     connection = get_connection()
     cursor = connection.cursor()
     items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
     data = items.fetchall()
+    cursor.execute('''
+        SELECT Seller_Email, Listing_ID, Auction_Title
+        FROM Auction_Listings
+    ''')
+    data = cursor.fetchall()
+    connection.close()
+    return data
+
+def search_items(search_term):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    keyword = f"%{search_term}%"
+
+    cursor.execute("""
+        SELECT Seller_Email, Listing_ID, Auction_Title
+        FROM Auction_Listings
+        WHERE Auction_Title LIKE ?
+           OR Product_Name LIKE ?
+    """, (keyword, keyword))
+
+    data = cursor.fetchall()
     connection.close()
     return data
 
 @app.route('/item-details', methods=['POST', 'GET'])
 
 def item_bid():
-    listing_id = request.args.get('item')
+    item_name = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -387,9 +420,9 @@ def item_bid():
                           Max_bids,
                           Status
                    FROM Auction_Listings
-                   WHERE Listing_ID = ?
+                   WHERE Auction_Title = ?
             
-                   ''', (listing_id,))
+                   ''', (item_name,))
     item = cursor.fetchone()
     listing_id = item[1]
     seller_email = item[0]
