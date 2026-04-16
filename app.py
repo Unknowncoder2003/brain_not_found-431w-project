@@ -524,12 +524,15 @@ def get_all_subcategories(target_category):
 
 
 def get_items(category_name):
+    """fetch items from the selected category AND all subcategories."""
+    # Get the full list of related categories
     category_list = get_all_subcategories(category_name)
     connection = get_connection()
     cursor = connection.cursor()
     placeholders = ', '.join(['?'] * len(category_list))
+    #query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
     query = f'''
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
         WHERE Category IN ({placeholders})
     '''
@@ -541,8 +544,10 @@ def get_items(category_name):
 def get_all_items():
     connection = get_connection()
     cursor = connection.cursor()
+    #items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
+    #data = items.fetchall()
     cursor.execute('''
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
     ''')
     data = cursor.fetchall()
@@ -556,7 +561,7 @@ def search_items(search_term):
     keyword = f"%{search_term}%"
 
     cursor.execute("""
-        SELECT Seller_Email, Listing_ID, Auction_Title
+        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
         WHERE Auction_Title LIKE ?
            OR Product_Name LIKE ?
@@ -567,9 +572,8 @@ def search_items(search_term):
     return data
 
 @app.route('/item-details', methods=['POST', 'GET'])
-
 def item_bid():
-    item_name = request.args.get('item')
+    listing_id = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -585,9 +589,9 @@ def item_bid():
                           Max_bids,
                           Status
                    FROM Auction_Listings
-                   WHERE Auction_Title = ?
+                   WHERE Listing_ID = ?
             
-                   ''', (item_name,))
+                   ''', (listing_id,))
     item = cursor.fetchone()
     listing_id = item[1]
     seller_email = item[0]
@@ -627,7 +631,7 @@ def item_bid():
 
     print(current_bid_count)
     return render_template(
-        'listing-details.html',
+        'listing-details-bidder.html',
         item=item,
         bid_count=current_bid_count,
         current_price=highest_bid,

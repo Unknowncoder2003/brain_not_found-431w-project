@@ -114,12 +114,6 @@
                         <div class="label-text">Current High Bid</div>
                         <div class="data-value h4 font-weight-bold text-primary">
                             ${{ "{:,.2f}".format(current_price) }}
-
-                            {% if current_price < item[7] %}
-                                <span class="badge badge-warning ml-1" style="font-size: 0.7rem; vertical-align: middle;">RESERVE NOT MET</span>
-                            {% else %}
-                                <span class="badge badge-success ml-1" style="font-size: 0.7rem; vertical-align: middle;">RESERVE MET</span>
-                            {% endif %}
                         </div>
 
                         <!-- <div class="label-text">Reserve Price</div> -->
@@ -137,9 +131,9 @@
                         <div class="mt-4">
                             {% if item[9] == 1 %}
                                 {% if item[9] == 1 and bid_count != item[8]%}
-                                    <button type="button" class="btn btn-block btn-outline-danger" data-toggle="modal" >
+                                    <a type="button" class="btn btn-block btn-outline-danger" data-toggle="modal" methods = "POST" >
                                         Bid
-                                    </button>
+                                    </a>
                                 {% endif %}
                             {% endif %}
 
