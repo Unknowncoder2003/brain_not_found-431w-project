@@ -6,14 +6,14 @@ from unittest import result
 
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+import uuid
 
 from passwordHasher import hashed_password
 
-# Alias for sqlite3 to preserve existing sql.connect(...) usage
 sql = sqlite3
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # Required for session support
+app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the session (the memory) to work
 
 DB_NAME = 'database.db'
 host = 'http://127.0.0.1:5000/'
@@ -25,10 +25,6 @@ def get_connection():
 
 
 def ensure_seller_ratings_table():
-    """
-    Ensure the seller_ratings table exists.
-    auction_id is UNIQUE to prevent duplicate ratings for the same transaction.
-    """
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute("""
@@ -43,7 +39,6 @@ def ensure_seller_ratings_table():
     """)
     connection.commit()
     connection.close()
-
 
 @app.route('/')
 def index():
@@ -71,6 +66,7 @@ def valid_email_password(email, password):
 
 @app.route('/login', methods=['POST', 'GET'])
 def authenticate():
+    error = None
     error = request.args.get('error')
 
     if request.method == 'POST':
@@ -303,22 +299,13 @@ def bidder():
     cate = get_category_tree()
 
     category = request.args.get('category')
-    search_term = request.args.get('search')
-
-    if search_term:
-        items = search_items(search_term)
-    elif category:
+    if category:
         items = get_items(category)
+
     else:
         items = get_all_items()
 
-    return render_template(
-        'bidder.html',
-        first_name=fname,
-        categories=cate,
-        items=items,
-        search_term=search_term if search_term else ""
-    )
+    return render_template('bidder.html', first_name=fname, categories=cate, items=items)
 
 
 def categories():
@@ -329,42 +316,53 @@ def categories():
     return top_categories
 
 
-def get_items(category_name):
+def get_all_subcategories(target_category):
+    """
+    Finds the target category and all its children/grandchildren
+    to create a full list of category names for filtering.
+    """
     connection = get_connection()
     cursor = connection.cursor()
-    items = cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE Category = ?', (category_name,))
-    data = items.fetchall()
+    cursor.execute('SELECT category_name, parent_category FROM Categories')
+    rows = cursor.fetchall()
+    connection.close()
+    # Build a simple mapping of Parent -> [Children]
+    adj_list = {}
+    for name, parent in rows:
+        if parent not in adj_list:
+            adj_list[parent] = []
+        adj_list[parent].append(name)
+    # BFS to find all subcategories
+    all_names = [target_category]
+    queue = [target_category]
+    while queue:
+        current = queue.pop(0)
+        if current in adj_list:
+            for child in adj_list[current]:
+                all_names.append(child)
+                queue.append(child)
+    print(f"debug {all_names}")
+    return all_names
+
+
+def get_items(category_name):
+    """fetch items from the selected category AND all subcategories."""
+    # Get the full list of related categories
+    category_list = get_all_subcategories(category_name)
+    connection = get_connection()
+    cursor = connection.cursor()
+    placeholders = ', '.join(['?'] * len(category_list))
+    query = f'SELECT Auction_Title FROM Auction_Listings WHERE Category IN ({placeholders})'
+    cursor.execute(query, category_list)
+    data = cursor.fetchall()
     connection.close()
     return data
-
 
 def get_all_items():
     connection = get_connection()
     cursor = connection.cursor()
     items = cursor.execute('SELECT DISTINCT Auction_Title FROM Auction_Listings')
     data = items.fetchall()
-    connection.close()
-    return data
-
-
-def search_items(search_term):
-    """Search items by auction title, product name, description, category, or seller email."""
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    keyword = f"%{search_term}%"
-
-    cursor.execute("""
-        SELECT DISTINCT Auction_Title
-        FROM Auction_Listings
-        WHERE Auction_Title LIKE ?
-           OR Product_Name LIKE ?
-           OR Product_Description LIKE ?
-           OR Category LIKE ?
-           OR Seller_Email LIKE ?
-    """, (keyword, keyword, keyword, keyword, keyword))
-
-    data = cursor.fetchall()
     connection.close()
     return data
 
@@ -561,7 +559,7 @@ def register_page():
                 request.form['first_name'],
                 request.form['last_name'],
                 request.form['age'],
-                request.form['home_address_id'],
+                home_address_id,
                 request.form['major']
             ))
 
