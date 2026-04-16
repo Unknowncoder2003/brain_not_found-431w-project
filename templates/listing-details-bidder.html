@@ -61,7 +61,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-light">
     <div class="container">
-        <a class="navbar-brand brand-text" href="/seller">
+        <a class="navbar-brand brand-text" href="/bidder">
             <span class="nittany">Nittany</span><span class="auction">Auction</span>
         </a>
     </div>
@@ -73,7 +73,7 @@
 
             <div class="item-header d-flex justify-content-between align-items-start">
                 <div>
-                    <a href="/my-listings" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1;">&larr; Back to My Listings</a>
+                    <a href="/my-bids" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1;">&larr; Back to My Bids</a>
                     <h1 class="h3 mb-1">{{ item[3] }}</h1> <p class="text-muted">Listing ID: #{{ item[1] }} | Seller: {{ item[0] }}</p>
                 </div>
 
@@ -122,8 +122,8 @@
                             {% endif %}
                         </div>
 
-                        <div class="label-text">Reserve Price</div>
-                        <div class="data-value text-muted font-weight-bold">${{ "{:,.2f}".format(item[7]) }}</div>
+                        <!-- <div class="label-text">Reserve Price</div> -->
+                        <!-- <div class="data-value text-muted font-weight-bold">${{ "{:,.2f}".format(item[7]) }}</div> -->
 
                         <div class="label-text">Auction Progress</div>
                         <div class="progress mb-2" style="height: 12px; border-radius: 10px;">
@@ -136,8 +136,8 @@
 
                         <div class="mt-4">
                             {% if item[9] == 1 %}
-                                {% if item[9] == 1 %}
-                                    <button type="button" class="btn btn-block btn-outline-danger" data-toggle="modal" data-target="#confirmDeactivate">
+                                {% if item[9] == 1 and bid_count != item[8]%}
+                                    <button type="button" class="btn btn-block btn-outline-danger" data-toggle="modal" >
                                         Bid
                                     </button>
                                 {% endif %}
@@ -152,30 +152,7 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="confirmDeactivate" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalLabel" style="color: #1e4fa1;">Confirm Action</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to take <strong>"{{ item[3] }}"</strong> off the market?
-        <br><br>
-          <p class="text-muted small">This will change the status to <strong>Inactive</strong>. You are <strong>not</strong> allowed to change it back to <strong>Active</strong>. You can relist it later from your dashboard.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 
-        <form action="/deactivate-listing/{{ item[0] }}/{{ item[1] }}" method="POST">
-            <button type="submit" class="btn btn-danger">Yes, Take Off Market</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
