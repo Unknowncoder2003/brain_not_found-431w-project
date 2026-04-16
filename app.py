@@ -714,8 +714,131 @@ def profile():
         edit_card=edit_card
     )
 
+@app.route('/profile/update_basic', methods=['POST'])
+def update_basic():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    first_name = request.form.get('first_name')
+    last_name = request.form.get('last_name')
+    age = request.form.get('age')
+    major = request.form.get('major')
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        UPDATE Bidders
+        SET first_name = ?, last_name = ?, age = ?, major = ?
+        WHERE email = ?
+    """, (first_name, last_name, age, major, user_email))
+
+    connection.commit()
+    connection.close()
+
+    return redirect('/profile')
+
+
+@app.route('/profile/update_address', methods=['POST'])
+def update_address():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    street = request.form.get('street', '').strip()
+    zipcode = request.form.get('zipcode', '').strip()
+
+    street_num = ''
+    street_name = street
+
+    if street:
+        parts = street.split(' ', 1)
+        if len(parts) == 2:
+            street_num = parts[0]
+            street_name = parts[1]
+        else:
+            street_name = parts[0]
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT home_address_id FROM Bidders WHERE email = ?", (user_email,))
+    result = cursor.fetchone()
+
+    if result and result[0]:
+        address_id = result[0]
+        cursor.execute("""
+            UPDATE Address
+            SET street_num = ?, street_name = ?, zipcode = ?
+            WHERE address_id = ?
+        """, (street_num, street_name, zipcode, address_id))
+    else:
+        address_id = generate_address_id()
+        cursor.execute("""
+            INSERT INTO Address (address_id, zipcode, street_num, street_name)
+            VALUES (?, ?, ?, ?)
+        """, (address_id, zipcode, street_num, street_name))
+
+        cursor.execute("""
+            UPDATE Bidders
+            SET home_address_id = ?
+            WHERE email = ?
+        """, (address_id, user_email))
+
+    connection.commit()
+    connection.close()
+
+    return redirect('/profile')
+
+
+@app.route('/profile/update_card', methods=['POST'])
+def update_card():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    card_type = request.form.get('card_type')
+    card_number = request.form.get('card_number')
+    card_exp = request.form.get('card_exp', '').strip()
+
+    expire_month = None
+    expire_year = None
+
+    if '/' in card_exp:
+        parts = card_exp.split('/')
+        if len(parts) == 2:
+            expire_month = parts[0].strip()
+            expire_year = parts[1].strip()
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT 1 FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
+    existing = cursor.fetchone()
+
+    if existing:
+        cursor.execute("""
+            UPDATE Credit_Cards
+            SET card_type = ?, credit_card_num = ?, expire_month = ?, expire_year = ?
+            WHERE Owner_email = ?
+        """, (card_type, card_number, expire_month, expire_year, user_email))
+    else:
+        cursor.execute("""
+            INSERT INTO Credit_Cards (Owner_email, credit_card_num, card_type, expire_month, expire_year)
+            VALUES (?, ?, ?, ?, ?)
+        """, (user_email, card_number, card_type, expire_month, expire_year))
+
+    connection.commit()
+    connection.close()
+
+    return redirect('/profile')
+
+
 def generate_address_id():
     return uuid.uuid4().hex[:24]
+
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
