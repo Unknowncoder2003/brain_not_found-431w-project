@@ -213,6 +213,16 @@
                         </div>
                     </div>
                 {% endif %}
+   <div class="d-flex justify-content-center mt-4">
+
+    {% for p in range(1, total_pages + 1) %}
+        <a href="/bidder?page={{ p }}"
+           class="btn btn-sm {% if p == page %}btn-primary{% else %}btn-outline-primary{% endif %} mx-1">
+            {{ p }}
+        </a>
+    {% endfor %}
+
+    </div>
 
 
 

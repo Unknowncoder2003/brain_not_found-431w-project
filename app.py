@@ -501,7 +501,7 @@ def bidder():
     cursor = connection.cursor()
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
     result = cursor.fetchone()
-    connection.close()
+
 
     if result:
         fname = result[0]
@@ -519,13 +519,33 @@ def bidder():
         items = get_items(category)
     else:
         items = get_all_items()
+    page = request.args.get('page', 1, type=int)
+    per_page = 30
 
+    offset = (page - 1) * per_page
+
+    cursor.execute("""
+                   SELECT *
+                   FROM Auction_Listings LIMIT ?
+                   OFFSET ?
+                   """, (per_page, offset))
+
+    items = cursor.fetchall()
+
+    # get total count for page buttons
+    cursor.execute("SELECT COUNT(*) FROM Auction_Listings")
+    total_items = cursor.fetchone()[0]
+
+    total_pages = (total_items + per_page - 1) // per_page
+    connection.close()
     return render_template(
         'bidder.html',
         first_name=fname,
         categories=cate,
         items=items,
-        search_term=search_term if search_term else ""
+        search_term=search_term if search_term else "",
+        page=page,
+        total_pages=total_pages
     )
 
 def categories():
@@ -683,7 +703,7 @@ def item_bid():
         ''', (user_email, seller_email, listing_id))
         if cursor.fetchone():
             in_watchlist = True
-    
+    #check for consecutive bidding
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
         error = None
