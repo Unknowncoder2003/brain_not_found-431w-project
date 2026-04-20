@@ -340,6 +340,16 @@
                                required>
                     </div>
 
+                    <div class="form-check mt-2">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="showPasswords"
+                               onclick="togglePasswords()">
+                        <label class="form-check-label" for="showPasswords">
+                            Show Passwords
+                        </label>
+                    </div>
+
                     {% if error %}
                     <div class="alert alert-danger">{{ error }}</div>
                     {% endif %}
@@ -473,7 +483,19 @@ document.getElementById("register-form").addEventListener("submit", function(e) 
         alert("Customer service phone number must be in the format XXX-XXX-XXXX.");
     }
 });
+
+function togglePasswords() {
+    const passwordField = document.getElementById("password");
+    const confirmField = document.getElementById("confirm_password");
+
+    const type = passwordField.type === "password" ? "text" : "password";
+
+    passwordField.type = type;
+    confirmField.type = type;
+}
 </script>
+
+
 
 </body>
 </html>
