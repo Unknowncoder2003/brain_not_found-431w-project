@@ -402,6 +402,23 @@
                                 {% endif %}
                             </td>
                         </tr>
+
+
+                        <tr>
+                            <td>Security Code</td>
+                            <td>
+                                {% if edit_card %}
+                                    <input type="text"
+                                           class="form-control form-control-sm-custom"
+                                           name="security_code"
+                                           value="{{ user['security_code'] if user and user['security_code'] else '' }}">
+                                {% else %}
+                                    <div class="readonly-value">
+                                        {{ user['masked_security_code'] if user and user['masked_security_code'] else 'N/A' }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
                         </tbody>
                     </table>
                 </div>
