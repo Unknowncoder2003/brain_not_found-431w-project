@@ -153,6 +153,11 @@
                                           </div>
                                           <form method="POST">
                                           <div class="modal-body">
+                                              {% if error %}
+                                                  <div class="alert alert-danger">
+                                                    {{ error }}
+                                                  </div>
+                                              {% endif %}
 
                                               <div class="form-group">
                                                 <label for="bid_price" class="col-form-label">Price:</label>
@@ -204,5 +209,15 @@
     $('#myInput').trigger('focus')
   })
 </script>
+
+{% if error %}
+<script>
+  $(document).ready(function () {
+    $('#exampleModal').modal('show');
+  });
+</script>
+{% endif %}
+
+</body>
 </body>
 </html>
