@@ -714,7 +714,7 @@ def item_bid():
     if request.method == 'POST':
         error = None
         bid_price = request.form.get('bid_price')
-        if int(bid_price) > highest_bid:
+        if float(bid_price) > highest_bid + 1:
             connection = get_connection()
             cursor = connection.cursor()
             current_bid_count += 1
