@@ -40,6 +40,23 @@ def ensure_seller_ratings_table():
     connection.commit()
     connection.close()
 
+def ensure_watchlist_table():
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Watchlist (
+            Bidder_Email TEXT NOT NULL,
+            Seller_Email TEXT NOT NULL,
+            Listing_ID INTEGER NOT NULL,
+            Added_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (Bidder_Email, Seller_Email, Listing_ID),
+            FOREIGN KEY (Bidder_Email) REFERENCES Bidders(email) ON DELETE CASCADE,
+            FOREIGN KEY (Seller_Email, Listing_ID) REFERENCES Auction_Listings(Seller_Email, Listing_ID) ON DELETE CASCADE
+        )
+    """)
+    connection.commit()
+    connection.close()
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -792,7 +809,8 @@ def profile():
             A.zipcode AS zipcode,
             C.card_type AS card_type,
             C.credit_card_num AS card_number,
-            (C.expire_month || '/' || C.expire_year) AS card_exp
+            (C.expire_month || '/' || C.expire_year) AS card_exp,
+            C.security_code AS security_code
         FROM Bidders B
         LEFT JOIN Address A
             ON B.home_address_id = A.address_id
@@ -815,6 +833,14 @@ def profile():
                 user['masked_card_number'] = card_number
         else:
             user['masked_card_number'] = None
+
+        security_code = user.get('security_code')
+        if security_code:
+            security_code = str(security_code)
+            user['masked_security_code'] = '*' * len(security_code)
+        else:
+            user['masked_security_code'] = None
+
     print("DEBUG user =", dict(user) if user else None)
     connection.close()
 
@@ -915,6 +941,7 @@ def update_card():
     card_type = request.form.get('card_type')
     card_number = request.form.get('card_number')
     card_exp = request.form.get('card_exp', '').strip()
+    security_code = request.form.get('security_code')
 
     expire_month = None
     expire_year = None
@@ -933,15 +960,20 @@ def update_card():
 
     if existing:
         cursor.execute("""
-            UPDATE Credit_Cards
-            SET card_type = ?, credit_card_num = ?, expire_month = ?, expire_year = ?
-            WHERE Owner_email = ?
-        """, (card_type, card_number, expire_month, expire_year, user_email))
+                       UPDATE Credit_Cards
+                       SET card_type       = ?,
+                           credit_card_num = ?,
+                           expire_month    = ?,
+                           expire_year     = ?,
+                           security_code   = ?
+                       WHERE Owner_email = ?
+                       """, (card_type, card_number, expire_month, expire_year, security_code, user_email))
     else:
         cursor.execute("""
-            INSERT INTO Credit_Cards (Owner_email, credit_card_num, card_type, expire_month, expire_year)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_email, card_number, card_type, expire_month, expire_year))
+                       INSERT INTO Credit_Cards (Owner_email, credit_card_num, card_type, expire_month, expire_year,
+                                                 security_code)
+                       VALUES (?, ?, ?, ?, ?, ?)
+                       """, (user_email, card_number, card_type, expire_month, expire_year, security_code))
 
     connection.commit()
     connection.close()
@@ -1420,8 +1452,90 @@ def post_item():
 
     category_tree = get_category_tree()
     return render_template('post-item.html', category_tree=category_tree,email = user_email)
+@app.route('/watchlist', methods=['GET'])
+def watchlist():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT W.Seller_Email, W.Listing_ID, W.Added_At, 
+               A.Auction_Title, A.Product_Name, A.Status 
+        FROM Watchlist W
+        JOIN Auction_Listings A ON W.Listing_ID = A.Listing_ID AND W.Seller_Email = A.Seller_Email
+        WHERE W.Bidder_Email = ?
+        ORDER BY W.Added_At DESC
+    """, (user_email,))
+    
+    saved_items = cursor.fetchall()
+    connection.close()
+
+    processed_items = []
+    for row in saved_items:
+        item = dict(row)
+        
+        conn2 = get_connection()
+        cur2 = conn2.cursor()
+        cur2.execute("SELECT MAX(Bid_price) FROM Bids WHERE listing_id = ?", (item['Listing_ID'],))
+        highest = cur2.fetchone()[0]
+        item['Current_High_Bid'] = highest if highest else 0
+        conn2.close()
+        
+        processed_items.append(item)
+
+    return render_template('watchlist.html', listings=processed_items, email=user_email)
+
+@app.route('/watchlist/add', methods=['POST'])
+def add_to_watchlist():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    seller_email = request.form.get('seller_email')
+    listing_id = request.form.get('listing_id')
+
+    if seller_email and listing_id:
+        try:
+            connection = get_connection()
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO Watchlist (Bidder_Email, Seller_Email, Listing_ID)
+                VALUES (?, ?, ?)
+            """, (user_email, seller_email, listing_id))
+            connection.commit()
+            connection.close()
+        except sqlite3.IntegrityError:
+            pass
+
+    return redirect(url_for('watchlist'))
+
+@app.route('/watchlist/remove', methods=['POST'])
+def remove_from_watchlist():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    seller_email = request.form.get('seller_email')
+    listing_id = request.form.get('listing_id')
+
+    if seller_email and listing_id:
+        connection = get_connection()
+        cursor = connection.cursor()
+        cursor.execute("""
+            DELETE FROM Watchlist 
+            WHERE Bidder_Email = ? AND Seller_Email = ? AND Listing_ID = ?
+        """, (user_email, seller_email, listing_id))
+        connection.commit()
+        connection.close()
+
+    return redirect(url_for('watchlist'))
 
 
 if __name__ == "__main__":
     ensure_seller_ratings_table()
+    ensure_watchlist_table()
     app.run()
