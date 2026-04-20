@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NittanyAuction Login</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body {
             background-color: #f2f2f2;
@@ -117,23 +117,21 @@
 
                         <div class="form-group mt-3">
                             <label for="password">Password</label>
-                            <input type="password"
-                                   class="form-control"
-                                   id="password"
-                                   name="password"
-                                   placeholder="Enter your password"
-                                   required>
+                            <div class="input-group">
+                                <input type="password"
+                                       class="form-control"
+                                       id="password"
+                                       name="password"
+                                       required>
+
+                                <div class="input-group-append">
+                                    <span class="input-group-text" onclick="togglePassword('password', this)">
+                                        <i class="fa fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="form-check mt-2">
-                            <input type="checkbox"
-                                   class="form-check-input"
-                                   id="showPassword"
-                                   onclick="togglePassword()">
-                            <label class="form-check-label" for="showPassword">
-                                Show Password
-                            </label>
-                        </div>
 
                         {% if error %}
                         <div class="alert alert-danger mt-3" role="alert">
@@ -159,13 +157,18 @@
 </html>
 
 <script>
-function togglePassword() {
-    const passwordField = document.getElementById("password");
+function togglePassword(fieldId, iconSpan) {
+    const field = document.getElementById(fieldId);
+    const icon = iconSpan.querySelector("i");
 
-    if (passwordField.type === "password") {
-        passwordField.type = "text";
+    if (field.type === "password") {
+        field.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
     } else {
-        passwordField.type = "password";
+        field.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
     }
 }
 </script>
