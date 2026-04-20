@@ -651,7 +651,6 @@ def item_bid():
                    ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
-    ensure_seller_ratings_table()
     cursor.execute("""
                    SELECT AVG(rating), COUNT(*)
                    FROM seller_ratings
@@ -1255,7 +1254,6 @@ def listing_details(seller_email, listing_id):
     ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
-    ensure_seller_ratings_table()
     cursor.execute("""
         SELECT AVG(rating), COUNT(*)
         FROM seller_ratings
@@ -1526,7 +1524,4 @@ def remove_from_watchlist():
 
 
 if __name__ == "__main__":
-    ensure_seller_ratings_table()
-    ensure_watchlist_table()
-    ensure_max_bids_trigger()
     app.run()
