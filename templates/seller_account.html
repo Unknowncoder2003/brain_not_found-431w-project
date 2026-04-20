@@ -174,30 +174,46 @@
 
                     <div class="form-group">
                         <label for="bank_routing_number">Bank Routing Number</label>
-                        <input type="text"
-                               class="form-control editable-field"
-                               id="bank_routing_number"
-                               name="bank_routing_number"
-                               value="{{ seller.bank_routing_number if seller else '' }}"
-                               placeholder="0011-4959-0"
-                               inputmode="numeric"
-                               maxlength="11"
-                               readonly>
-                        <div class="hint-text">Format: 0011-4959-0</div>
+                        <div class="input-group">
+                            <input type="password"
+                                   class="form-control editable-field"
+                                   id="bank_routing_number"
+                                   name="bank_routing_number"
+                                   value="{{ seller.bank_routing_number if seller else '' }}"
+                                   placeholder="0011-4959-0"
+                                   inputmode="numeric"
+                                   maxlength="11"
+                                   readonly>
+                            <div class="input-group-append">
+                                <span class="input-group-text password-toggle"
+                                      onclick="togglePassword('bank_routing_number', this)">
+                                    <i class="fa fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="hint-text">Format: 0000-0000-0</div>
                     </div>
 
                     <div class="form-group">
                         <label for="bank_account_number">Bank Account Number</label>
-                        <input type="text"
-                               class="form-control editable-field"
-                               id="bank_account_number"
-                               name="bank_account_number"
-                               value="{{ seller.bank_account_number if seller else '' }}"
-                               placeholder="Enter 8-digit account number"
-                               inputmode="numeric"
-                               maxlength="8"
-                               readonly>
-                        <div class="hint-text">Format: 8 digits, for example 31923667</div>
+                        <div class="input-group">
+                            <input type="password"
+                                   class="form-control editable-field"
+                                   id="bank_account_number"
+                                   name="bank_account_number"
+                                   value="{{ seller.bank_account_number if seller else '' }}"
+                                   placeholder="Enter 8-digit account number"
+                                   inputmode="numeric"
+                                   maxlength="8"
+                                   readonly>
+                            <div class="input-group-append">
+                                <span class="input-group-text password-toggle"
+                                      onclick="togglePassword('bank_account_number', this)">
+                                    <i class="fa fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="hint-text">Format: 8 digits, for example 12345678</div>
                     </div>
                 </div>
 
@@ -274,11 +290,11 @@
                                    id="customer_service_phone_number"
                                    name="customer_service_phone_number"
                                    value="{{ local_vendor.customer_service_phone_number if local_vendor else '' }}"
-                                   placeholder="555-123-4567"
+                                   placeholder="XXX-XXX-XXXX"
                                    inputmode="numeric"
                                    maxlength="12"
                                    readonly>
-                            <div class="hint-text">Format: 555-123-4567</div>
+                            <div class="hint-text">Format: XXX-XXX-XXXX</div>
                         </div>
                     </div>
                 </div>
@@ -370,7 +386,9 @@ document.getElementById("customer_service_phone_number").addEventListener("input
 });
 
 document.getElementById("bank_routing_number").addEventListener("input", function(e) {
-    e.target.value = formatRoutingNumber(e.target.value);
+    const isVisible = e.target.type === "text";
+    const formatted = formatRoutingNumber(e.target.value);
+    e.target.value = formatted;
 });
 
 document.getElementById("bank_account_number").addEventListener("input", function(e) {
@@ -408,7 +426,7 @@ document.getElementById("seller-account-form").addEventListener("submit", functi
 
     if (routingDigits.length !== 9) {
         e.preventDefault();
-        alert("Routing number must contain exactly 9 digits in the format 0011-4959-0.");
+        alert("Routing number must contain exactly 9 digits in the format 0000-0000-0.");
         return;
     }
 
