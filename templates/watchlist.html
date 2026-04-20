@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Watchlist | NittanyAuction</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
+    <style>
+        body {
+            background-color: #f2f2f2;
+        }
+
+        .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
+        }
+
+        .brand-text .nittany {
+            color: #1e4fa1;
+            font-weight: bold;
+        }
+
+        .brand-text .auction {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin-bottom: 50px;
+        }
+
+        .section-header {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        .table thead th {
+            border-top: none;
+            color: #1e4fa1;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .badge {
+            font-size: 90%;
+            padding: 0.5em 0.7em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-text" href="/bidder">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#bidderNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="bidderNavbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/bidder">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/my-bids">My Bids</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/watchlist">Watch list</a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="/profile">User Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/support">Contact HelpDesk</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <span class="nav-link text-muted">Bidder: <strong>{{ email }}</strong></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-11 dashboard-card">
+                <div class="section-header">
+                    <h2>My Watchlist</h2>
+                    <p class="text-muted small">Items you are keeping an eye on.</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item Title</th>
+                                <th>Current High Bid</th>
+                                <th>Status</th>
+                                <th>Added</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in listings %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.Auction_Title }}</strong><br>
+                                    <small class="text-muted">{{ item.Product_Name }}</small>
+                                </td>
+
+                                <td class="text-primary font-weight-bold">
+                                    ${{ "{:,.2f}".format(item.Current_High_Bid | float) }}
+                                </td>
+
+                                <td>
+                                    {% if item.Status == 1 %}
+                                    <span class="badge badge-success">Active</span>
+                                    {% elif item.Status == 0 %}
+                                    <span class="badge badge-secondary">Inactive</span>
+                                    {% elif item.Status == 2 %}
+                                    <span class="badge badge-info" style="background-color: #1e4fa1;">Sold</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-muted"><small>{{ item.Added_At }}</small></td>
+
+                                <td>
+                                    <div class="d-flex" style="gap: 10px;">
+                                        <a href="/item-details?item={{ item.Listing_ID }}"
+                                            class="btn btn-sm btn-outline-primary">View</a>
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-toggle="modal"
+                                            data-target="#removeModal{{ item.Listing_ID }}">
+                                            Remove
+                                        </button>
+
+                                        <!-- Modal -->
+                                        <div class="modal fade" id="removeModal{{ item.Listing_ID }}" tabindex="-1"
+                                            role="dialog" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content text-left">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Remove from Watchlist</h5>
+                                                        <button type="button" class="close" data-dismiss="modal"
+                                                            aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Are you sure you want to remove <strong>{{ item.Auction_Title
+                                                            }}</strong> from your watchlist?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-dismiss="modal">Cancel</button>
+                                                        <form action="/watchlist/remove" method="POST" class="m-0 p-0">
+                                                            <input type="hidden" name="seller_email"
+                                                                value="{{ item.Seller_Email }}">
+                                                            <input type="hidden" name="listing_id"
+                                                                value="{{ item.Listing_ID }}">
+                                                            <button type="submit" class="btn btn-danger">Yes,
+                                                                Remove</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    Your watchlist is empty. <br>
+                                    <a href="/bidder" class="btn btn-primary btn-sm mt-3">Browse Items</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+
+</html>
