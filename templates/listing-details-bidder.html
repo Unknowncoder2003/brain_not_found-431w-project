@@ -167,7 +167,11 @@
                                 {% endif %}
                             {% endif %}
 
-                            <a href="/item-details" class="btn btn-block btn-outline-primary mt-2">Watch List</a>
+                            <form action="/watchlist/add" method="POST" class="mt-2 text-center">
+                                <input type="hidden" name="seller_email" value="{{ item[0] }}">
+                                <input type="hidden" name="listing_id" value="{{ item[1] }}">
+                                <button type="submit" class="btn btn-block btn-outline-primary">Add to Watchlist</button>
+                            </form>
                         </div>
                     </div>
                 </div>
