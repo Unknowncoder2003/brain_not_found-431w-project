@@ -7,6 +7,9 @@
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           crossorigin="anonymous">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <style>
         body {
             background-color: #f2f2f2;
@@ -86,6 +89,15 @@
         .form-control-sm-custom {
             max-width: 400px;
         }
+
+        .password-toggle {
+            cursor: pointer;
+            background-color: #fff;
+        }
+
+        .password-toggle:hover {
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -117,7 +129,7 @@
                         User Profile
                     </a>
                 </li>
-                                <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link" href="/helpdesk">Contact HelpDesk</a>
                 </li>
             </ul>
@@ -403,7 +415,6 @@
                             </td>
                         </tr>
 
-
                         <tr>
                             <td>Security Code</td>
                             <td>
@@ -453,11 +464,20 @@
                             <td>Current Password</td>
                             <td>
                                 {% if edit_password %}
-                                    <input type="password"
-                                           class="form-control form-control-sm-custom"
-                                           name="old_password"
-                                           placeholder="Enter current password"
-                                           required>
+                                    <div class="input-group form-control-sm-custom">
+                                        <input type="password"
+                                               class="form-control"
+                                               id="old_password"
+                                               name="old_password"
+                                               placeholder="Enter current password"
+                                               required>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text password-toggle"
+                                                  onclick="togglePassword('old_password', this)">
+                                                <i class="fa fa-eye"></i>
+                                            </span>
+                                        </div>
+                                    </div>
                                 {% else %}
                                     <div class="readonly-value">********</div>
                                 {% endif %}
@@ -467,11 +487,20 @@
                             <td>New Password</td>
                             <td>
                                 {% if edit_password %}
-                                    <input type="password"
-                                           class="form-control form-control-sm-custom"
-                                           name="new_password"
-                                           placeholder="Enter new password"
-                                           required>
+                                    <div class="input-group form-control-sm-custom">
+                                        <input type="password"
+                                               class="form-control"
+                                               id="new_password"
+                                               name="new_password"
+                                               placeholder="Enter new password"
+                                               required>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text password-toggle"
+                                                  onclick="togglePassword('new_password', this)">
+                                                <i class="fa fa-eye"></i>
+                                            </span>
+                                        </div>
+                                    </div>
                                 {% else %}
                                     <div class="readonly-value">********</div>
                                 {% endif %}
@@ -481,11 +510,20 @@
                             <td>Confirm New Password</td>
                             <td>
                                 {% if edit_password %}
-                                    <input type="password"
-                                           class="form-control form-control-sm-custom"
-                                           name="confirm_new_password"
-                                           placeholder="Re-enter new password"
-                                           required>
+                                    <div class="input-group form-control-sm-custom">
+                                        <input type="password"
+                                               class="form-control"
+                                               id="confirm_new_password"
+                                               name="confirm_new_password"
+                                               placeholder="Re-enter new password"
+                                               required>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text password-toggle"
+                                                  onclick="togglePassword('confirm_new_password', this)">
+                                                <i class="fa fa-eye"></i>
+                                            </span>
+                                        </div>
+                                    </div>
                                 {% else %}
                                     <div class="readonly-value">********</div>
                                 {% endif %}
@@ -506,6 +544,23 @@
         </div>
     </div>
 </div>
+
+<script>
+function togglePassword(fieldId, iconSpan) {
+    const field = document.getElementById(fieldId);
+    const icon = iconSpan.querySelector("i");
+
+    if (field.type === "password") {
+        field.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    } else {
+        field.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+    }
+}
+</script>
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
