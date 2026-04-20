@@ -685,26 +685,44 @@ def item_bid():
         if avg_rating is not None:
             avg_rating = round(avg_rating, 2)
 
-    connection.close()
+    #getting the max bid_id
+    cursor.execute('''
+                   SELECT MAX(bid_id)
+                   FROM Bids
+                   ''')
+    highest_bid_id = cursor.fetchone()[0]
 
+    user_email = session.get('email')
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
         error = None
         bid_price = request.form.get('bid_price')
         if int(bid_price) > highest_bid:
+            connection = get_connection()
+            cursor = connection.cursor()
             current_bid_count += 1
-            highest_bid = int(bid_price)
+            highest_bid = float(bid_price)
+            highest_bid_id = highest_bid_id + 1
+
             #Insert a new bid
-
-            #cursor.execute('''
-             #              INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
-              #             VALUES (?,?,?,?);
-               #            ''', ("asfaf"))
-
+            cursor.execute('''
+                           INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
+                           VALUES (?,?,?,?);
+                           ''', (highest_bid_id,user_email,listing_id,highest_bid))
+            cursor.execute('''
+                           SELECT COUNT(*)
+                           FROM Bids
+                           WHERE listing_id = ?
+                           ''', (listing_id,))
+            current_bid_count = cursor.fetchone()[0]
+            print(current_bid_count)
+            connection.close()
         else:
             error = "Your price is less than or equal to the current bid put in another one"
 
+
         print("Bid:", bid_price)
+        #after clicking the bid button on modal then reload the page with new information
         return render_template(
             'listing-details-bidder.html',
             item=item,
@@ -714,8 +732,8 @@ def item_bid():
             rating_count=rating_count,
             error = error
         )
-
-    print(current_bid_count)
+    connection.close()
+    #print(current_bid_count)
     return render_template(
         'listing-details-bidder.html',
         item=item,
