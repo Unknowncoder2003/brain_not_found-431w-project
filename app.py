@@ -57,6 +57,45 @@ def ensure_watchlist_table():
     connection.commit()
     connection.close()
 
+def ensure_max_bids_trigger():
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute("DROP TRIGGER IF EXISTS check_max_bids_after_insert")
+    cursor.execute("""
+        CREATE TRIGGER check_max_bids_after_insert
+        AFTER INSERT ON Bids
+        BEGIN
+            UPDATE Auction_Listings
+            SET Status = CASE 
+                WHEN (SELECT MAX(bid_price) FROM Bids WHERE listing_id = NEW.listing_id) >= Reserve_Price THEN 2
+                ELSE 3
+            END
+            WHERE Listing_ID = NEW.listing_id
+              AND (
+                  SELECT COUNT(*)
+                  FROM Bids
+                  WHERE listing_id = NEW.listing_id
+              ) >= Max_bids
+              AND Status = 1;
+        END;
+    """)
+    # Also aggressively check any past listings that might already be at max capacity!
+    cursor.execute("""
+        UPDATE Auction_Listings
+        SET Status = CASE 
+            WHEN (SELECT MAX(bid_price) FROM Bids WHERE Bids.listing_id = Auction_Listings.Listing_ID) >= Reserve_Price THEN 2
+            ELSE 3
+        END
+        WHERE Status = 1
+          AND (
+              SELECT COUNT(*)
+              FROM Bids
+              WHERE Bids.listing_id = Auction_Listings.Listing_ID
+          ) >= Max_bids;
+    """)
+    connection.commit()
+    connection.close()
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -710,6 +749,15 @@ def item_bid():
     highest_bid_id = cursor.fetchone()[0]
 
     user_email = session.get('email')
+    in_watchlist = False
+    if user_email:
+        cursor.execute('''
+            SELECT 1 FROM Watchlist
+            WHERE Bidder_Email = ? AND Seller_Email = ? AND Listing_ID = ?
+        ''', (user_email, seller_email, listing_id))
+        if cursor.fetchone():
+            in_watchlist = True
+    
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
         error = None
@@ -723,7 +771,7 @@ def item_bid():
 
             #Insert a new bid
             cursor.execute('''
-                           INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
+                           INSERT INTO Bids (bid_sid, bidder_email, listing_id, bid_price)
                            VALUES (?,?,?,?);
                            ''', (highest_bid_id,user_email,listing_id,highest_bid))
             connection.commit()
@@ -734,6 +782,15 @@ def item_bid():
                            ''', (listing_id,))
             current_bid_count = cursor.fetchone()[0]
             print(current_bid_count)
+            cursor.execute('''
+                           SELECT Status
+                           FROM Auction_Listings
+                           WHERE Listing_ID = ?
+                           ''', (listing_id,))
+            new_status = cursor.fetchone()[0]
+            item = list(item)
+            item[9] = new_status
+            item = tuple(item)
             connection.close()
         else:
             error = "Your price is less than or equal to the current bid put in another one"
@@ -748,7 +805,8 @@ def item_bid():
             current_price=highest_bid,
             avg_rating=avg_rating,
             rating_count=rating_count,
-            error = error
+            error = error,
+            in_watchlist = in_watchlist
         )
     connection.close()
     #print(current_bid_count)
@@ -758,7 +816,8 @@ def item_bid():
         bid_count=current_bid_count,
         current_price=highest_bid,
         avg_rating=avg_rating,
-        rating_count=rating_count
+        rating_count=rating_count,
+        in_watchlist=in_watchlist
     )
 
 
@@ -1173,7 +1232,8 @@ def my_bids():
     cursor = connection.cursor()
     # This query retrieves the user's bid alongside the current highest bid for that item
     cursor.execute('''
-                   SELECT A.Auction_Title,
+                   SELECT A.Listing_ID,
+                          A.Auction_Title,
                           A.Product_Name,
                           B.bid_price,
                           A.Status AS Auction_Status,
@@ -1205,6 +1265,9 @@ def my_bids():
             elif auction_status == 2:
                 bid['display_status'] = "Won"
                 bid['status_color'] = "text-primary"
+            elif auction_status == 3:
+                bid['display_status'] = "Reserve Not Met"
+                bid['status_color'] = "text-warning"
             else:
                 bid['display_status'] = "Auction Ended"
                 bid['status_color'] = "text-muted"
@@ -1539,4 +1602,5 @@ def remove_from_watchlist():
 if __name__ == "__main__":
     ensure_seller_ratings_table()
     ensure_watchlist_table()
+    ensure_max_bids_trigger()
     app.run()

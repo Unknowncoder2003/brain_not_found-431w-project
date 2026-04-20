@@ -55,6 +55,8 @@
         .status-1 { background-color: #d4edda; color: #28a745; border: 1px solid #28a745; } /* Active */
         .status-0 { background-color: #e2e3e5; color: #6c757d; border: 1px solid #6c757d; } /* Inactive */
         .status-2 { background-color: #d1ecf1; color: #1e4fa1; border: 1px solid #1e4fa1; } /* Sold */
+        .status-3 { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* Reserve Not Met */
+        .status-3 { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* Reserve Not Met */
     </style>
 </head>
 <body>
@@ -84,6 +86,8 @@
                         <span class="status-pill status-0">INACTIVE</span>
                     {% elif item[9] == 2 %}
                         <span class="status-pill status-2">SOLD</span>
+                    {% elif item[9] == 3 %}
+                        <span class="status-pill status-3">RESERVE NOT MET</span>
                     {% endif %}
                 </div>
             </div>

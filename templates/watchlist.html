@@ -138,6 +138,8 @@
                                     <span class="badge badge-secondary">Inactive</span>
                                     {% elif item.Status == 2 %}
                                     <span class="badge badge-info" style="background-color: #1e4fa1;">Sold</span>
+                                    {% elif item.Status == 3 %}
+                                    <span class="badge badge-warning" style="background-color: #ffc107; color: #212529;">Reserve Not Met</span>
                                     {% endif %}
                                 </td>
 
