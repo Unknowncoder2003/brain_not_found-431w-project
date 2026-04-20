@@ -117,8 +117,22 @@
 
                         <div class="form-group mt-3">
                             <label for="password">Password</label>
-                            <input type="password" class="form-control" id="password" name="password"
-                                placeholder="Enter your password" required>
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   name="password"
+                                   placeholder="Enter your password"
+                                   required>
+                        </div>
+
+                        <div class="form-check mt-2">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="showPassword"
+                                   onclick="togglePassword()">
+                            <label class="form-check-label" for="showPassword">
+                                Show Password
+                            </label>
                         </div>
 
                         {% if error %}
@@ -143,3 +157,15 @@
 </body>
 
 </html>
+
+<script>
+function togglePassword() {
+    const passwordField = document.getElementById("password");
+
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+    } else {
+        passwordField.type = "password";
+    }
+}
+</script>
