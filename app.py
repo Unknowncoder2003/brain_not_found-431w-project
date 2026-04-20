@@ -7,6 +7,7 @@ from unittest import result
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import uuid
+import datetime
 
 from passwordHasher import hashed_password
 
@@ -940,20 +941,8 @@ def update_card():
     connection = get_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT 1 FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
-    existing = cursor.fetchone()
-
-    if existing:
-        cursor.execute("""
-                       UPDATE Credit_Cards
-                       SET card_type       = ?,
-                           credit_card_num = ?,
-                           expire_month    = ?,
-                           expire_year     = ?,
-                           security_code   = ?
-                       WHERE Owner_email = ?
-                       """, (card_type, card_number, expire_month, expire_year, security_code, user_email))
-    else:
+    if True: # Always delete existing cards first to prevent UNIQUE constraint collisions on primary key update
+        cursor.execute("DELETE FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
         cursor.execute("""
                        INSERT INTO Credit_Cards (Owner_email, credit_card_num, card_type, expire_month, expire_year,
                                                  security_code)
@@ -1164,8 +1153,11 @@ def my_bids():
                           A.Status AS Auction_Status,
                           (SELECT MAX(Bid_Price)
                            FROM Bids
-                           WHERE Listing_ID = B.listing_id) AS Current_High_Bid
-                   FROM Bids B JOIN Auction_Listings A ON B.listing_id = A.Listing_ID
+                           WHERE Listing_ID = B.listing_id) AS Current_High_Bid,
+                          CASE WHEN T.Transaction_ID IS NOT NULL THEN 1 ELSE 0 END AS is_paid
+                   FROM Bids B 
+                   JOIN Auction_Listings A ON B.listing_id = A.Listing_ID
+                   LEFT JOIN Transactions T ON T.Listing_ID = A.Listing_ID AND T.Buyer_Email = B.bidder_email
                    WHERE B.bidder_email = ?
                    ORDER BY B.bid_id DESC
                    ''', (user_email,))
@@ -1179,7 +1171,7 @@ def my_bids():
         user_price = bid['bid_price']
         max_price = bid['Current_High_Bid']
         auction_status = bid['Auction_Status']
-        print(user_price, max_price, auction_status)
+        bid['is_paid'] = (bid['is_paid'] == 1)
         if user_price < max_price:
             bid['display_status'] = "Outbid"
             bid['status_color'] = "text-danger"
@@ -1522,6 +1514,81 @@ def remove_from_watchlist():
 
     return redirect(url_for('watchlist'))
 
+@app.route('/pay/<int:listing_id>', methods=['GET'])
+def pay_item_get(listing_id):
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    # Get Auction Info
+    cursor.execute('''
+        SELECT Seller_Email, Auction_Title, Product_Name
+        FROM Auction_Listings
+        WHERE Listing_ID = ? AND Status = 2
+    ''', (listing_id,))
+    item = cursor.fetchone()
+    if not item:
+        connection.close()
+        return redirect(url_for('my_bids'))
+    
+    # Get Max Bid
+    cursor.execute('''
+        SELECT MAX(bid_price)
+        FROM Bids
+        WHERE listing_id = ? AND bidder_email = ?
+    ''', (listing_id, user_email))
+    amount_owed = cursor.fetchone()[0] or 0.0
+
+    # Get user credit card
+    cursor.execute('SELECT * FROM Credit_Cards WHERE Owner_email = ?', (user_email,))
+    card = cursor.fetchone()
+
+    connection.close()
+    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, listing_id=listing_id, email=user_email)
+
+@app.route('/pay/<int:listing_id>', methods=['POST'])
+def pay_item_post(listing_id):
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    cc_num = request.form.get('credit_card_num')
+    card_type = request.form.get('card_type')
+    exp_month = request.form.get('expire_month')
+    exp_year = request.form.get('expire_year')
+    sec_code = request.form.get('security_code')
+    amount_paid = request.form.get('amount_paid')
+    seller_email = request.form.get('seller_email')
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("DELETE FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
+    cursor.execute('''
+        INSERT INTO Credit_Cards 
+        (credit_card_num, card_type, expire_month, expire_year, security_code, Owner_email)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (cc_num, card_type, exp_month, exp_year, sec_code, user_email))
+
+    cursor.execute("SELECT MAX(Transaction_ID) FROM Transactions")
+    highest_tx = cursor.fetchone()[0]
+    next_tx_id = (highest_tx or 0) + 1
+
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    cursor.execute('''
+        INSERT INTO Transactions (Transaction_ID, Seller_Email, Listing_ID, Buyer_Email, Date, Payment)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (next_tx_id, seller_email, listing_id, user_email, current_date, amount_paid))
+
+    connection.commit()
+    connection.close()
+
+    return redirect(url_for('my_bids'))
 
 if __name__ == "__main__":
     app.run()
