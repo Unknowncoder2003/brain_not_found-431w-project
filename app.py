@@ -774,7 +774,8 @@ def profile():
             A.zipcode AS zipcode,
             C.card_type AS card_type,
             C.credit_card_num AS card_number,
-            (C.expire_month || '/' || C.expire_year) AS card_exp
+            (C.expire_month || '/' || C.expire_year) AS card_exp,
+            C.security_code AS security_code
         FROM Bidders B
         LEFT JOIN Address A
             ON B.home_address_id = A.address_id
@@ -797,6 +798,14 @@ def profile():
                 user['masked_card_number'] = card_number
         else:
             user['masked_card_number'] = None
+
+        security_code = user.get('security_code')
+        if security_code:
+            security_code = str(security_code)
+            user['masked_security_code'] = '*' * len(security_code)
+        else:
+            user['masked_security_code'] = None
+
     print("DEBUG user =", dict(user) if user else None)
     connection.close()
 
@@ -897,6 +906,7 @@ def update_card():
     card_type = request.form.get('card_type')
     card_number = request.form.get('card_number')
     card_exp = request.form.get('card_exp', '').strip()
+    security_code = request.form.get('security_code')
 
     expire_month = None
     expire_year = None
@@ -915,15 +925,20 @@ def update_card():
 
     if existing:
         cursor.execute("""
-            UPDATE Credit_Cards
-            SET card_type = ?, credit_card_num = ?, expire_month = ?, expire_year = ?
-            WHERE Owner_email = ?
-        """, (card_type, card_number, expire_month, expire_year, user_email))
+                       UPDATE Credit_Cards
+                       SET card_type       = ?,
+                           credit_card_num = ?,
+                           expire_month    = ?,
+                           expire_year     = ?,
+                           security_code   = ?
+                       WHERE Owner_email = ?
+                       """, (card_type, card_number, expire_month, expire_year, security_code, user_email))
     else:
         cursor.execute("""
-            INSERT INTO Credit_Cards (Owner_email, credit_card_num, card_type, expire_month, expire_year)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_email, card_number, card_type, expire_month, expire_year))
+                       INSERT INTO Credit_Cards (Owner_email, credit_card_num, card_type, expire_month, expire_year,
+                                                 security_code)
+                       VALUES (?, ?, ?, ?, ?, ?)
+                       """, (user_email, card_number, card_type, expire_month, expire_year, security_code))
 
     connection.commit()
     connection.close()
