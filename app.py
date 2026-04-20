@@ -761,24 +761,230 @@ def item_bid():
         rating_count=rating_count
     )
 
+@app.route('/request/add-category', methods=['GET', 'POST'])
+def add_category_request():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
 
+    roles = session.get('roles', [])
+    if 'bidder' not in roles and 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Only bidders or sellers can submit category requests.'))
 
-@app.route('/helpdesk', methods=['POST', 'GET'])
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    if request.method == 'POST':
+        category_name = request.form.get('category_name', '').strip()
+        parent_category = request.form.get('parent_category', '').strip()
+        reason = request.form.get('reason', '').strip()
+
+        if not category_name or not parent_category:
+            cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
+            categories = cursor.fetchall()
+            connection.close()
+            return render_template(
+                'add_category_request.html',
+                email=user_email,
+                categories=categories,
+                error='Category name and parent category are required.'
+            )
+
+        request_desc = f"Please add a new category {category_name} under {parent_category}. {reason}"
+
+        cursor.execute("""
+            INSERT INTO Requests (
+                sender_email,
+                helpdesk_staff_email,
+                request_type,
+                request_desc,
+                request_status
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            user_email,
+            'helpdeskteam@lsu.edu',
+            'AddCategory',
+            request_desc,
+            0
+        ))
+
+        connection.commit()
+        cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
+        categories = cursor.fetchall()
+        connection.close()
+
+        return render_template(
+            'add_category_request.html',
+            email=user_email,
+            categories=categories,
+            success='Your category request has been submitted successfully.'
+        )
+
+    cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
+    categories = cursor.fetchall()
+    connection.close()
+
+    return render_template(
+        'add_category_request.html',
+        email=user_email,
+        categories=categories
+    )
+
+@app.route('/helpdesk', methods=['GET'])
 def helpdesk():
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
 
     connection = get_connection()
+    connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
+
     cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
     result = cursor.fetchone()
-    connection.close()
 
     if not result:
+        connection.close()
         return redirect(url_for('authenticate', error='You do not have access to the help desk'))
 
-    return render_template('helpdesk.html', email=user_email)
+    cursor.execute("""
+        SELECT *
+        FROM Requests
+        WHERE request_type = 'AddCategory'
+          AND request_status = 0
+          AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
+        ORDER BY request_id DESC
+    """)
+    unassigned_requests = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT *
+        FROM Requests
+        WHERE request_type = 'AddCategory'
+          AND helpdesk_staff_email = ?
+          AND request_status IN (1, 2)
+        ORDER BY request_id DESC
+    """, (user_email,))
+    my_requests = cursor.fetchall()
+
+    connection.close()
+
+    return render_template(
+        'helpdesk.html',
+        email=user_email,
+        unassigned_requests=unassigned_requests,
+        my_requests=my_requests
+    )
+
+@app.route('/helpdesk/claim/<int:request_id>', methods=['POST'])
+def claim_request(request_id):
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
+    if not cursor.fetchone():
+        connection.close()
+        return redirect(url_for('authenticate', error='You do not have access to the help desk'))
+
+    cursor.execute("""
+        UPDATE Requests
+        SET helpdesk_staff_email = ?, request_status = 1
+        WHERE request_id = ?
+          AND request_type = 'AddCategory'
+          AND request_status = 0
+          AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
+    """, (user_email, request_id))
+
+    connection.commit()
+    connection.close()
+
+    return redirect(url_for('helpdesk'))
+
+@app.route('/helpdesk/complete/<int:request_id>', methods=['POST'])
+def complete_request(request_id):
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
+    if not cursor.fetchone():
+        connection.close()
+        return redirect(url_for('authenticate', error='You do not have access to the help desk'))
+
+    cursor.execute("""
+        SELECT request_desc
+        FROM Requests
+        WHERE request_id = ?
+          AND request_type = 'AddCategory'
+          AND helpdesk_staff_email = ?
+          AND request_status = 1
+    """, (request_id, user_email))
+
+    row = cursor.fetchone()
+    if not row:
+        connection.close()
+        return redirect(url_for('helpdesk'))
+
+    request_desc = row[0]
+
+    category_name = None
+    parent_category = None
+
+    try:
+        # Expected format:
+        # Please add a new category hhg under erwerqqq. 111
+        first_part = request_desc.split("Please add a new category ", 1)[1]
+        category_name = first_part.split(" under ", 1)[0].strip()
+        parent_category = first_part.split(" under ", 1)[1].split(".", 1)[0].strip()
+    except Exception:
+        connection.close()
+        return redirect(url_for('helpdesk'))
+
+    # 1. If parent category does not exist, create it as a new top-level category under Root
+    cursor.execute("""
+        SELECT 1 FROM Categories
+        WHERE category_name = ?
+    """, (parent_category,))
+    parent_exists = cursor.fetchone()
+
+    if not parent_exists:
+        cursor.execute("""
+            INSERT INTO Categories (category_name, parent_category)
+            VALUES (?, ?)
+        """, (parent_category, 'Root'))
+
+    # 2. If the child category does not exist, insert it under the parent
+    cursor.execute("""
+        SELECT 1 FROM Categories
+        WHERE category_name = ?
+    """, (category_name,))
+    category_exists = cursor.fetchone()
+
+    if not category_exists:
+        cursor.execute("""
+            INSERT INTO Categories (category_name, parent_category)
+            VALUES (?, ?)
+        """, (category_name, parent_category))
+
+    # 3. Mark request as completed
+    cursor.execute("""
+        UPDATE Requests
+        SET request_status = 2
+        WHERE request_id = ?
+    """, (request_id,))
+
+    connection.commit()
+    connection.close()
+
+    return redirect(url_for('helpdesk'))
 
 
 @app.route('/profile', methods=['GET'])
