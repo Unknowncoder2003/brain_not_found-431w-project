@@ -687,16 +687,15 @@ def item_bid():
     if request.method == 'POST':
         error = None
         bid_price = request.form.get('bid_price')
-        if float(bid_price) > highest_bid + 1:
+        if float(bid_price) >= highest_bid + 1:
             connection = get_connection()
             cursor = connection.cursor()
             current_bid_count += 1
             highest_bid = float(bid_price)
             highest_bid_id = highest_bid_id + 1
-
             #Insert a new bid
             cursor.execute('''
-                           INSERT INTO Bids (bid_sid, bidder_email, listing_id, bid_price)
+                           INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
                            VALUES (?,?,?,?);
                            ''', (highest_bid_id,user_email,listing_id,highest_bid))
             connection.commit()
@@ -718,6 +717,7 @@ def item_bid():
             item = tuple(item)
             connection.close()
         else:
+            print("our price is less than or equal to the current bidding limit put in another one")
             error = "Your price is less than or equal to the current bid put in another one"
 
 
