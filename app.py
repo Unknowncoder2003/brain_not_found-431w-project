@@ -1179,6 +1179,12 @@ def my_bids():
                    JOIN Auction_Listings A ON B.listing_id = A.Listing_ID
                    LEFT JOIN Transactions T ON T.Listing_ID = A.Listing_ID AND T.Buyer_Email = B.bidder_email
                    WHERE B.bidder_email = ?
+                     AND B.bid_id = (
+                         SELECT MAX(bid_id) 
+                         FROM Bids B2 
+                         WHERE B2.listing_id = B.listing_id 
+                           AND B2.bidder_email = B.bidder_email
+                     )
                    ORDER BY B.bid_id DESC
                    ''', (user_email,))
 
