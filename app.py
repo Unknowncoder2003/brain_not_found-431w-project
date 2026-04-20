@@ -521,22 +521,12 @@ def bidder():
         items = get_all_items()
     page = request.args.get('page', 1, type=int)
     per_page = 30
-
     offset = (page - 1) * per_page
-
-    cursor.execute("""
-                   SELECT *
-                   FROM Auction_Listings LIMIT ?
-                   OFFSET ?
-                   """, (per_page, offset))
-
-    items = cursor.fetchall()
-
-    # get total count for page buttons
-    cursor.execute("SELECT COUNT(*) FROM Auction_Listings")
-    total_items = cursor.fetchone()[0]
-
+    
+    total_items = len(items)
+    items = items[offset : offset + per_page]
     total_pages = (total_items + per_page - 1) // per_page
+    
     connection.close()
     return render_template(
         'bidder.html',
