@@ -726,6 +726,7 @@ def item_bid():
                            INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
                            VALUES (?,?,?,?);
                            ''', (highest_bid_id,user_email,listing_id,highest_bid))
+            connection.commit()
             cursor.execute('''
                            SELECT COUNT(*)
                            FROM Bids
