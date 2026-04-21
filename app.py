@@ -815,10 +815,10 @@ def search_items(search_term, min_price=None, max_price=None, limit=30, offset=0
     params = [keyword, keyword, keyword, keyword, keyword]
 
     if min_price:
-        where_clause += " AND (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) >= ?"
+        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) >= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) IS NULL)"
         params.append(float(min_price))
     if max_price:
-        where_clause += " AND (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) <= ?"
+        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) <= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) IS NULL)"
         params.append(float(max_price))
 
     count_query = f"SELECT COUNT(*) FROM Auction_Listings A {where_clause}"
