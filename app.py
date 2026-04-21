@@ -14,6 +14,7 @@ from passwordHasher import hashed_password
 sql = sqlite3
 
 app = Flask(__name__)
+# This secret key is super important. It lets us securely track who is logged in via cookies.
 app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the session (the memory) to work
 
 DB_NAME = 'database.db'
@@ -21,10 +22,19 @@ host = 'http://127.0.0.1:5000/'
 
 
 def get_connection():
+    """
+    Grabs a fresh connection to our SQLite database. 
+    We call this anytime we want to read or write data.
+    """
     conn = sql.connect(DB_NAME)
     return conn
+
 @app.route('/')
-def index():
+def home():
+    """
+    This is our landing page. It's the first thing people see when they type in the URL.
+    Just renders the basic index.html template.
+    """
     return render_template('index.html')
 
 
@@ -49,6 +59,11 @@ def valid_email_password(email, password):
 
 @app.route('/login', methods=['POST', 'GET'])
 def authenticate():
+    """
+    The bouncer of our app. Handles the login process for users.
+    If it's a GET request, we just show them the login form.
+    If it's a POST request, they submitted the form and we need to check their credentials.
+    """
     error = None
     error = request.args.get('error')
 
@@ -124,6 +139,10 @@ def find_user_html(email):
 
 @app.route('/seller', methods=['POST', 'GET'])
 def seller():
+    """
+    The main Dashboard for Sellers.
+    This fetches their profile, active listings, and processes new item creations.
+    """
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
@@ -493,6 +512,10 @@ def seller_profile():
     )
 @app.route('/bidder', methods=['GET'])
 def bidder():
+    """
+    The main Dashboard for Bidders. 
+    This page lists available auctions, handles the search bar, and applies category filters.
+    """
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
@@ -1532,6 +1555,10 @@ def remove_from_watchlist():
 
 @app.route('/pay/<int:listing_id>', methods=['GET'])
 def pay_item_get(listing_id):
+    """
+    Displays the secure checkout screen.
+    We calculate exactly how much the bidder owes and pre-fill their stored credit card info if they have one.
+    """
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
@@ -1568,6 +1595,10 @@ def pay_item_get(listing_id):
 
 @app.route('/pay/<int:listing_id>', methods=['POST'])
 def pay_item_post(listing_id):
+    """
+    Process the payment. This locks in the transaction so the database knows the item was officially paid for.
+    It also saves their credit card details for next time so they don't have to retype it.
+    """
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))

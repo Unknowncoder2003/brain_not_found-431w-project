@@ -1,237 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Bidder page</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
     <style>
+        body {
+            background-color: #f2f2f2;
+        }
 
-    body { background-color: #f2f2f2; }
-
-    .navbar {
+        .navbar {
             background-color: white;
 
         }
-    .bottom-navbar {
-        background-color: white;
-        border-bottom: 2px solid #1e4fa1;
-        margin-bottom: 30px;
 
-    }
+        .bottom-navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
+
+        }
 
 
 
-    .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
-    .brand-text .auction { color: #28a745; font-weight: bold; }
+        .brand-text .nittany {
+            color: #1e4fa1;
+            font-weight: bold;
+        }
 
-    .dashboard-card {
+        .brand-text .auction {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .dashboard-card {
             background: white;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             padding: 2rem;
         }
 
-    .welcome-header {
+        .welcome-header {
             color: #333;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
-    /* Custom CSS for hierarchical sub-menus */
-    .dropdown-submenu {
-        position: relative;
-    }
 
-    .dropdown-submenu .dropdown-menu {
-        top: 0;
-        left: 100%;
-        margin-top: -1px;
-        display: none; /* Hidden by default */
-    }
+        /* Custom CSS for hierarchical sub-menus */
+        .dropdown-submenu {
+            position: relative;
+        }
 
-    .dropdown-submenu:hover > .dropdown-menu {
-        display: block; /* Show on hover */
-    }
+        .dropdown-submenu .dropdown-menu {
+            top: 0;
+            left: 100%;
+            margin-top: -1px;
+            display: none;
+            /* Hidden by default */
+        }
 
-    /* Adds a small arrow to items that have children */
-    .dropdown-submenu > .dropdown-toggle::after {
-        display: inline-block;
-        margin-left: 0.5em;
-        vertical-align: 0.255em;
-        content: "";
-        border-top: 0.3em solid transparent;
-        border-right: 0;
-        border-bottom: 0.3em solid transparent;
-        border-left: 0.3em solid;
-    }
+        .dropdown-submenu:hover>.dropdown-menu {
+            display: block;
+            /* Show on hover */
+        }
+
+        /* Adds a small arrow to items that have children */
+        .dropdown-submenu>.dropdown-toggle::after {
+            display: inline-block;
+            margin-left: 0.5em;
+            vertical-align: 0.255em;
+            content: "";
+            border-top: 0.3em solid transparent;
+            border-right: 0;
+            border-bottom: 0.3em solid transparent;
+            border-left: 0.3em solid;
+        }
     </style>
 </head>
+
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light"> <!-- trying to make it the same template as the other pages-->
-    <div class="container">
-        <a class="navbar-brand brand-text" href="/bidder">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </a>
+    <nav class="navbar navbar-expand-lg navbar-light"> <!-- trying to make it the same template as the other pages-->
+        <div class="container">
+            <a class="navbar-brand brand-text" href="/bidder">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
 
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <div class="collapse navbar-collapse" id="sellerNavbar">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="/bidder">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/my-bids">My Bids</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/watchlist">Watch list</a>
-                </li>
+            <div class="collapse navbar-collapse" id="sellerNavbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/bidder">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/my-bids">My Bids</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/watchlist">Watch list</a>
+                    </li>
 
-                <li>
-                    <a class="nav-link" href="/profile">
-                        User Profile
-                    </a>
-                </li>
-                                <li class="nav-item">
-                    <a class="nav-link" href="/support">Contact HelpDesk</a>
-                </li>
-            </ul>
+                    <li>
+                        <a class="nav-link" href="/profile">
+                            User Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/support">Contact HelpDesk</a>
+                    </li>
+                </ul>
 
-            <ul class="navbar-nav ml-auto align-items-center">
-                <li class="nav-item">
-                    <span class="nav-link text-muted mb-0">Bidder: <strong>{{ first_name }}</strong></span>
-                </li>
-                {% if session.get('roles') and 'seller' in session['roles'] %}
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
-                </li>
-                {% endif %}
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
-                </li>
-            </ul>
+                <ul class="navbar-nav ml-auto align-items-center">
+                    <li class="nav-item">
+                        <span class="nav-link text-muted mb-0">Bidder: <strong>{{ first_name }}</strong></span>
+                    </li>
+                    {% if session.get('roles') and 'seller' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<nav class="navbar navbar-expand-lg navbar-light bottom-navbar">
-    <div class="container">
-        <div class="collapse navbar-collapse" id="searchNavbar">
+    <nav class="navbar navbar-expand-lg navbar-light bottom-navbar">
+        <div class="container">
+            <div class="collapse navbar-collapse" id="searchNavbar">
 
-            {% macro render_category(category) %}
+                <!-- This macro dynamically builds out our category trees。 It calls itself to build child categories if they exist. -->
+                {% macro render_category(category) %}
                 <li class="dropdown-submenu">
                     <a class="dropdown-item {% if category.children %}dropdown-toggle{% endif %}"
-                       href="/bidder?category={{ category.name | urlencode }}"> <!--Encode it so the backend gets the full name of the catelog-->
+                        href="/bidder?category={{ category.name | urlencode }}">
+                        <!-- Encode the URL so Flask receives the raw category string perfectly. -->
                         {{ category.name }}
                     </a>
                     {% if category.children %}
-                        <ul class="dropdown-menu">
-                            {% for child in category.children %}
-                                {{ render_category(child) }}
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </li>
-            {% endmacro %}
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown"
-                       role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        All...
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
-                        {% for cate in categories %}
-                            {{ render_category(cate) }}
+                    <ul class="dropdown-menu">
+                        {% for child in category.children %}
+                        {{ render_category(child) }}
                         {% endfor %}
                     </ul>
+                    {% endif %}
                 </li>
-            </ul>
+                {% endmacro %}
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            All...
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                            {% for cate in categories %}
+                            {{ render_category(cate) }}
+                            {% endfor %}
+                        </ul>
+                    </li>
+                </ul>
 
-            <form class="form-inline mr-auto" action="/bidder" method="GET">
-                <input class="form-control mr-sm-2"
-                       style="width: 600px;"
-                       type="search"
-                       name="search"
-                       placeholder="Search"
-                       aria-label="Search"
-                       value="{{ search_term }}">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-            </form>
+                <form class="form-inline mr-auto" action="/bidder" method="GET">
+                    <input class="form-control mr-sm-2" style="width: 600px;" type="search" name="search"
+                        placeholder="Search" aria-label="Search" value="{{ search_term }}">
+                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+
+
+    <!-- welcome information -->
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 dashboard-card">
+                <h2 class="welcome-header">Hi, {{ first_name }}!</h2>
+
+                <p class="lead">Welcome to your Bidder dashboard. </p>
+                <p class="lead">You can navigate through the categories by clicking
+                    the <b>All..</b> button at the upper left corner.</b></p>
+                <p class="lead">You can also search for items by typing in the search bar.</b></p>
+            </div>
         </div>
     </div>
-</nav>
 
+    <!--place to display the items -->
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10 dashboard-card">
+                <h4 class="mb-3">Items</h4> <!-- mb- indicates the bottom margin -->
 
+                <div class="row">
 
-<!-- welcom information -->
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-10 dashboard-card">
-            <h2 class="welcome-header">Hi, {{ first_name }}!</h2>
-
-            <p class="lead">Welcome to your Bidder dashboard. Go buy some stuff</p>
-
-        </div>
-    </div>
-</div>
-
-<!--place to display the items -->
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10 dashboard-card">
-            <h4 class="mb-3">Items</h4> <!-- mb- indicates the bottom margin -->
-
-            <div class="row">
-
-                <!-- loop in order to get the items -->
-                {% if items %}
+                    <!-- loop in order to get the items -->
+                    {% if items %}
                     {% for i in items %}
                     <div class="col-md-4 mb-3">
                         <div class="card h-100">
-                             <div class="card-body text-center">
-                                <p class="card-text">{{ i[2] }}, {{ i[3] }}</p>
-                                <form action="/item-details" method="GET">
-                                <input type="hidden" name="item" value="{{ i[1] }}">
-                                <button type="submit" class="btn btn-primary">
-                                    View Item
-                                </button>
+                            <div class="card-body text-center d-flex flex-column justify-content-between">
+                                <div>
+                                    <h5 class="card-title"
+                                        style="color: #1e4fa1; font-weight: 700; font-size: 1.15rem;">{{ i[2] }}</h5>
+                                    <h6 class="card-subtitle mb-4 text-muted"
+                                        style="font-size: 0.9rem; letter-spacing: 0.5px;">{{ i[3] }}</h6>
+                                </div>
+                                <form action="/item-details" method="GET" class="mt-auto">
+                                    <input type="hidden" name="item" value="{{ i[1] }}">
+                                    <button type="submit" class="btn btn-primary btn-block"
+                                        style="font-weight: bold; border-radius: 20px;">
+                                        View Item
+                                    </button>
                                 </form>
-                             </div>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
-                {% else %}
+                    {% else %}
                     <div class="col-12">
                         <div class="alert alert-warning text-center">
                             No matching items found.
                         </div>
                     </div>
-                {% endif %}
-   <div class="d-flex justify-content-center mt-4">
+                    {% endif %}
+                </div> <!-- Close the items row -->
 
-    {% for p in range(1, total_pages + 1) %}
-        <a href="/bidder?page={{ p }}"
-           class="btn btn-sm {% if p == page %}btn-primary{% else %}btn-outline-primary{% endif %} mx-1">
-            {{ p }}
-        </a>
-    {% endfor %}
+                <div class="d-flex justify-content-center mt-5 mb-4">
 
-    </div>
+                    {% for p in range(1, total_pages + 1) %}
+                    <a href="/bidder?page={{ p }}{% if request.args.get('search') %}&search={{ request.args.get('search') | urlencode }}{% endif %}{% if request.args.get('category') %}&category={{ request.args.get('category') | urlencode }}{% endif %}"
+                        class="btn btn-sm {% if p == page %}btn-primary{% else %}btn-outline-primary{% endif %} mx-2"
+                        style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.2s;">
+                        {{ p }}
+                    </a>
+                    {% endfor %}
 
+                </div>
 
+                <!-- script for dropdown settings and columns and stuff-->
+                <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 
-<!-- script for dropdown settings and columns and stuff-->
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+                <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 
 </body>
+
 </html>

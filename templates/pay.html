@@ -96,10 +96,11 @@
 <div class="container">
     <div class="row">
         
-        <!-- Left Column: Checkout Form -->
+        <!-- Left Column: Checkout Form (Where the wallet comes out.) -->
         <div class="col-md-7 mb-4">
             <div class="checkout-box">
                 <h2 class="section-title">Payment Method</h2>
+                <!-- We pass the transaction payload straight to the backend to securely process -->
                 <form action="/pay/{{ listing_id }}" method="POST">
 
                     <input type="hidden" name="amount_paid" value="{{ amount_owed }}">
@@ -160,7 +161,7 @@
             </div>
         </div>
 
-        <!-- Right Column: Order Summary -->
+        <!-- Right Column: Order Summary (Shows exactly what they're paying for) -->
         <div class="col-md-5">
             <div class="summary-box">
                 <h3 class="section-title">Order Summary</h3>
