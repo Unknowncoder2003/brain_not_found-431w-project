@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Secure Checkout | NittanyAuction</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
+    <style>
+        body { background-color: #f2f2f2; font-family: 'Inter', sans-serif; }
+        
+        .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 40px;
+        }
+
+        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
+        .brand-text .auction { color: #28a745; font-weight: bold; }
+
+        .checkout-box {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 30px;
+            border-top: 4px solid #1e4fa1;
+        }
+
+        .summary-box {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .section-title {
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .price-text {
+            font-size: 2.5rem;
+            color: #28a745;
+            font-weight: 700;
+        }
+        
+        .form-control {
+            border-radius: 4px;
+            padding: 10px 15px;
+            height: auto;
+        }
+
+        .btn-pay {
+            background-color: #28a745;
+            border-color: #28a745;
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 12px;
+            font-size: 1.1rem;
+        }
+        
+        .btn-pay:hover {
+            background-color: #218838;
+        }
+
+        .secure-badge {
+            display: inline-block;
+            margin-top: 15px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand brand-text" href="/bidder">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/bidder">Dashboard</a></li>
+                <li class="nav-item active"><a class="nav-link" href="/my-bids">My Bids</a></li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item"><span class="nav-link text-muted">Buyer: <strong>{{ email }}</strong></span></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        
+        <!-- Left Column: Checkout Form (Where the wallet comes out.) -->
+        <div class="col-md-7 mb-4">
+            <div class="checkout-box">
+                <h2 class="section-title">Payment Method</h2>
+                <!-- We pass the transaction payload straight to the backend to securely process -->
+                <form action="/pay/{{ listing_id }}" method="POST">
+
+                    <input type="hidden" name="amount_paid" value="{{ amount_owed }}">
+                    <input type="hidden" name="seller_email" value="{{ item['Seller_Email'] }}">
+                    
+                    <h3 class="mt-3 mb-3" style="color: #444; font-size: 1.2rem;">Shipping Address</h3>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Street No.</label>
+                                <input type="number" class="form-control" name="street_num"
+                                       value="{{ address['street_num'] if address else '' }}" placeholder="123" required>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-group">
+                                <label>Street Name</label>
+                                <input type="text" class="form-control" name="street_name"
+                                       value="{{ address['street_name'] if address else '' }}" placeholder="Main St" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" class="form-control" name="city"
+                                       value="{{ address['city'] if address else '' }}" placeholder="State College" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>State</label>
+                                <input type="text" class="form-control" name="state"
+                                       value="{{ address['state'] if address else '' }}" placeholder="PA" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Zipcode</label>
+                                <input type="number" class="form-control" name="zipcode"
+                                       value="{{ address['zipcode'] if address else '' }}" placeholder="16801" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-4 mb-4">
+                    <h3 class="mb-3" style="color: #444; font-size: 1.2rem;">Billing Info</h3>
+                    
+                    <div class="form-group">
+                        <label>Name on Card</label>
+                        <input type="text" class="form-control" name="owner_name" value="{{ email }}" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Card Type</label>
+                        <select class="form-control" name="card_type" required>
+                            <option value="Visa" {% if card and card['card_type'] == 'Visa' %}selected{% endif %}>Visa</option>
+                            <option value="MasterCard" {% if card and card['card_type'] == 'MasterCard' %}selected{% endif %}>MasterCard</option>
+                            <option value="Discover" {% if card and card['card_type'] == 'Discover' %}selected{% endif %}>Discover</option>
+                            <option value="Amex" {% if card and card['card_type'] == 'Amex' %}selected{% endif %}>American Express</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Credit Card Number</label>
+                        <input type="text" class="form-control" name="credit_card_num" 
+                               value="{{ card['credit_card_num'] if card else '' }}" 
+                               placeholder="1234 5678 9101 1121" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Exp. Month</label>
+                                <input type="number" class="form-control" name="expire_month" 
+                                       value="{{ card['expire_month'] if card else '' }}" 
+                                       placeholder="MM" min="1" max="12" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Exp. Year</label>
+                                <input type="number" class="form-control" name="expire_year" 
+                                       value="{{ card['expire_year'] if card else '' }}" 
+                                       placeholder="YYYY" min="2026" max="2077" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Security Code (CVC)</label>
+                                <input type="text" class="form-control" name="security_code" 
+                                       value="{{ card['security_code'] if card else '' }}" 
+                                       placeholder="123" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-4 mb-4">
+                    <button type="submit" class="btn btn-primary btn-block btn-pay">Process Payment of ${{ "{:,.2f}".format(amount_owed) }}</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Order Summary (Shows exactly what they're paying for) -->
+        <div class="col-md-5">
+            <div class="summary-box">
+                <h3 class="section-title">Order Summary</h3>
+                <p class="text-muted mb-1">Listing #{{ listing_id }}</p>
+                <h5 class="mb-4">{{ item['Auction_Title'] }}</h5>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Winning Bid</span>
+                    <span>${{ "{:,.2f}".format(amount_owed) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2 pb-2" style="border-bottom: 1px solid #ddd;">
+                    <span>Taxes & Fees</span>
+                    <span>$0.00</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span style="font-size: 1.2rem; font-weight: 500;">Total</span>
+                    <span class="price-text">${{ "{:,.2f}".format(amount_owed) }}</span>
+                </div>
+                
+                <div class="mt-4 pt-3 border-top">
+                    <p class="small text-muted">By clicking Process Payment, you authorize NittanyAuction to charge the provided card for the total amount shown. Once successfully processed, the seller ({{ item['Seller_Email'] }}) will be notified immediately to prepare your item.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>

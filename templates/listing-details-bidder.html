@@ -55,6 +55,8 @@
         .status-1 { background-color: #d4edda; color: #28a745; border: 1px solid #28a745; } /* Active */
         .status-0 { background-color: #e2e3e5; color: #6c757d; border: 1px solid #6c757d; } /* Inactive */
         .status-2 { background-color: #d1ecf1; color: #1e4fa1; border: 1px solid #1e4fa1; } /* Sold */
+        .status-3 { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* Reserve Not Met */
+        .status-3 { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* Reserve Not Met */
     </style>
 </head>
 <body>
@@ -84,6 +86,8 @@
                         <span class="status-pill status-0">INACTIVE</span>
                     {% elif item[9] == 2 %}
                         <span class="status-pill status-2">SOLD</span>
+                    {% elif item[9] == 3 %}
+                        <span class="status-pill status-3">RESERVE NOT MET</span>
                     {% endif %}
                 </div>
             </div>
@@ -116,7 +120,7 @@
                             ${{ "{:,.2f}".format(current_price) }}
                         </div>
 
-                        <!-- <div class="label-text">Reserve Price</div> -->
+                        <!-- <div class="label-text">Reserve Prices</div> -->
                         <!-- <div class="data-value text-muted font-weight-bold">${{ "{:,.2f}".format(item[7]) }}</div> -->
 
                         <div class="label-text">Auction Progress</div>
@@ -149,10 +153,16 @@
                                           </div>
                                           <form method="POST">
                                           <div class="modal-body">
+                                              {% if error %}
+                                                  <div class="alert alert-danger">
+                                                    {{ error }}
+                                                  </div>
+                                              {% endif %}
 
                                               <div class="form-group">
                                                 <label for="bid_price" class="col-form-label">Price:</label>
-                                                <input type="text" class="form-control" id="bid_price" name="bid_price">
+                                                  <!--settings to limit the decimal of the input-->
+                                                <input type="text" class="form-control" id="bid_price" name="bid_price" min="0" step="0.01" placeholder="0.00">
                                               </div>
 
                                           </div>
@@ -167,11 +177,19 @@
                                 {% endif %}
                             {% endif %}
 
+                            {% if in_watchlist %}
+                            <form action="/watchlist/remove" method="POST" class="mt-2 text-center">
+                                <input type="hidden" name="seller_email" value="{{ item[0] }}">
+                                <input type="hidden" name="listing_id" value="{{ item[1] }}">
+                                <button type="submit" class="btn btn-block btn-outline-danger">Remove from Watchlist</button>
+                            </form>
+                            {% else %}
                             <form action="/watchlist/add" method="POST" class="mt-2 text-center">
                                 <input type="hidden" name="seller_email" value="{{ item[0] }}">
                                 <input type="hidden" name="listing_id" value="{{ item[1] }}">
                                 <button type="submit" class="btn btn-block btn-outline-primary">Add to Watchlist</button>
                             </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -191,5 +209,15 @@
     $('#myInput').trigger('focus')
   })
 </script>
+
+{% if error %}
+<script>
+  $(document).ready(function () {
+    $('#exampleModal').modal('show');
+  });
+</script>
+{% endif %}
+
+</body>
 </body>
 </html>

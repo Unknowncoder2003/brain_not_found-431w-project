@@ -139,6 +139,11 @@
                           <td>
                               <a href="/item-details?item={{ bid.Listing_ID }}"
                                  class="btn btn-sm btn-outline-primary">View Item</a>
+                              {% if bid.display_status == "Won" and not bid.is_paid %}
+                                  <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success ml-2">Pay Now</a>
+                              {% elif bid.display_status == "Won" and bid.is_paid %}
+                                  <button disabled class="btn btn-sm btn-secondary ml-2">Paid</button>
+                              {% endif %}
                           </td>
                         </tr>
                       {% else %}

@@ -7,12 +7,14 @@ from unittest import result
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import uuid
+import datetime
 
 from passwordHasher import hashed_password
 
 sql = sqlite3
 
 app = Flask(__name__)
+# This secret key is super important. It lets us securely track who is logged in via cookies.
 app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the session (the memory) to work
 
 DB_NAME = 'database.db'
@@ -20,45 +22,19 @@ host = 'http://127.0.0.1:5000/'
 
 
 def get_connection():
+    """
+    Grabs a fresh connection to our SQLite database. 
+    We call this anytime we want to read or write data.
+    """
     conn = sql.connect(DB_NAME)
     return conn
 
-
-def ensure_seller_ratings_table():
-    connection = get_connection()
-    cursor = connection.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS seller_ratings (
-            rating_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            auction_id INTEGER NOT NULL UNIQUE,
-            seller_email TEXT NOT NULL,
-            bidder_email TEXT NOT NULL,
-            rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    connection.commit()
-    connection.close()
-
-def ensure_watchlist_table():
-    connection = get_connection()
-    cursor = connection.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Watchlist (
-            Bidder_Email TEXT NOT NULL,
-            Seller_Email TEXT NOT NULL,
-            Listing_ID INTEGER NOT NULL,
-            Added_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (Bidder_Email, Seller_Email, Listing_ID),
-            FOREIGN KEY (Bidder_Email) REFERENCES Bidders(email) ON DELETE CASCADE,
-            FOREIGN KEY (Seller_Email, Listing_ID) REFERENCES Auction_Listings(Seller_Email, Listing_ID) ON DELETE CASCADE
-        )
-    """)
-    connection.commit()
-    connection.close()
-
 @app.route('/')
-def index():
+def home():
+    """
+    This is our landing page. It's the first thing people see when they type in the URL.
+    Just renders the basic index.html template.
+    """
     return render_template('index.html')
 
 
@@ -83,6 +59,11 @@ def valid_email_password(email, password):
 
 @app.route('/login', methods=['POST', 'GET'])
 def authenticate():
+    """
+    The bouncer of our app. Handles the login process for users.
+    If it's a GET request, we just show them the login form.
+    If it's a POST request, they submitted the form and we need to check their credentials.
+    """
     error = None
     error = request.args.get('error')
 
@@ -158,6 +139,10 @@ def find_user_html(email):
 
 @app.route('/seller', methods=['POST', 'GET'])
 def seller():
+    """
+    The main Dashboard for Sellers.
+    This fetches their profile, active listings, and processes new item creations.
+    """
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
@@ -527,6 +512,10 @@ def seller_profile():
     )
 @app.route('/bidder', methods=['GET'])
 def bidder():
+    """
+    The main Dashboard for Bidders. 
+    This page lists available auctions, handles the search bar, and applies category filters.
+    """
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
@@ -535,7 +524,7 @@ def bidder():
     cursor = connection.cursor()
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
     result = cursor.fetchone()
-    connection.close()
+
 
     if result:
         fname = result[0]
@@ -553,13 +542,35 @@ def bidder():
         items = get_items(category)
     else:
         items = get_all_items()
-
+    page = request.args.get('page', 1, type=int)
+    per_page = 30
+    offset = (page - 1) * per_page
+    
+    total_items = len(items)
+    items = items[offset : offset + per_page]
+    total_pages = (total_items + per_page - 1) // per_page
+    
+    pagination_pages = []
+    if total_pages <= 7:
+        pagination_pages = list(range(1, total_pages + 1))
+    else:
+        if page <= 4:
+            pagination_pages = [1, 2, 3, 4, 5, None, total_pages]
+        elif page >= total_pages - 3:
+            pagination_pages = [1, None, total_pages - 4, total_pages - 3, total_pages - 2, total_pages - 1, total_pages]
+        else:
+            pagination_pages = [1, None, page - 1, page, page + 1, None, total_pages]
+    
+    connection.close()
     return render_template(
         'bidder.html',
         first_name=fname,
         categories=cate,
         items=items,
-        search_term=search_term if search_term else ""
+        search_term=search_term if search_term else "",
+        page=page,
+        total_pages=total_pages,
+        pagination_pages=pagination_pages
     )
 
 def categories():
@@ -686,7 +697,6 @@ def item_bid():
                    ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
-    ensure_seller_ratings_table()
     cursor.execute("""
                    SELECT AVG(rating), COUNT(*)
                    FROM seller_ratings
@@ -710,17 +720,55 @@ def item_bid():
     highest_bid_id = cursor.fetchone()[0]
 
     user_email = session.get('email')
+    in_watchlist = False
+    if user_email:
+        cursor.execute('''
+            SELECT 1 FROM Watchlist
+            WHERE Bidder_Email = ? AND Seller_Email = ? AND Listing_ID = ?
+        ''', (user_email, seller_email, listing_id))
+        if cursor.fetchone():
+            in_watchlist = True
+
+    #---check for consecutive bidding
+    #getting the email for highest bidder
+
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
         error = None
+        if current_bid_count > 0:
+            cursor.execute('''
+                           SELECT MAX(bid_id)
+                           FROM Bids
+                           WHERE listing_id = ?
+                           ''', (listing_id,))
+            latest_bidder = cursor.fetchone()[0]
+
+            cursor.execute('''
+                           SELECT bidder_email
+                           FROM Bids
+                           WHERE listing_id = ?
+                             and bid_id = ?
+                           ''', (listing_id, latest_bidder))
+            latest_bidder_email = cursor.fetchone()[0]
+            if user_email == latest_bidder_email:
+                error = "You recently bid this item, wait for another bidder"
+                return render_template(
+                    'listing-details-bidder.html',
+                    item=item,
+                    bid_count=current_bid_count,
+                    current_price=highest_bid,
+                    avg_rating=avg_rating,
+                    rating_count=rating_count,
+                    error=error,
+                    in_watchlist=in_watchlist
+                )
         bid_price = request.form.get('bid_price')
-        if int(bid_price) > highest_bid:
+        if float(bid_price) >= highest_bid + 1:
             connection = get_connection()
             cursor = connection.cursor()
             current_bid_count += 1
             highest_bid = float(bid_price)
             highest_bid_id = highest_bid_id + 1
-
             #Insert a new bid
             cursor.execute('''
                            INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
@@ -734,8 +782,18 @@ def item_bid():
                            ''', (listing_id,))
             current_bid_count = cursor.fetchone()[0]
             print(current_bid_count)
+            cursor.execute('''
+                           SELECT Status
+                           FROM Auction_Listings
+                           WHERE Listing_ID = ?
+                           ''', (listing_id,))
+            new_status = cursor.fetchone()[0]
+            item = list(item)
+            item[9] = new_status
+            item = tuple(item)
             connection.close()
         else:
+            print("our price is less than or equal to the current bidding limit put in another one")
             error = "Your price is less than or equal to the current bid put in another one"
 
 
@@ -748,7 +806,8 @@ def item_bid():
             current_price=highest_bid,
             avg_rating=avg_rating,
             rating_count=rating_count,
-            error = error
+            error = error,
+            in_watchlist = in_watchlist
         )
     connection.close()
     #print(current_bid_count)
@@ -758,7 +817,8 @@ def item_bid():
         bid_count=current_bid_count,
         current_price=highest_bid,
         avg_rating=avg_rating,
-        rating_count=rating_count
+        rating_count=rating_count,
+        in_watchlist=in_watchlist
     )
 
 @app.route('/request/add-category', methods=['GET', 'POST'])
@@ -1162,20 +1222,8 @@ def update_card():
     connection = get_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT 1 FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
-    existing = cursor.fetchone()
-
-    if existing:
-        cursor.execute("""
-                       UPDATE Credit_Cards
-                       SET card_type       = ?,
-                           credit_card_num = ?,
-                           expire_month    = ?,
-                           expire_year     = ?,
-                           security_code   = ?
-                       WHERE Owner_email = ?
-                       """, (card_type, card_number, expire_month, expire_year, security_code, user_email))
-    else:
+    if True: # Always delete existing cards first to prevent UNIQUE constraint collisions on primary key update
+        cursor.execute("DELETE FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
         cursor.execute("""
                        INSERT INTO Credit_Cards (Owner_email, credit_card_num, card_type, expire_month, expire_year,
                                                  security_code)
@@ -1379,15 +1427,25 @@ def my_bids():
     cursor = connection.cursor()
     # This query retrieves the user's bid alongside the current highest bid for that item
     cursor.execute('''
-                   SELECT A.Auction_Title,
+                   SELECT A.Listing_ID,
+                          A.Auction_Title,
                           A.Product_Name,
                           B.bid_price,
                           A.Status AS Auction_Status,
                           (SELECT MAX(Bid_Price)
                            FROM Bids
-                           WHERE Listing_ID = B.listing_id) AS Current_High_Bid
-                   FROM Bids B JOIN Auction_Listings A ON B.listing_id = A.Listing_ID
+                           WHERE Listing_ID = B.listing_id) AS Current_High_Bid,
+                          CASE WHEN T.Transaction_ID IS NOT NULL THEN 1 ELSE 0 END AS is_paid
+                   FROM Bids B 
+                   JOIN Auction_Listings A ON B.listing_id = A.Listing_ID
+                   LEFT JOIN Transactions T ON T.Listing_ID = A.Listing_ID AND T.Buyer_Email = B.bidder_email
                    WHERE B.bidder_email = ?
+                     AND B.bid_id = (
+                         SELECT MAX(bid_id) 
+                         FROM Bids B2 
+                         WHERE B2.listing_id = B.listing_id 
+                           AND B2.bidder_email = B.bidder_email
+                     )
                    ORDER BY B.bid_id DESC
                    ''', (user_email,))
 
@@ -1400,7 +1458,7 @@ def my_bids():
         user_price = bid['bid_price']
         max_price = bid['Current_High_Bid']
         auction_status = bid['Auction_Status']
-        print(user_price, max_price, auction_status)
+        bid['is_paid'] = (bid['is_paid'] == 1)
         if user_price < max_price:
             bid['display_status'] = "Outbid"
             bid['status_color'] = "text-danger"
@@ -1411,6 +1469,9 @@ def my_bids():
             elif auction_status == 2:
                 bid['display_status'] = "Won"
                 bid['status_color'] = "text-primary"
+            elif auction_status == 3:
+                bid['display_status'] = "Reserve Not Met"
+                bid['status_color'] = "text-warning"
             else:
                 bid['display_status'] = "Auction Ended"
                 bid['status_color'] = "text-muted"
@@ -1472,7 +1533,6 @@ def listing_details(seller_email, listing_id):
     ''', (listing_id,))
     highest_bid = cursor.fetchone()[0] or 0
 
-    ensure_seller_ratings_table()
     cursor.execute("""
         SELECT AVG(rating), COUNT(*)
         FROM seller_ratings
@@ -1741,8 +1801,173 @@ def remove_from_watchlist():
 
     return redirect(url_for('watchlist'))
 
+@app.route('/pay/<int:listing_id>', methods=['GET'])
+def pay_item_get(listing_id):
+    """
+    Displays the secure checkout screen.
+    We calculate exactly how much the bidder owes and pre-fill their stored credit card info if they have one.
+    """
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    # Get Auction Info
+    cursor.execute('''
+        SELECT Seller_Email, Auction_Title, Product_Name
+        FROM Auction_Listings
+        WHERE Listing_ID = ? AND Status = 2
+    ''', (listing_id,))
+    item = cursor.fetchone()
+    if not item:
+        connection.close()
+        return redirect(url_for('my_bids'))
+    
+    # Get Max Bid
+    cursor.execute('''
+        SELECT MAX(bid_price)
+        FROM Bids
+        WHERE listing_id = ? AND bidder_email = ?
+    ''', (listing_id, user_email))
+    amount_owed = cursor.fetchone()[0] or 0.0
+
+    # Get user credit card
+    cursor.execute('SELECT * FROM Credit_Cards WHERE Owner_email = ?', (user_email,))
+    card = cursor.fetchone()
+
+    # Get user address
+    cursor.execute('''
+        SELECT a.street_num, a.street_name, z.city, z.state, a.zipcode
+        FROM Bidders b
+        LEFT JOIN Address a ON b.home_address_id = a.address_id
+        LEFT JOIN Zipcode_Info z ON a.zipcode = z.zipcode
+        WHERE b.email = ?
+    ''', (user_email,))
+    address = cursor.fetchone()
+
+    connection.close()
+    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, address=address, listing_id=listing_id, email=user_email)
+
+@app.route('/pay/<int:listing_id>', methods=['POST'])
+def pay_item_post(listing_id):
+    """
+    Process the payment. This locks in the transaction so the database knows the item was officially paid for.
+    It also saves their credit card details for next time so they don't have to retype it.
+    """
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    cc_num = request.form.get('credit_card_num')
+    card_type = request.form.get('card_type')
+    exp_month = request.form.get('expire_month')
+    exp_year = request.form.get('expire_year')
+    sec_code = request.form.get('security_code')
+    amount_paid = request.form.get('amount_paid')
+    seller_email = request.form.get('seller_email')
+
+    street_num = request.form.get('street_num')
+    street_name = request.form.get('street_name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    zipcode = request.form.get('zipcode')
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("DELETE FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
+    cursor.execute('''
+        INSERT INTO Credit_Cards 
+        (credit_card_num, card_type, expire_month, expire_year, security_code, Owner_email)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (cc_num, card_type, exp_month, exp_year, sec_code, user_email))
+
+    if street_num and street_name and city and state and zipcode:
+        cursor.execute('''
+            INSERT OR IGNORE INTO Zipcode_Info (zipcode, city, state)
+            VALUES (?, ?, ?)
+        ''', (zipcode, city, state))
+
+        cursor.execute('SELECT home_address_id FROM Bidders WHERE email = ?', (user_email,))
+        bidder_record = cursor.fetchone()
+        home_address_id = bidder_record[0] if bidder_record else None
+
+        if home_address_id:
+            cursor.execute('''
+                UPDATE Address 
+                SET street_num = ?, street_name = ?, zipcode = ?
+                WHERE address_id = ?
+            ''', (street_num, street_name, zipcode, home_address_id))
+        else:
+            import uuid
+            new_address_id = uuid.uuid4().hex
+            cursor.execute('''
+                INSERT INTO Address (address_id, street_num, street_name, zipcode)
+                VALUES (?, ?, ?, ?)
+            ''', (new_address_id, street_num, street_name, zipcode))
+            cursor.execute('''
+                UPDATE Bidders SET home_address_id = ? WHERE email = ?
+            ''', (new_address_id, user_email))
+
+    cursor.execute("SELECT MAX(Transaction_ID) FROM Transactions")
+    highest_tx = cursor.fetchone()[0]
+    next_tx_id = (highest_tx or 0) + 1
+
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    cursor.execute('''
+        INSERT INTO Transactions (Transaction_ID, Seller_Email, Listing_ID, Buyer_Email, Date, Payment)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (next_tx_id, seller_email, listing_id, user_email, current_date, amount_paid))
+
+    connection.commit()
+    connection.close()
+
+    return redirect(url_for('my_bids'))
+
+def sync_listing_statuses():
+    """
+    Run a startup check to ensure all Auction Listings have the correct status.
+    If the number of bids >= Max_bids, Status should be 2 (Sold) if reserve met, else 3 (Reserve Not Met).
+    """
+    connection = get_connection()
+    cursor = connection.cursor()
+    
+    # Update listings where max bids are reached and reserve price is met
+    cursor.execute('''
+        UPDATE Auction_Listings
+        SET Status = 2
+        WHERE Status = 1 AND Listing_ID IN (
+            SELECT a.Listing_ID
+            FROM Auction_Listings a
+            JOIN Bids b ON a.Listing_ID = b.listing_id
+            GROUP BY a.Listing_ID
+            HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) >= a.Reserve_Price
+        )
+    ''')
+    
+    # Update listings where max bids are reached and reserve price is NOT met
+    cursor.execute('''
+        UPDATE Auction_Listings
+        SET Status = 3
+        WHERE Status = 1 AND Listing_ID IN (
+            SELECT a.Listing_ID
+            FROM Auction_Listings a
+            JOIN Bids b ON a.Listing_ID = b.listing_id
+            GROUP BY a.Listing_ID
+            HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) < a.Reserve_Price
+        )
+    ''')
+    
+    connection.commit()
+    connection.close()
+
+
+
 
 if __name__ == "__main__":
-    ensure_seller_ratings_table()
-    ensure_watchlist_table()
+    sync_listing_statuses()#syncronizing the database so the listing doesn't stay active if it should be sold or expired
     app.run()
