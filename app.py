@@ -32,10 +32,9 @@ def get_connection():
 @app.route('/')
 def home():
     """
-    This is our landing page. It's the first thing people see when they type in the URL.
-    Just renders the basic index.html template.
+    This is our landing page. It redirects directly to the login.
     """
-    return render_template('index.html')
+    return redirect(url_for('authenticate'))
 
 
 '''
@@ -144,8 +143,9 @@ def seller():
     This fetches their profile, active listings, and processes new item creations.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
@@ -208,8 +208,9 @@ def seller():
 @app.route('/seller-account', methods=['GET', 'POST'])
 def seller_account():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     connection = sql.connect('database.db')
     cursor = connection.cursor()
@@ -552,8 +553,9 @@ def delete_seller_account():
 @app.route('/seller-profile', methods=['GET'])
 def seller_profile():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     avg_rating = None
     rating_count = 0
@@ -664,8 +666,9 @@ def bidder():
     This page lists available auctions, handles the search bar, and applies category filters.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -808,6 +811,10 @@ def search_items(search_term):
 
 @app.route('/item-details', methods=['POST', 'GET'])
 def item_bid():
+    user_email = session.get('email')
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
     listing_id = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
@@ -985,36 +992,50 @@ def item_bid():
         in_watchlist=in_watchlist
     )
 
-@app.route('/request/add-category', methods=['GET', 'POST'])
-def add_category_request():
+@app.route('/contact-helpdesk', methods=['GET', 'POST'])
+def contact_helpdesk():
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
 
     roles = session.get('roles', [])
     if 'bidder' not in roles and 'seller' not in roles:
-        return redirect(url_for('authenticate', error='Only bidders or sellers can submit category requests.'))
+        return redirect(url_for('authenticate', error='Only bidders or sellers can submit helpdesk requests.'))
 
     connection = get_connection()
     cursor = connection.cursor()
 
     if request.method == 'POST':
-        category_name = request.form.get('category_name', '').strip()
-        parent_category = request.form.get('parent_category', '').strip()
+        request_type = request.form.get('request_type', '').strip()
         reason = request.form.get('reason', '').strip()
 
-        if not category_name or not parent_category:
-            cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
-            categories = cursor.fetchall()
-            connection.close()
+        # Enforce seller-only constraint for AddCategory and MarketAnalysis
+        if request_type in ['AddCategory', 'MarketAnalysis'] and 'seller' not in roles:
             return render_template(
-                'add_category_request.html',
+                'contact-helpdesk.html',
                 email=user_email,
-                categories=categories,
-                error='Category name and parent category are required.'
+                is_seller=('seller' in roles),
+                error='Only sellers can request Market Analysis or Add New Category.'
             )
 
-        request_desc = f"Please add a new category {category_name} under {parent_category}. {reason}"
+        if request_type == 'AddCategory':
+            category_name = request.form.get('category_name', '').strip()
+            parent_category = request.form.get('parent_category', '').strip()
+
+            if not category_name or not parent_category:
+                cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
+                categories = cursor.fetchall()
+                connection.close()
+                return render_template(
+                    'contact-helpdesk.html',
+                    email=user_email,
+                    is_seller=('seller' in roles),
+                    categories=categories,
+                    error='Category name and parent category are required for AddCategory requests.'
+                )
+            request_desc = f"Please add a new category {category_name} under {parent_category}. {reason}"
+        else:
+            request_desc = reason
 
         cursor.execute("""
             INSERT INTO Requests (
@@ -1028,31 +1049,25 @@ def add_category_request():
         """, (
             user_email,
             'helpdeskteam@lsu.edu',
-            'AddCategory',
+            request_type,
             request_desc,
             0
         ))
 
         connection.commit()
-        cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
-        categories = cursor.fetchall()
         connection.close()
 
         return render_template(
-            'add_category_request.html',
+            'contact-helpdesk.html',
             email=user_email,
-            categories=categories,
-            success='Your category request has been submitted successfully.'
+            is_seller=('seller' in roles),
+            success='Your request has been submitted successfully.'
         )
 
-    cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
-    categories = cursor.fetchall()
-    connection.close()
-
     return render_template(
-        'add_category_request.html',
+        'contact-helpdesk.html',
         email=user_email,
-        categories=categories
+        is_seller=('seller' in roles)
     )
 
 @app.route('/helpdesk', methods=['GET'])
@@ -1075,8 +1090,7 @@ def helpdesk():
     cursor.execute("""
         SELECT *
         FROM Requests
-        WHERE request_type = 'AddCategory'
-          AND request_status = 0
+        WHERE request_status = 0
           AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
         ORDER BY request_id DESC
     """)
@@ -1085,8 +1099,7 @@ def helpdesk():
     cursor.execute("""
         SELECT *
         FROM Requests
-        WHERE request_type = 'AddCategory'
-          AND helpdesk_staff_email = ?
+        WHERE helpdesk_staff_email = ?
           AND request_status IN (1, 2)
         ORDER BY request_id DESC
     """, (user_email,))
@@ -1119,7 +1132,6 @@ def claim_request(request_id):
         UPDATE Requests
         SET helpdesk_staff_email = ?, request_status = 1
         WHERE request_id = ?
-          AND request_type = 'AddCategory'
           AND request_status = 0
           AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
     """, (user_email, request_id))
@@ -1223,8 +1235,9 @@ def complete_request(request_id):
 @app.route('/profile', methods=['GET'])
 def profile():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     edit = request.args.get("edit")
     message = request.args.get("message")
@@ -1297,8 +1310,9 @@ def profile():
 @app.route('/profile/update_basic', methods=['POST'])
 def update_basic():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
@@ -1323,8 +1337,9 @@ def update_basic():
 @app.route('/profile/update_address', methods=['POST'])
 def update_address():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     street = request.form.get('street', '').strip()
     zipcode = request.form.get('zipcode', '').strip()
@@ -1375,8 +1390,9 @@ def update_address():
 @app.route('/profile/update_card', methods=['POST'])
 def update_card():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     card_type = request.form.get('card_type')
     card_number = request.form.get('card_number')
@@ -1411,8 +1427,9 @@ def update_card():
 @app.route('/profile/update_password', methods=['POST'])
 def update_password():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     old_password = request.form.get('old_password', '').strip()
     new_password = request.form.get('new_password', '').strip()
@@ -1591,8 +1608,9 @@ def register_page():
 @app.route('/my-bids', methods=['GET'])
 def my_bids():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     # Use sqlite3.Row to access columns by their database names
@@ -1655,8 +1673,9 @@ def my_bids():
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -1678,6 +1697,10 @@ def my_listing():
 
 @app.route('/listing-details/<seller_email>/<int:listing_id>')
 def listing_details(seller_email, listing_id):
+    user_email = session.get('email')
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -1742,8 +1765,9 @@ def listing_details(seller_email, listing_id):
 @app.route('/deactivate-listing/<seller_email>/<int:listing_id>', methods=['POST'])
 def deactivate_listing(seller_email, listing_id):
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     if user_email != seller_email:
         return redirect(url_for('my_listing'))
@@ -1771,9 +1795,10 @@ def deactivate_listing(seller_email, listing_id):
 @app.route('/edit-listing/<seller_email>/<int:listing_id>', methods=['GET', 'POST'])
 def edit_listing(seller_email, listing_id):
     user_email = session.get('email')
+    roles = session.get('roles', [])
 
-    if not user_email or user_email != seller_email:
-        return redirect(url_for('authenticate'))
+    if not user_email or user_email != seller_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     if request.method == 'POST':
         connection = get_connection()
@@ -1867,8 +1892,9 @@ def get_category_tree():
 @app.route('/post-item', methods=['GET', 'POST'])
 def post_item():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     if request.method == 'POST':
         title = request.form.get('auction_title')
@@ -1919,8 +1945,9 @@ def post_item():
 @app.route('/watchlist', methods=['GET'])
 def watchlist():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     connection.row_factory = sqlite3.Row
@@ -1956,8 +1983,9 @@ def watchlist():
 @app.route('/watchlist/add', methods=['POST'])
 def add_to_watchlist():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     seller_email = request.form.get('seller_email')
     listing_id = request.form.get('listing_id')
@@ -1984,8 +2012,9 @@ def add_to_watchlist():
 @app.route('/watchlist/remove', methods=['POST'])
 def remove_from_watchlist():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     seller_email = request.form.get('seller_email')
     listing_id = request.form.get('listing_id')
@@ -2009,8 +2038,9 @@ def pay_item_get(listing_id):
     We calculate exactly how much the bidder owes and pre-fill their stored credit card info if they have one.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     connection.row_factory = sqlite3.Row
@@ -2059,8 +2089,9 @@ def pay_item_post(listing_id):
     It also saves their credit card details for next time so they don't have to retype it.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     cc_num = request.form.get('credit_card_num')
     card_type = request.form.get('card_type')
