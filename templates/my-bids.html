@@ -143,6 +143,50 @@
                                   <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success ml-2">Pay Now</a>
                               {% elif bid.display_status == "Won" and bid.is_paid %}
                                   <button disabled class="btn btn-sm btn-secondary ml-2">Paid</button>
+
+                                  <button class="btn btn-sm btn-secondary ml-2" data-toggle="modal" data-target="#exampleModal">Rate</button>
+
+                                <!-- Modal for Rating-->
+                                  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                      <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                          <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalLabel">Rate the Seller</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                              <span aria-hidden="true">&times;</span>
+                                            </button>
+                                          </div>
+                                          <form method="POST">
+                                          <div class="modal-body">
+
+                                              <div class="form-group">
+                                                  <!-- source w3school select-->
+                                                      <label for="rate">Choose a rating:</label>
+                                                      <select name="rate" id="rate">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                      </select>
+                                                       <br><br>
+
+                                                <label for="description" class="col-form-label">Description:</label>
+                                                  <!--settings to limit the decimal of the input-->
+                                                <input type="text" class="form-control" id="description" name="description" placeholder="Description">
+                                              </div>
+
+                                          </div>
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                            <input type="hidden" name="listing_id" value="{{ bid.Listing_ID }}">
+                                              <input type="hidden" name="seller" value="{{ bid.Seller_Email }}">
+                                            <button type="submit" class="btn btn-primary">Rate</button>
+                                          </div>
+                                          </form>
+                                        </div>
+                                      </div>
+                                    </div>
                               {% endif %}
                           </td>
                         </tr>
@@ -154,3 +198,23 @@
                             </td>
                         </tr>
                       {% endfor %}
+                      </tbody>
+
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+<script>
+  $('#myModal').on('shown.bs.modal', function () {
+    $('#myInput').trigger('focus')
+  })
+</script>
+
+</body>
+</html>
