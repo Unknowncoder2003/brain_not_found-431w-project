@@ -1632,8 +1632,18 @@ def pay_item_get(listing_id):
     cursor.execute('SELECT * FROM Credit_Cards WHERE Owner_email = ?', (user_email,))
     card = cursor.fetchone()
 
+    # Get user address
+    cursor.execute('''
+        SELECT a.street_num, a.street_name, z.city, z.state, a.zipcode
+        FROM Bidders b
+        LEFT JOIN Address a ON b.home_address_id = a.address_id
+        LEFT JOIN Zipcode_Info z ON a.zipcode = z.zipcode
+        WHERE b.email = ?
+    ''', (user_email,))
+    address = cursor.fetchone()
+
     connection.close()
-    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, listing_id=listing_id, email=user_email)
+    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, address=address, listing_id=listing_id, email=user_email)
 
 @app.route('/pay/<int:listing_id>', methods=['POST'])
 def pay_item_post(listing_id):
@@ -1653,6 +1663,12 @@ def pay_item_post(listing_id):
     amount_paid = request.form.get('amount_paid')
     seller_email = request.form.get('seller_email')
 
+    street_num = request.form.get('street_num')
+    street_name = request.form.get('street_name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    zipcode = request.form.get('zipcode')
+
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -1662,6 +1678,33 @@ def pay_item_post(listing_id):
         (credit_card_num, card_type, expire_month, expire_year, security_code, Owner_email)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (cc_num, card_type, exp_month, exp_year, sec_code, user_email))
+
+    if street_num and street_name and city and state and zipcode:
+        cursor.execute('''
+            INSERT OR IGNORE INTO Zipcode_Info (zipcode, city, state)
+            VALUES (?, ?, ?)
+        ''', (zipcode, city, state))
+
+        cursor.execute('SELECT home_address_id FROM Bidders WHERE email = ?', (user_email,))
+        bidder_record = cursor.fetchone()
+        home_address_id = bidder_record[0] if bidder_record else None
+
+        if home_address_id:
+            cursor.execute('''
+                UPDATE Address 
+                SET street_num = ?, street_name = ?, zipcode = ?
+                WHERE address_id = ?
+            ''', (street_num, street_name, zipcode, home_address_id))
+        else:
+            import uuid
+            new_address_id = uuid.uuid4().hex
+            cursor.execute('''
+                INSERT INTO Address (address_id, street_num, street_name, zipcode)
+                VALUES (?, ?, ?, ?)
+            ''', (new_address_id, street_num, street_name, zipcode))
+            cursor.execute('''
+                UPDATE Bidders SET home_address_id = ? WHERE email = ?
+            ''', (new_address_id, user_email))
 
     cursor.execute("SELECT MAX(Transaction_ID) FROM Transactions")
     highest_tx = cursor.fetchone()[0]
@@ -1679,5 +1722,46 @@ def pay_item_post(listing_id):
 
     return redirect(url_for('my_bids'))
 
+def sync_listing_statuses():
+    """
+    Run a startup check to ensure all Auction Listings have the correct status.
+    If the number of bids >= Max_bids, Status should be 2 (Sold) if reserve met, else 3 (Reserve Not Met).
+    """
+    connection = get_connection()
+    cursor = connection.cursor()
+    
+    # Update listings where max bids are reached and reserve price is met
+    cursor.execute('''
+        UPDATE Auction_Listings
+        SET Status = 2
+        WHERE Status = 1 AND Listing_ID IN (
+            SELECT a.Listing_ID
+            FROM Auction_Listings a
+            JOIN Bids b ON a.Listing_ID = b.listing_id
+            GROUP BY a.Listing_ID
+            HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) >= a.Reserve_Price
+        )
+    ''')
+    
+    # Update listings where max bids are reached and reserve price is NOT met
+    cursor.execute('''
+        UPDATE Auction_Listings
+        SET Status = 3
+        WHERE Status = 1 AND Listing_ID IN (
+            SELECT a.Listing_ID
+            FROM Auction_Listings a
+            JOIN Bids b ON a.Listing_ID = b.listing_id
+            GROUP BY a.Listing_ID
+            HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) < a.Reserve_Price
+        )
+    ''')
+    
+    connection.commit()
+    connection.close()
+
+
+
+
 if __name__ == "__main__":
+    sync_listing_statuses()#syncronizing the database so the listing doesn't stay active if it should be sold or expired
     app.run()
