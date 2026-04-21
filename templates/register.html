@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NittanyAuction Register</title>
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body {
             background-color: #f2f2f2;
@@ -33,14 +32,19 @@
             margin-bottom: 20px;
         }
 
-        .brand-title .nittany { color: #1e4fa1; }
-        .brand-title .auction { color: #28a745; }
+        .brand-title .nittany {
+            color: #1e4fa1;
+        }
+
+        .brand-title .auction {
+            color: #28a745;
+        }
 
         .register-card {
             background: white;
             border: 1px solid #d9d9d9;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
@@ -110,405 +114,340 @@
 
 <body>
 
-<div class="register-wrapper">
-    <div class="register-container">
+    <div class="register-wrapper">
+        <div class="register-container">
 
-        <div class="brand-title">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </div>
-
-        <div class="register-card">
-
-            <div class="tab-header">
-                <a href="/login" class="tab">Sign In</a>
-                <div class="tab active">Register</div>
+            <div class="brand-title">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
             </div>
 
-            <div class="form-section">
-                <form action="/register" method="POST" id="register-form">
+            <div class="register-card">
 
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email"
-                               class="form-control"
-                               id="email"
-                               name="email"
-                               placeholder="Enter your email"
-                               required>
-                    </div>
+                <div class="tab-header">
+                    <a href="/login" class="tab">Sign In</a>
+                    <div class="tab active">Register</div>
+                </div>
 
-                    <div class="form-group">
-                        <label for="role">Register As</label>
-                        <select class="form-control"
-                                id="role"
-                                name="role"
-                                required
-                                onchange="toggleRoleFields()">
-                            <option value="">Select account type</option>
-                            <option value="bidder">Bidder</option>
-                            <option value="seller">Seller</option>
-                        </select>
-                    </div>
+                <div class="form-section">
+                    <form action="/register" method="POST" id="register-form">
 
-                    <!-- BIDDER -->
-                    <div id="bidder-fields" class="role-section" style="display:none;">
-                        <h5>Bidder Information</h5>
-
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label for="first_name">First Name</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="first_name"
-                                       name="first_name"
-                                       placeholder="First name">
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label for="last_name">Last Name</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="last_name"
-                                       name="last_name"
-                                       placeholder="Last name">
-                            </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                placeholder="Enter your email" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="age">Age</label>
-                            <input type="number"
-                                   min="1"
-                                   class="form-control"
-                                   id="age"
-                                   name="age"
-                                   placeholder="Enter your age">
+                            <label for="role">Register As</label>
+                            <select class="form-control" id="role" name="role" required onchange="toggleRoleFields()">
+                                <option value="">Select account type</option>
+                                <option value="bidder">Bidder</option>
+                                <option value="seller">Seller</option>
+                            </select>
                         </div>
 
-                        <div class="nested-section">
-                            <h6>Home Address</h6>
+                        <!-- BIDDER -->
+                        <div id="bidder-fields" class="role-section" style="display:none;">
+                            <h5>Bidder Information</h5>
 
                             <div class="form-row">
-                                <div class="form-group col-md-4">
-                                    <label for="home_zipcode">Zipcode</label>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="home_zipcode"
-                                           name="home_zipcode"
-                                           placeholder="Enter zipcode">
+                                <div class="form-group col-md-6">
+                                    <label for="first_name">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name"
+                                        placeholder="First name">
                                 </div>
-                                <div class="form-group col-md-4">
-                                    <label for="home_street_num">Street Number</label>
-                                    <input type="number"
-                                           min="0"
-                                           class="form-control"
-                                           id="home_street_num"
-                                           name="home_street_num"
-                                           placeholder="Enter street number">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="home_street_name">Street Name</label>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="home_street_name"
-                                           name="home_street_name"
-                                           placeholder="Enter street name">
+                                <div class="form-group col-md-6">
+                                    <label for="last_name">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name"
+                                        placeholder="Last name">
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-group mt-3">
-                            <label for="major">Major</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="major"
-                                   name="major"
-                                   placeholder="Enter your major">
-                        </div>
-                    </div>
-
-                    <!-- SELLER -->
-                    <div id="seller-fields" class="role-section" style="display:none;">
-                        <h5>Seller Information</h5>
-
-                        <div class="form-group">
-                            <label for="bank_routing_number">Bank Routing Number</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="bank_routing_number"
-                                   name="bank_routing_number"
-                                   placeholder="0011-4959-0"
-                                   inputmode="numeric"
-                                   maxlength="11">
-                            <div class="hint-text">Format: 0011-4959-0</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="bank_account_number">Bank Account Number</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="bank_account_number"
-                                   name="bank_account_number"
-                                   placeholder="Enter 8-digit account number"
-                                   inputmode="numeric"
-                                   maxlength="8">
-                            <div class="hint-text">Format: 8 digits, for example 31923667</div>
-                        </div>
-
-                        <div class="form-check">
-                            <input type="checkbox"
-                                   class="form-check-input"
-                                   id="is_local_vendor"
-                                   name="is_local_vendor"
-                                   onchange="toggleVendorFields()">
-                            <label class="form-check-label" for="is_local_vendor">
-                                I am a Local Vendor
-                            </label>
-                        </div>
-
-                        <!-- LOCAL VENDOR -->
-                        <div id="vendor-fields" class="nested-section" style="display:none;">
-                            <h6>Local Vendor Information</h6>
 
                             <div class="form-group">
-                                <label for="business_name">Business Name</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="business_name"
-                                       name="business_name"
-                                       placeholder="Enter business name">
+                                <label for="age">Age</label>
+                                <input type="number" min="1" class="form-control" id="age" name="age"
+                                    placeholder="Enter your age">
                             </div>
 
                             <div class="nested-section">
-                                <h6>Business Address</h6>
+                                <h6>Home Address</h6>
 
                                 <div class="form-row">
                                     <div class="form-group col-md-4">
-                                        <label for="business_zipcode">Zipcode</label>
-                                        <input type="text"
-                                               class="form-control"
-                                               id="business_zipcode"
-                                               name="business_zipcode"
-                                               placeholder="Enter zipcode">
+                                        <label for="home_zipcode">Zipcode</label>
+                                        <input type="text" class="form-control" id="home_zipcode" name="home_zipcode"
+                                            placeholder="Enter zipcode">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label for="business_street_num">Street Number</label>
-                                        <input type="number"
-                                               min="0"
-                                               class="form-control"
-                                               id="business_street_num"
-                                               name="business_street_num"
-                                               placeholder="Enter street number">
+                                        <label for="home_street_num">Street Number</label>
+                                        <input type="number" min="0" class="form-control" id="home_street_num"
+                                            name="home_street_num" placeholder="Enter street number">
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label for="business_street_name">Street Name</label>
-                                        <input type="text"
-                                               class="form-control"
-                                               id="business_street_name"
-                                               name="business_street_name"
-                                               placeholder="Enter street name">
+                                        <label for="home_street_name">Street Name</label>
+                                        <input type="text" class="form-control" id="home_street_name"
+                                            name="home_street_name" placeholder="Enter street name">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-group mt-3">
-                                <label for="customer_service_phone_number">Customer Service Phone Number</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="customer_service_phone_number"
-                                       name="customer_service_phone_number"
-                                       placeholder="555-123-4567"
-                                       inputmode="numeric"
-                                       maxlength="12">
-                                <div class="hint-text">Format: 555-123-4567</div>
+                                <label for="major">Major</label>
+                                <input type="text" class="form-control" id="major" name="major"
+                                    placeholder="Enter your major">
                             </div>
                         </div>
-                    </div>
 
-                    <div class="form-group mt-3">
-                        <label for="password">Password</label>
-                        <div class="input-group">
-                            <input type="password"
-                                   class="form-control"
-                                   id="password"
-                                   name="password"
-                                   required>
+                        <!-- SELLER -->
+                        <div id="seller-fields" class="role-section" style="display:none;">
+                            <h5>Seller Information</h5>
 
-                            <div class="input-group-append">
-                                <span class="input-group-text" onclick="togglePassword('password', this)">
-                                    <i class="fa fa-eye"></i>
-                                </span>
+                            <div class="form-group">
+                                <label for="bank_routing_number">Bank Routing Number</label>
+                                <input type="text" class="form-control" id="bank_routing_number"
+                                    name="bank_routing_number" placeholder="0011-4959-0" inputmode="numeric"
+                                    maxlength="11">
+                                <div class="hint-text">Format: 0011-4959-0</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bank_account_number">Bank Account Number</label>
+                                <input type="text" class="form-control" id="bank_account_number"
+                                    name="bank_account_number" placeholder="Enter 8-digit account number"
+                                    inputmode="numeric" maxlength="8">
+                                <div class="hint-text">Format: 8 digits, for example 31923667</div>
+                            </div>
+
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="is_local_vendor"
+                                    name="is_local_vendor" onchange="toggleVendorFields()">
+                                <label class="form-check-label" for="is_local_vendor">
+                                    I am a Local Vendor
+                                </label>
+                            </div>
+
+                            <!-- LOCAL VENDOR -->
+                            <div id="vendor-fields" class="nested-section" style="display:none;">
+                                <h6>Local Vendor Information</h6>
+
+                                <div class="form-group">
+                                    <label for="business_name">Business Name</label>
+                                    <input type="text" class="form-control" id="business_name" name="business_name"
+                                        placeholder="Enter business name">
+                                </div>
+
+                                <div class="nested-section">
+                                    <h6>Business Address</h6>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="business_zipcode">Zipcode</label>
+                                            <input type="text" class="form-control" id="business_zipcode"
+                                                name="business_zipcode" placeholder="Enter zipcode">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="business_street_num">Street Number</label>
+                                            <input type="number" min="0" class="form-control" id="business_street_num"
+                                                name="business_street_num" placeholder="Enter street number">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="business_street_name">Street Name</label>
+                                            <input type="text" class="form-control" id="business_street_name"
+                                                name="business_street_name" placeholder="Enter street name">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mt-3">
+                                    <label for="customer_service_phone_number">Customer Service Phone Number</label>
+                                    <input type="text" class="form-control" id="customer_service_phone_number"
+                                        name="customer_service_phone_number" placeholder="555-123-4567"
+                                        inputmode="numeric" maxlength="12">
+                                    <div class="hint-text">Format: 555-123-4567</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                    <label for="confirm_password">Confirm Password</label>
-                    <div class="input-group">
-                        <input type="password"
-                               class="form-control"
-                               id="confirm_password"
-                               name="confirm_password"
-                               required>
+                        <div class="form-group mt-3">
+                            <label for="password">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" required>
 
-                        <div class="input-group-append">
-                            <span class="input-group-text" onclick="togglePassword('confirm_password', this)">
-                                <i class="fa fa-eye"></i>
-                            </span>
+                                <div class="input-group-append">
+                                    <span class="input-group-text" onclick="togglePassword('password', this)">
+                                        <i class="fa fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirm_password"
+                                    name="confirm_password" required>
+
+                                <div class="input-group-append">
+                                    <span class="input-group-text" onclick="togglePassword('confirm_password', this)">
+                                        <i class="fa fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
 
-                    {% if error %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                    {% endif %}
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
 
-                    {% if success %}
-                    <div class="alert alert-success">{{ success }}</div>
-                    {% endif %}
+                        {% if success %}
+                        <div class="alert alert-success">{{ success }}</div>
+                        {% endif %}
 
-                    <button type="submit" class="btn btn-success btn-register">
-                        Create Account
-                    </button>
+                        <button type="submit" class="btn btn-success btn-register">
+                            Create Account
+                        </button>
 
-                    <div class="bottom-links">
+                        <!--div class="bottom-links">
                         <a href="/login">Back to Sign In</a>
-                    </div>
+                    </div-->
 
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-function setRequired(inputs, isRequired) {
-    inputs.forEach(input => {
-        input.required = isRequired;
-    });
-}
+    <script>
+        function setRequired(inputs, isRequired) {
+            inputs.forEach(input => {
+                input.required = isRequired;
+            });
+        }
 
-function toggleRoleFields() {
-    const role = document.getElementById("role").value;
+        function toggleRoleFields() {
+            const role = document.getElementById("role").value;
 
-    const bidder = document.getElementById("bidder-fields");
-    const seller = document.getElementById("seller-fields");
-    const vendor = document.getElementById("vendor-fields");
-    const vendorCheckbox = document.getElementById("is_local_vendor");
+            const bidder = document.getElementById("bidder-fields");
+            const seller = document.getElementById("seller-fields");
+            const vendor = document.getElementById("vendor-fields");
+            const vendorCheckbox = document.getElementById("is_local_vendor");
 
-    const bidderInputs = bidder.querySelectorAll("input");
-    const sellerInputs = seller.querySelectorAll("input");
-    const vendorInputs = vendor.querySelectorAll("input");
+            const bidderInputs = bidder.querySelectorAll("input");
+            const sellerInputs = seller.querySelectorAll("input");
+            const vendorInputs = vendor.querySelectorAll("input");
 
-    bidder.style.display = "none";
-    seller.style.display = "none";
-    vendor.style.display = "none";
-    vendorCheckbox.checked = false;
+            bidder.style.display = "none";
+            seller.style.display = "none";
+            vendor.style.display = "none";
+            vendorCheckbox.checked = false;
 
-    setRequired(bidderInputs, false);
-    setRequired(sellerInputs, false);
-    setRequired(vendorInputs, false);
+            setRequired(bidderInputs, false);
+            setRequired(sellerInputs, false);
+            setRequired(vendorInputs, false);
 
-    if (role === "bidder") {
-        bidder.style.display = "block";
-        setRequired(bidderInputs, true);
-    } else if (role === "seller") {
-        seller.style.display = "block";
-        document.getElementById("bank_routing_number").required = true;
-        document.getElementById("bank_account_number").required = true;
-    }
-}
+            if (role === "bidder") {
+                bidder.style.display = "block";
+                setRequired(bidderInputs, true);
+            } else if (role === "seller") {
+                seller.style.display = "block";
+                document.getElementById("bank_routing_number").required = true;
+                document.getElementById("bank_account_number").required = true;
+            }
+        }
 
-function toggleVendorFields() {
-    const checkbox = document.getElementById("is_local_vendor");
-    const vendor = document.getElementById("vendor-fields");
-    const vendorInputs = vendor.querySelectorAll("input");
+        function toggleVendorFields() {
+            const checkbox = document.getElementById("is_local_vendor");
+            const vendor = document.getElementById("vendor-fields");
+            const vendorInputs = vendor.querySelectorAll("input");
 
-    if (checkbox.checked) {
-        vendor.style.display = "block";
-        setRequired(vendorInputs, true);
-    } else {
-        vendor.style.display = "none";
-        setRequired(vendorInputs, false);
-    }
-}
+            if (checkbox.checked) {
+                vendor.style.display = "block";
+                setRequired(vendorInputs, true);
+            } else {
+                vendor.style.display = "none";
+                setRequired(vendorInputs, false);
+            }
+        }
 
-function formatPhoneNumber(value) {
-    const digits = value.replace(/\D/g, '').slice(0, 10);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
-    return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
-}
+        function formatPhoneNumber(value) {
+            const digits = value.replace(/\D/g, '').slice(0, 10);
+            if (digits.length <= 3) return digits;
+            if (digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
+            return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
+        }
 
-function formatRoutingNumber(value) {
-    const digits = value.replace(/\D/g, '').slice(0, 9);
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 8) return digits.slice(0, 4) + '-' + digits.slice(4);
-    return digits.slice(0, 4) + '-' + digits.slice(4, 8) + '-' + digits.slice(8);
-}
+        function formatRoutingNumber(value) {
+            const digits = value.replace(/\D/g, '').slice(0, 9);
+            if (digits.length <= 4) return digits;
+            if (digits.length <= 8) return digits.slice(0, 4) + '-' + digits.slice(4);
+            return digits.slice(0, 4) + '-' + digits.slice(4, 8) + '-' + digits.slice(8);
+        }
 
-document.getElementById("customer_service_phone_number").addEventListener("input", function(e) {
-    e.target.value = formatPhoneNumber(e.target.value);
-});
+        document.getElementById("customer_service_phone_number").addEventListener("input", function (e) {
+            e.target.value = formatPhoneNumber(e.target.value);
+        });
 
-document.getElementById("bank_routing_number").addEventListener("input", function(e) {
-    e.target.value = formatRoutingNumber(e.target.value);
-});
+        document.getElementById("bank_routing_number").addEventListener("input", function (e) {
+            e.target.value = formatRoutingNumber(e.target.value);
+        });
 
-document.getElementById("bank_account_number").addEventListener("input", function(e) {
-    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
-});
+        document.getElementById("bank_account_number").addEventListener("input", function (e) {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
+        });
 
-document.getElementById("home_zipcode").addEventListener("input", function(e) {
-    e.target.value = e.target.value.replace(/\D/g, '');
-});
+        document.getElementById("home_zipcode").addEventListener("input", function (e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
 
-document.getElementById("business_zipcode").addEventListener("input", function(e) {
-    e.target.value = e.target.value.replace(/\D/g, '');
-});
+        document.getElementById("business_zipcode").addEventListener("input", function (e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
 
-document.getElementById("register-form").addEventListener("submit", function(e) {
-    const role = document.getElementById("role").value;
-    const isLocalVendor = document.getElementById("is_local_vendor").checked;
-    const routing = document.getElementById("bank_routing_number").value;
-    const routingDigits = routing.replace(/\D/g, '');
-    const accountNumber = document.getElementById("bank_account_number").value;
-    const phone = document.getElementById("customer_service_phone_number").value;
+        document.getElementById("register-form").addEventListener("submit", function (e) {
+            const role = document.getElementById("role").value;
+            const isLocalVendor = document.getElementById("is_local_vendor").checked;
+            const routing = document.getElementById("bank_routing_number").value;
+            const routingDigits = routing.replace(/\D/g, '');
+            const accountNumber = document.getElementById("bank_account_number").value;
+            const phone = document.getElementById("customer_service_phone_number").value;
 
-    if (role === "seller" && routingDigits.length !== 9) {
-        e.preventDefault();
-        alert("Routing number must contain exactly 9 digits in the format 0011-4959-0.");
-        return;
-    }
+            if (role === "seller" && routingDigits.length !== 9) {
+                e.preventDefault();
+                alert("Routing number must contain exactly 9 digits in the format 0011-4959-0.");
+                return;
+            }
 
-    if (role === "seller" && accountNumber.length !== 8) {
-        e.preventDefault();
-        alert("Bank account number must contain exactly 8 digits.");
-        return;
-    }
+            if (role === "seller" && accountNumber.length !== 8) {
+                e.preventDefault();
+                alert("Bank account number must contain exactly 8 digits.");
+                return;
+            }
 
-    if (role === "seller" && isLocalVendor && phone.length !== 12) {
-        e.preventDefault();
-        alert("Customer service phone number must be in the format XXX-XXX-XXXX.");
-    }
-});
+            if (role === "seller" && isLocalVendor && phone.length !== 12) {
+                e.preventDefault();
+                alert("Customer service phone number must be in the format XXX-XXX-XXXX.");
+            }
+        });
 
-function togglePassword(fieldId, iconSpan) {
-    const field = document.getElementById(fieldId);
-    const icon = iconSpan.querySelector("i");
+        function togglePassword(fieldId, iconSpan) {
+            const field = document.getElementById(fieldId);
+            const icon = iconSpan.querySelector("i");
 
-    if (field.type === "password") {
-        field.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-    } else {
-        field.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-    }
-}
-</script>
+            if (field.type === "password") {
+                field.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                field.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+    </script>
 
 
 
 </body>
+
 </html>

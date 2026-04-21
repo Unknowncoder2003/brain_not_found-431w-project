@@ -32,10 +32,9 @@ def get_connection():
 @app.route('/')
 def home():
     """
-    This is our landing page. It's the first thing people see when they type in the URL.
-    Just renders the basic index.html template.
+    This is our landing page. It redirects directly to the login.
     """
-    return render_template('index.html')
+    return redirect(url_for('authenticate'))
 
 
 '''
