@@ -662,8 +662,9 @@ def seller_profile():
 @app.route('/bidder', methods=['GET'])
 def bidder():
     """
-    The main Dashboard for Bidders. 
-    This page lists available auctions, handles the search bar, and applies category filters.
+    Main Dashboard for Bidders.
+    Implements dynamic category traversal, advanced keyword/price search,
+    and server-side pagination to maintain high performance.
     """
     user_email = session.get('email')
     roles = session.get('roles', [])
@@ -714,11 +715,18 @@ def bidder():
         else:
             pagination_pages = [1, None, page - 1, page, page + 1, None, total_pages]
     
+    current_category = category if category else 'All'
+    subcategories = get_subcategories(current_category)
+    breadcrumbs = get_category_path(current_category)
+    
     connection.close()
     return render_template(
         'bidder.html',
         first_name=fname,
-        categories=cate,
+        categories=get_category_tree(), # Keeping for legacy dropdown if needed
+        subcategories=subcategories,
+        breadcrumbs=breadcrumbs,
+        current_category=current_category,
         items=items,
         search_term=search_term if search_term else "",
         page=page,
@@ -764,7 +772,10 @@ def get_all_subcategories(target_category):
 
 
 def get_items(category_name, limit, offset):
-    """fetch items from the selected category AND all subcategories."""
+    """
+    Fetches active listings for a specific category AND all its subcategories.
+    Implements SQL-level pagination (LIMIT/OFFSET) and returns total count for UI pagination logic.
+    """
     # Get the full list of related categories
     category_list = get_all_subcategories(category_name)
     connection = get_connection()
@@ -808,6 +819,11 @@ def get_all_items(limit, offset):
     return data, total_count
 
 def search_items(search_term, min_price=None, max_price=None, limit=30, offset=0):
+    """
+    Comprehensive search engine. 
+    Matches keyword against Title, Description, Category, and Seller Email.
+    Applies optional price filters based on current highest bid (treating no-bids as satisfying the filter).
+    """
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -1962,6 +1978,10 @@ def listing_details(seller_email, listing_id):
 
 @app.route('/deactivate-listing/<seller_email>/<int:listing_id>', methods=['POST'])
 def deactivate_listing(seller_email, listing_id):
+    """
+    Handles the removal of a listing from the market.
+    Enforces audit logging by requiring a removal reason and calculating remaining bid capacity.
+    """
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'seller' not in roles:
@@ -2008,6 +2028,11 @@ def deactivate_listing(seller_email, listing_id):
 
 @app.route('/edit-listing/<seller_email>/<int:listing_id>', methods=['GET', 'POST'])
 def edit_listing(seller_email, listing_id):
+    """
+    Allows sellers to update listing details.
+    SECURITY: blocks edits if the listing has already received bids 
+    or is no longer in an 'Active' state.
+    """
     user_email = session.get('email')
     roles = session.get('roles', [])
 
@@ -2097,8 +2122,51 @@ def edit_listing(seller_email, listing_id):
         return render_template('edit-listing.html', item=item, category_tree=category_tree)
 
 
+def get_subcategories(parent_name):
+    """
+    Dynamically fetches immediate child categories for the given parent.
+    Used for level-by-level hierarchy traversal without loading the full tree.
+    """
+    connection = get_connection()
+    cursor = connection.cursor()
+    # If parent is None or 'All', we look for 'Root'
+    if not parent_name or parent_name == 'All':
+        target_parent = 'Root'
+    else:
+        target_parent = parent_name
+    
+    cursor.execute('SELECT category_name FROM Categories WHERE parent_category = ?', (target_parent,))
+    rows = cursor.fetchall()
+    connection.close()
+    return [row[0] for row in rows]
+
+def get_category_path(current_category):
+    """
+    Recursive path builder to generate breadcrumb navigation trails.
+    """
+    if not current_category or current_category == 'All':
+        return []
+    
+    path = []
+    curr = current_category
+    connection = get_connection()
+    cursor = connection.cursor()
+    
+    while curr and curr != 'Root':
+        path.append(curr)
+        cursor.execute('SELECT parent_category FROM Categories WHERE category_name = ?', (curr,))
+        row = cursor.fetchone()
+        if row:
+            curr = row[0]
+        else:
+            break
+            
+    connection.close()
+    path.reverse()
+    return path
+
 def get_category_tree():
-    """Helper function to get the category tree"""
+    """Helper function to get the category tree (used for dropdowns)"""
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT category_name, parent_category FROM Categories')
