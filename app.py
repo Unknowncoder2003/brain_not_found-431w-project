@@ -1748,7 +1748,7 @@ def register_page():
     return render_template('register.html')
 
 
-@app.route('/my-bids', methods=['GET'])
+@app.route('/my-bids', methods=['GET','POST'])
 def my_bids():
     user_email = session.get('email')
     roles = session.get('roles', [])
@@ -1761,7 +1761,8 @@ def my_bids():
     cursor = connection.cursor()
     # This query retrieves the user's bid alongside the current highest bid for that item
     cursor.execute('''
-                   SELECT A.Listing_ID,
+                   SELECT A.Seller_Email,
+                          A.Listing_ID,
                           A.Auction_Title,
                           A.Product_Name,
                           B.bid_price,
@@ -1812,6 +1813,27 @@ def my_bids():
 
         processed_bids.append(bid)
 
+    #rating mechanics for bidders to sellers
+    if request.method == 'POST':
+        rating = request.form.get('rate')
+        description = request.form.get('description')
+        listing_id = request.form.get('listing_id')
+        seller_email = request.form.get('seller')
+        print("Rating:", rating)
+        print("Description:", description)
+        print("Listing ID:", listing_id)
+        print("Seller Email:", seller_email)
+
+        connection = get_connection()
+        cursor = connection.cursor()
+        # Insert stuff into the ratings table
+        cursor.execute('''INSERT INTO Rating(Bidder_Email, Seller_Email, Date, Rating, Rating_Desc)
+                          VALUES (?, ?, CURRENT_DATE, ?, ?)
+                       ''', (user_email, seller_email, rating, description))
+
+        connection.commit()
+
+        connection.close()
     return render_template('my-bids.html', email=user_email, listings=processed_bids)
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
