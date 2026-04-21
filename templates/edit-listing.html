@@ -32,6 +32,7 @@
                 <h2 class="mt-2">Edit Listing #{{ item[1] }}</h2>
             </div>
 
+            {% if item[9] == 1 %}
             <form id="editListingForm" action="/edit-listing/{{ item[0] }}/{{ item[1] }}" method="POST">
 
                 <div class="form-group">
@@ -102,6 +103,12 @@
                     </button>
                 </div>
             </form>
+            {% else %}
+            <div class="alert alert-warning text-center mt-4 p-4" style="border-radius: 8px;">
+                <h4 style="color: #856404; font-weight: bold;">Listing Unavailable</h4>
+                <p class="mb-0" style="font-size: 1.1rem;">The item is inactive or the auction ended but the reserve was not met. To relist the item, please use the Post New Item button.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

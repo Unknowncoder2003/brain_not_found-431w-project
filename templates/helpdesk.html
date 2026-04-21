@@ -4,274 +4,130 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HelpDesk Dashboard | NittanyAuction</title>
-
 <link rel="stylesheet"
 href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
 crossorigin="anonymous">
-
 <style>
-
-body{
-background-color:#f2f2f2;
+body { background-color:#f2f2f2; }
+.navbar {
+    background-color:white;
+    border-bottom:2px solid #1e4fa1;
+    margin-bottom:30px;
 }
-
-.navbar{
-background-color:white;
-border-bottom:2px solid #1e4fa1;
-margin-bottom:30px;
+.brand-text .nittany { color:#1e4fa1; font-weight:bold; }
+.brand-text .auction { color:#28a745; font-weight:bold; }
+.dashboard-card {
+    background:white;
+    border-radius:6px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    padding:2rem;
+    margin-bottom:30px;
 }
-
-.brand-text .nittany{
-color:#1e4fa1;
-font-weight:bold;
-}
-
-.brand-text .auction{
-color:#28a745;
-font-weight:bold;
-}
-
-.dashboard-card{
-background:white;
-border-radius:6px;
-box-shadow:0 2px 8px rgba(0,0,0,0.08);
-padding:2rem;
-}
-
-.brand-title{
-text-align:center;
-font-size:2.2rem;
-font-weight:bold;
-margin-bottom:10px;
-}
-
-.brand-title .nittany{
-color:#1e4fa1;
-}
-
-.brand-title .auction{
-color:#28a745;
-}
-
-.subtitle{
-text-align:center;
-color:#666;
-margin-bottom:10px;
-}
-
-.welcome-title{
-text-align:center;
-color:#f0ad4e;
-font-size:1.6rem;
-font-weight:600;
-margin-bottom:8px;
-}
-
-.user-email{
-text-align:center;
-color:#444;
-margin-bottom:30px;
-}
-
-.feature-card{
-background:#fafafa;
-border:1px solid #e0e0e0;
-border-radius:6px;
-padding:20px;
-height:100%;
-box-shadow:0 1px 3px rgba(0,0,0,0.04);
-}
-
-.feature-card h5{
-font-weight:600;
-margin-bottom:10px;
-}
-
-.feature-card p{
-color:#666;
-margin-bottom:0;
-}
-
-.bottom-links{
-margin-top:25px;
-text-align:center;
-}
-
 </style>
 </head>
-
 <body>
-
-<!-- NAVBAR -->
 
 <nav class="navbar navbar-expand-lg navbar-light">
 <div class="container">
+    <a class="navbar-brand brand-text" href="/">
+        <span class="nittany">Nittany</span><span class="auction">Auction</span>
+    </a>
 
-<a class="navbar-brand brand-text" href="/">
-<span class="nittany">Nittany</span><span class="auction">Auction</span>
-</a>
-
-<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#helpdeskNavbar">
-<span class="navbar-toggler-icon"></span>
-</button>
-
-<div class="collapse navbar-collapse" id="helpdeskNavbar">
-
-<ul class="navbar-nav mr-auto">
-
-<li class="nav-item">
-<a class="nav-link" href="/">Home</a>
-</li>
-
-<li class="nav-item">
-<a class="nav-link" href="/seller">Seller Dashboard</a>
-</li>
-
-<li class="nav-item">
-<a class="nav-link" href="/bidder">Bidder Dashboard</a>
-</li>
-
-<li class="nav-item active">
-<a class="nav-link" href="/helpdesk">HelpDesk</a>
-</li>
-
-</ul>
-
-<ul class="navbar-nav ml-auto">
-
-<li class="nav-item">
-<span class="nav-link text-muted">
-HelpDesk: <strong>{{ email }}</strong>
-</span>
-</li>
-
-<li class="nav-item">
-<a class="btn btn-sm btn-outline-danger ml-2" href="/login">
-Logout
-</a>
-</li>
-
-</ul>
-
-</div>
+    <div class="ml-auto">
+        <span class="text-muted mr-3">HelpDesk: <strong>{{ email }}</strong></span>
+        <a class="btn btn-sm btn-outline-danger" href="/logout">Logout</a>
+    </div>
 </div>
 </nav>
 
-
 <div class="container">
 
-<div class="row justify-content-center">
+    <div class="dashboard-card">
+        <h3>Unassigned Requests</h3>
+        {% if unassigned_requests %}
+            <table class="table table-bordered mt-3">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Type</th>
+                        <th>Sender</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in unassigned_requests %}
+                    <tr>
+                        <td>{{ r['request_id'] }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ r['request_type'] }}</span>
+                        </td>
+                        <td>{{ r['sender_email'] }}</td>
+                        <td>{{ r['request_desc'] }}</td>
+                        <td>
+                            <form method="POST" action="/helpdesk/claim/{{ r['request_id'] }}">
+                                <button type="submit" class="btn btn-sm btn-primary">Claim</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted mt-3">No unassigned requests.</p>
+        {% endif %}
+    </div>
 
-<div class="col-md-8 dashboard-card">
-
-
-<div class="brand-title">
-<span class="nittany">Nittany</span><span class="auction">Auction</span>
-</div>
-
-<p class="subtitle">HelpDesk Dashboard</p>
-
-<div class="welcome-title">
-Welcome HelpDesk
-</div>
-
-<p class="user-email">
-Logged in as: <strong>{{ email }}</strong>
-</p>
-
-
-<!-- HELP FORM -->
-
-<div class="mb-4">
-
-<form method="POST" action="/helpdesk">
-
-<div class="form-group">
-<label>Search User Request</label>
-
-<input type="text"
-class="form-control"
-name="request"
-placeholder="Enter request ID or user email">
-
-</div>
-
-<div class="form-group">
-
-<label>HelpDesk Message</label>
-
-<textarea
-class="form-control"
-name="message"
-rows="3"
-placeholder="Type your response or notes here"></textarea>
-
-</div>
-
-<button type="submit" class="btn btn-success">
-Submit
-</button>
-
-</form>
-
-</div>
-
-
-<!-- CARDS -->
-
-<div class="row justify-content-center">
-
-<div class="col-md-5 mb-3">
-
-<div class="feature-card">
-
-<h5>User Requests</h5>
-
-<p>
-Review support requests submitted by buyers and sellers.
-</p>
-
-</div>
-
-</div>
-
-<div class="col-md-5 mb-3">
-
-<div class="feature-card">
-
-<h5>System Support</h5>
-
-<p>
-Provide administrative assistance for the NittanyAuction platform.
-</p>
-
-</div>
-
-</div>
+    <div class="dashboard-card">
+        <h3>My Requests</h3>
+        {% if my_requests %}
+            <table class="table table-bordered mt-3">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Type</th>
+                        <th>Sender</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in my_requests %}
+                    <tr>
+                        <td>{{ r['request_id'] }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ r['request_type'] }}</span>
+                        </td>
+                        <td>{{ r['sender_email'] }}</td>
+                        <td>{{ r['request_desc'] }}</td>
+                        <td>
+                            {% if r['request_status'] == 1 %}
+                                Claimed
+                            {% elif r['request_status'] == 2 %}
+                                Completed
+                            {% else %}
+                                Unassigned
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r['request_status'] == 1 %}
+                            <form method="POST" action="/helpdesk/complete/{{ r['request_id'] }}">
+                                <button type="submit" class="btn btn-sm btn-success">Complete</button>
+                            </form>
+                            {% else %}
+                                <span class="text-success">Done</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted mt-3">No assigned requests.</p>
+        {% endif %}
+    </div>
 
 </div>
-
-
-<div class="bottom-links">
-
-<a href="/login" class="btn btn-outline-secondary">
-Logout
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-
 </body>
 </html>

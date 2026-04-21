@@ -32,10 +32,9 @@ def get_connection():
 @app.route('/')
 def home():
     """
-    This is our landing page. It's the first thing people see when they type in the URL.
-    Just renders the basic index.html template.
+    This is our landing page. It redirects directly to the login.
     """
-    return render_template('index.html')
+    return redirect(url_for('authenticate'))
 
 
 '''
@@ -144,8 +143,9 @@ def seller():
     This fetches their profile, active listings, and processes new item creations.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
@@ -208,8 +208,9 @@ def seller():
 @app.route('/seller-account', methods=['GET', 'POST'])
 def seller_account():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     connection = sql.connect('database.db')
     cursor = connection.cursor()
@@ -400,13 +401,161 @@ def seller_account():
         local_vendor=local_vendor,
         business_address=business_address,
         error=error,
-        success=success
+        success=success,
+        delete_error=None
     )
-@app.route('/seller-profile', methods=['GET'])
-def seller_profile():
+
+@app.route('/seller-account/delete', methods=['POST'])
+def delete_seller_account():
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
+
+    delete_password = request.form.get('delete_password', '').strip()
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Verify current password first
+        cursor.execute("""
+            SELECT password, salt
+            FROM Users
+            WHERE email = ?
+        """, (user_email,))
+        user_row = cursor.fetchone()
+
+        if not user_row:
+            connection.close()
+            session.clear()
+            return redirect(url_for('authenticate'))
+
+        stored_hash, salt = user_row
+        entered_hash = hashlib.sha256((delete_password + salt).encode('utf-8')).hexdigest()
+
+        if entered_hash != stored_hash:
+            # Reload seller account page with delete-specific error
+            cursor.execute("""
+                SELECT email, bank_routing_number, bank_account_number, balance
+                FROM Sellers
+                WHERE email = ?
+            """, (user_email,))
+            seller_row = cursor.fetchone()
+
+            seller = None
+            if seller_row:
+                seller = {
+                    'email': seller_row[0],
+                    'bank_routing_number': seller_row[1],
+                    'bank_account_number': seller_row[2],
+                    'balance': seller_row[3]
+                }
+
+            cursor.execute("""
+                SELECT email, business_name, business_address_id, customer_service_phone_number
+                FROM Local_Vendors
+                WHERE email = ?
+            """, (user_email,))
+            vendor_row = cursor.fetchone()
+
+            local_vendor = None
+            business_address = None
+
+            if vendor_row:
+                local_vendor = {
+                    'email': vendor_row[0],
+                    'business_name': vendor_row[1],
+                    'business_address_id': vendor_row[2],
+                    'customer_service_phone_number': vendor_row[3]
+                }
+
+                cursor.execute("""
+                    SELECT zipcode, street_num, street_name
+                    FROM Address
+                    WHERE address_id = ?
+                """, (vendor_row[2],))
+                address_row = cursor.fetchone()
+
+                if address_row:
+                    business_address = {
+                        'zipcode': address_row[0],
+                        'street_num': address_row[1],
+                        'street_name': address_row[2]
+                    }
+
+            connection.close()
+            return render_template(
+                'seller_account.html',
+                email=user_email,
+                seller=seller,
+                local_vendor=local_vendor,
+                business_address=business_address,
+                error=None,
+                success=None,
+                delete_error="Current password is incorrect."
+            )
+
+        # Delete local vendor info if it exists
+        cursor.execute("""
+            SELECT business_address_id
+            FROM Local_Vendors
+            WHERE email = ?
+        """, (user_email,))
+        local_vendor_row = cursor.fetchone()
+
+        if local_vendor_row:
+            business_address_id = local_vendor_row[0]
+
+            cursor.execute("""
+                DELETE FROM Local_Vendors
+                WHERE email = ?
+            """, (user_email,))
+
+            cursor.execute("""
+                DELETE FROM Address
+                WHERE address_id = ?
+            """, (business_address_id,))
+
+        # Delete seller role
+        cursor.execute("""
+            DELETE FROM Sellers
+            WHERE email = ?
+        """, (user_email,))
+
+        # Only delete from Users if no other roles remain
+        cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (user_email,))
+        is_bidder = cursor.fetchone()
+
+        cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (user_email,))
+        is_helpdesk = cursor.fetchone()
+
+        if not is_bidder and not is_helpdesk:
+            cursor.execute("""
+                DELETE FROM Users
+                WHERE email = ?
+            """, (user_email,))
+            connection.commit()
+            connection.close()
+            session.clear()
+            return redirect(url_for('home'))
+
+        connection.commit()
+        connection.close()
+        session.clear()
+        return redirect(url_for('authenticate'))
+
+    except Exception as e:
+        connection.rollback()
+        connection.close()
+        print("Error deleting seller account:", e)
+        return redirect(url_for('seller_account'))
+
+@app.route('/seller-profile', methods=['GET'])
+def seller_profile():
+    user_email = session.get('email')
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     avg_rating = None
     rating_count = 0
@@ -517,8 +666,9 @@ def bidder():
     This page lists available auctions, handles the search bar, and applies category filters.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -621,7 +771,7 @@ def get_items(category_name):
     query = f'''
         SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
-        WHERE Category IN ({placeholders})
+        WHERE Category IN ({placeholders}) AND Status = 1
     '''
     cursor.execute(query, category_list)
     data = cursor.fetchall()
@@ -636,6 +786,7 @@ def get_all_items():
     cursor.execute('''
         SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
+        WHERE Status = 1
     ''')
     data = cursor.fetchall()
     connection.close()
@@ -650,8 +801,8 @@ def search_items(search_term):
     cursor.execute("""
         SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
-        WHERE Auction_Title LIKE ?
-           OR Product_Name LIKE ?
+        WHERE (Auction_Title LIKE ? OR Product_Name LIKE ?)
+          AND Status = 1
     """, (keyword, keyword))
 
     data = cursor.fetchall()
@@ -660,6 +811,10 @@ def search_items(search_term):
 
 @app.route('/item-details', methods=['POST', 'GET'])
 def item_bid():
+    user_email = session.get('email')
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
     listing_id = request.args.get('item')
     connection = get_connection()
     cursor = connection.cursor()
@@ -735,6 +890,22 @@ def item_bid():
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
         error = None
+
+        # Prevent seller from bidding on their own item
+        if user_email == seller_email:
+            error = "You cannot bid on your own item."
+            return render_template(
+                'listing-details-bidder.html',
+                item=item,
+                bid_count=current_bid_count,
+                current_price=highest_bid,
+                avg_rating=avg_rating,
+                rating_count=rating_count,
+                error=error,
+                in_watchlist=in_watchlist
+            )
+
+        # Prevent consecutive self-bidding
         if current_bid_count > 0:
             cursor.execute('''
                            SELECT MAX(bid_id)
@@ -821,31 +992,252 @@ def item_bid():
         in_watchlist=in_watchlist
     )
 
+@app.route('/contact-helpdesk', methods=['GET', 'POST'])
+def contact_helpdesk():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
 
+    roles = session.get('roles', [])
+    if 'bidder' not in roles and 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Only bidders or sellers can submit helpdesk requests.'))
 
-@app.route('/helpdesk', methods=['POST', 'GET'])
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    if request.method == 'POST':
+        request_type = request.form.get('request_type', '').strip()
+        reason = request.form.get('reason', '').strip()
+
+        # Enforce seller-only constraint for AddCategory and MarketAnalysis
+        if request_type in ['AddCategory', 'MarketAnalysis'] and 'seller' not in roles:
+            return render_template(
+                'contact-helpdesk.html',
+                email=user_email,
+                is_seller=('seller' in roles),
+                error='Only sellers can request Market Analysis or Add New Category.'
+            )
+
+        if request_type == 'AddCategory':
+            category_name = request.form.get('category_name', '').strip()
+            parent_category = request.form.get('parent_category', '').strip()
+
+            if not category_name or not parent_category:
+                cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
+                categories = cursor.fetchall()
+                connection.close()
+                return render_template(
+                    'contact-helpdesk.html',
+                    email=user_email,
+                    is_seller=('seller' in roles),
+                    categories=categories,
+                    error='Category name and parent category are required for AddCategory requests.'
+                )
+            request_desc = f"Please add a new category {category_name} under {parent_category}. {reason}"
+        else:
+            request_desc = reason
+
+        cursor.execute("""
+            INSERT INTO Requests (
+                sender_email,
+                helpdesk_staff_email,
+                request_type,
+                request_desc,
+                request_status
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            user_email,
+            'helpdeskteam@lsu.edu',
+            request_type,
+            request_desc,
+            0
+        ))
+
+        connection.commit()
+        connection.close()
+
+        return render_template(
+            'contact-helpdesk.html',
+            email=user_email,
+            is_seller=('seller' in roles),
+            success='Your request has been submitted successfully.'
+        )
+
+    return render_template(
+        'contact-helpdesk.html',
+        email=user_email,
+        is_seller=('seller' in roles)
+    )
+
+@app.route('/helpdesk', methods=['GET'])
 def helpdesk():
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
 
     connection = get_connection()
+    connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
+
     cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
     result = cursor.fetchone()
-    connection.close()
 
     if not result:
+        connection.close()
         return redirect(url_for('authenticate', error='You do not have access to the help desk'))
 
-    return render_template('helpdesk.html', email=user_email)
+    cursor.execute("""
+        SELECT *
+        FROM Requests
+        WHERE request_status = 0
+          AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
+        ORDER BY request_id DESC
+    """)
+    unassigned_requests = cursor.fetchall()
 
+    cursor.execute("""
+        SELECT *
+        FROM Requests
+        WHERE helpdesk_staff_email = ?
+          AND request_status IN (1, 2)
+        ORDER BY request_id DESC
+    """, (user_email,))
+    my_requests = cursor.fetchall()
+
+    connection.close()
+
+    return render_template(
+        'helpdesk.html',
+        email=user_email,
+        unassigned_requests=unassigned_requests,
+        my_requests=my_requests
+    )
+
+@app.route('/helpdesk/claim/<int:request_id>', methods=['POST'])
+def claim_request(request_id):
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
+    if not cursor.fetchone():
+        connection.close()
+        return redirect(url_for('authenticate', error='You do not have access to the help desk'))
+
+    cursor.execute("""
+        UPDATE Requests
+        SET helpdesk_staff_email = ?, request_status = 1
+        WHERE request_id = ?
+          AND request_status = 0
+          AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
+    """, (user_email, request_id))
+
+    connection.commit()
+    connection.close()
+
+    return redirect(url_for('helpdesk'))
+
+@app.route('/helpdesk/complete/<int:request_id>', methods=['POST'])
+def complete_request(request_id):
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('SELECT email FROM Helpdesk WHERE email = ?', (user_email,))
+    if not cursor.fetchone():
+        connection.close()
+        return redirect(url_for('authenticate', error='You do not have access to the help desk'))
+
+    cursor.execute("""
+        SELECT request_desc
+        FROM Requests
+        WHERE request_id = ?
+          AND request_type = 'AddCategory'
+          AND helpdesk_staff_email = ?
+          AND request_status = 1
+    """, (request_id, user_email))
+
+    row = cursor.fetchone()
+    if not row:
+        connection.close()
+        return redirect(url_for('helpdesk'))
+
+    request_desc = row[0]
+
+    try:
+        normalized_desc = request_desc.strip()
+
+        if "Please add a new category " in normalized_desc:
+            first_part = normalized_desc.split("Please add a new category ", 1)[1]
+        elif "Please ad a new category " in normalized_desc:
+            first_part = normalized_desc.split("Please ad a new category ", 1)[1]
+        else:
+            connection.close()
+            return redirect(url_for('helpdesk'))
+
+        category_name = first_part.split(" under ", 1)[0].strip()
+        parent_category = first_part.split(" under ", 1)[1].split(".", 1)[0].strip()
+
+    except Exception:
+        connection.close()
+        return redirect(url_for('helpdesk'))
+
+    cursor.execute("""
+        SELECT 1
+        FROM Categories
+        WHERE category_name = ?
+    """, (parent_category,))
+    parent_exists = cursor.fetchone()
+
+    if not parent_exists:
+        cursor.execute("""
+            INSERT INTO Categories (category_name, parent_category)
+            VALUES (?, ?)
+        """, (parent_category, 'Root'))
+
+    cursor.execute("""
+        SELECT 1
+        FROM Categories
+        WHERE category_name = ?
+    """, (category_name,))
+    child_exists = cursor.fetchone()
+
+    if child_exists:
+        cursor.execute("""
+            UPDATE Categories
+            SET parent_category = ?
+            WHERE category_name = ?
+        """, (parent_category, category_name))
+    else:
+        cursor.execute("""
+            INSERT INTO Categories (category_name, parent_category)
+            VALUES (?, ?)
+        """, (category_name, parent_category))
+
+    cursor.execute("""
+        UPDATE Requests
+        SET request_status = 2
+        WHERE request_id = ?
+    """, (request_id,))
+
+    connection.commit()
+    connection.close()
+
+    return redirect(url_for('helpdesk'))
 
 @app.route('/profile', methods=['GET'])
 def profile():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     edit = request.args.get("edit")
     message = request.args.get("message")
@@ -918,8 +1310,9 @@ def profile():
 @app.route('/profile/update_basic', methods=['POST'])
 def update_basic():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     first_name = request.form.get('first_name')
     last_name = request.form.get('last_name')
@@ -944,8 +1337,9 @@ def update_basic():
 @app.route('/profile/update_address', methods=['POST'])
 def update_address():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     street = request.form.get('street', '').strip()
     zipcode = request.form.get('zipcode', '').strip()
@@ -996,8 +1390,9 @@ def update_address():
 @app.route('/profile/update_card', methods=['POST'])
 def update_card():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     card_type = request.form.get('card_type')
     card_number = request.form.get('card_number')
@@ -1032,8 +1427,9 @@ def update_card():
 @app.route('/profile/update_password', methods=['POST'])
 def update_password():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
 
     old_password = request.form.get('old_password', '').strip()
     new_password = request.form.get('new_password', '').strip()
@@ -1212,8 +1608,9 @@ def register_page():
 @app.route('/my-bids', methods=['GET','POST'])
 def my_bids():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     # Use sqlite3.Row to access columns by their database names
@@ -1298,13 +1695,20 @@ def my_bids():
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('''
-        SELECT A.Listing_ID, A.Auction_Title, A.Category, A.Reserve_Price, A.Max_bids, A.Status
+        SELECT A.Listing_ID, 
+               A.Auction_Title, 
+               A.Category, 
+               A.Reserve_Price, 
+               A.Max_bids, 
+               A.Status,
+               (SELECT COUNT(*) FROM Bids b WHERE b.listing_id = A.Listing_ID) as bid_count
         FROM Auction_Listings A
         WHERE A.Seller_Email = ?
     ''', (user_email,))
@@ -1315,6 +1719,10 @@ def my_listing():
 
 @app.route('/listing-details/<seller_email>/<int:listing_id>')
 def listing_details(seller_email, listing_id):
+    user_email = session.get('email')
+    roles = session.get('roles', [])
+    if not user_email or ('bidder' not in roles and 'seller' not in roles):
+        return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -1379,8 +1787,9 @@ def listing_details(seller_email, listing_id):
 @app.route('/deactivate-listing/<seller_email>/<int:listing_id>', methods=['POST'])
 def deactivate_listing(seller_email, listing_id):
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     if user_email != seller_email:
         return redirect(url_for('my_listing'))
@@ -1408,9 +1817,10 @@ def deactivate_listing(seller_email, listing_id):
 @app.route('/edit-listing/<seller_email>/<int:listing_id>', methods=['GET', 'POST'])
 def edit_listing(seller_email, listing_id):
     user_email = session.get('email')
+    roles = session.get('roles', [])
 
-    if not user_email or user_email != seller_email:
-        return redirect(url_for('authenticate'))
+    if not user_email or user_email != seller_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     if request.method == 'POST':
         connection = get_connection()
@@ -1429,6 +1839,12 @@ def edit_listing(seller_email, listing_id):
             connection.close()
             return "Error: Category does not exist.", 400
 
+        cursor.execute('SELECT Status FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
+        item_status = cursor.fetchone()
+        if not item_status or item_status[0] != 1:
+            connection.close()
+            return "Error: Cannot edit an item that is inactive, sold, or ended.", 400
+
         cursor.execute('''
             UPDATE Auction_Listings
             SET Auction_Title       = ?,
@@ -1441,6 +1857,18 @@ def edit_listing(seller_email, listing_id):
             WHERE Seller_Email = ?
               AND Listing_ID = ?
         ''', (title, prod_name, cat, desc, qty, reserve, max_b, seller_email, listing_id))
+
+        # Automatically check if the new lowered Max_bids or Reserve_Price causes the auction to end
+        cursor.execute('''
+            UPDATE Auction_Listings
+            SET Status = CASE
+                WHEN (SELECT MAX(bid_price) FROM Bids WHERE listing_id = ?) >= Reserve_Price THEN 2
+                ELSE 3
+            END
+            WHERE Listing_ID = ?
+              AND (SELECT COUNT(*) FROM Bids WHERE listing_id = ?) >= Max_bids
+              AND Status = 1
+        ''', (listing_id, listing_id, listing_id))
 
         connection.commit()
         connection.close()
@@ -1486,8 +1914,9 @@ def get_category_tree():
 @app.route('/post-item', methods=['GET', 'POST'])
 def post_item():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'seller' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
 
     if request.method == 'POST':
         title = request.form.get('auction_title')
@@ -1538,8 +1967,9 @@ def post_item():
 @app.route('/watchlist', methods=['GET'])
 def watchlist():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     connection.row_factory = sqlite3.Row
@@ -1575,11 +2005,16 @@ def watchlist():
 @app.route('/watchlist/add', methods=['POST'])
 def add_to_watchlist():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     seller_email = request.form.get('seller_email')
     listing_id = request.form.get('listing_id')
+
+    # Prevent seller from adding their own item to watchlist
+    if user_email == seller_email:
+        return redirect(url_for('item_bid', item=listing_id))
 
     if seller_email and listing_id:
         try:
@@ -1599,8 +2034,9 @@ def add_to_watchlist():
 @app.route('/watchlist/remove', methods=['POST'])
 def remove_from_watchlist():
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     seller_email = request.form.get('seller_email')
     listing_id = request.form.get('listing_id')
@@ -1624,8 +2060,9 @@ def pay_item_get(listing_id):
     We calculate exactly how much the bidder owes and pre-fill their stored credit card info if they have one.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     connection = get_connection()
     connection.row_factory = sqlite3.Row
@@ -1654,8 +2091,18 @@ def pay_item_get(listing_id):
     cursor.execute('SELECT * FROM Credit_Cards WHERE Owner_email = ?', (user_email,))
     card = cursor.fetchone()
 
+    # Get user address
+    cursor.execute('''
+        SELECT a.street_num, a.street_name, z.city, z.state, a.zipcode
+        FROM Bidders b
+        LEFT JOIN Address a ON b.home_address_id = a.address_id
+        LEFT JOIN Zipcode_Info z ON a.zipcode = z.zipcode
+        WHERE b.email = ?
+    ''', (user_email,))
+    address = cursor.fetchone()
+
     connection.close()
-    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, listing_id=listing_id, email=user_email)
+    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, address=address, listing_id=listing_id, email=user_email)
 
 @app.route('/pay/<int:listing_id>', methods=['POST'])
 def pay_item_post(listing_id):
@@ -1664,8 +2111,9 @@ def pay_item_post(listing_id):
     It also saves their credit card details for next time so they don't have to retype it.
     """
     user_email = session.get('email')
-    if not user_email:
-        return redirect(url_for('authenticate'))
+    roles = session.get('roles', [])
+    if not user_email or 'bidder' not in roles:
+        return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
     cc_num = request.form.get('credit_card_num')
     card_type = request.form.get('card_type')
@@ -1674,6 +2122,12 @@ def pay_item_post(listing_id):
     sec_code = request.form.get('security_code')
     amount_paid = request.form.get('amount_paid')
     seller_email = request.form.get('seller_email')
+
+    street_num = request.form.get('street_num')
+    street_name = request.form.get('street_name')
+    city = request.form.get('city')
+    state = request.form.get('state')
+    zipcode = request.form.get('zipcode')
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -1684,6 +2138,33 @@ def pay_item_post(listing_id):
         (credit_card_num, card_type, expire_month, expire_year, security_code, Owner_email)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (cc_num, card_type, exp_month, exp_year, sec_code, user_email))
+
+    if street_num and street_name and city and state and zipcode:
+        cursor.execute('''
+            INSERT OR IGNORE INTO Zipcode_Info (zipcode, city, state)
+            VALUES (?, ?, ?)
+        ''', (zipcode, city, state))
+
+        cursor.execute('SELECT home_address_id FROM Bidders WHERE email = ?', (user_email,))
+        bidder_record = cursor.fetchone()
+        home_address_id = bidder_record[0] if bidder_record else None
+
+        if home_address_id:
+            cursor.execute('''
+                UPDATE Address 
+                SET street_num = ?, street_name = ?, zipcode = ?
+                WHERE address_id = ?
+            ''', (street_num, street_name, zipcode, home_address_id))
+        else:
+            import uuid
+            new_address_id = uuid.uuid4().hex
+            cursor.execute('''
+                INSERT INTO Address (address_id, street_num, street_name, zipcode)
+                VALUES (?, ?, ?, ?)
+            ''', (new_address_id, street_num, street_name, zipcode))
+            cursor.execute('''
+                UPDATE Bidders SET home_address_id = ? WHERE email = ?
+            ''', (new_address_id, user_email))
 
     cursor.execute("SELECT MAX(Transaction_ID) FROM Transactions")
     highest_tx = cursor.fetchone()[0]
@@ -1696,10 +2177,58 @@ def pay_item_post(listing_id):
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (next_tx_id, seller_email, listing_id, user_email, current_date, amount_paid))
 
+    # Credit the seller's balance
+    cursor.execute('''
+        UPDATE Sellers 
+        SET balance = balance + ? 
+        WHERE email = ?
+    ''', (float(amount_paid), seller_email))
+
     connection.commit()
     connection.close()
 
     return redirect(url_for('my_bids'))
 
+def sync_listing_statuses():
+    """
+    Run a startup check to ensure all Auction Listings have the correct status.
+    If the number of bids >= Max_bids, Status should be 2 (Sold) if reserve met, else 3 (Reserve Not Met).
+    """
+    connection = get_connection()
+    cursor = connection.cursor()
+    
+    # Update listings where max bids are reached and reserve price is met
+    cursor.execute('''
+        UPDATE Auction_Listings
+        SET Status = 2
+        WHERE Status = 1 AND Listing_ID IN (
+            SELECT a.Listing_ID
+            FROM Auction_Listings a
+            JOIN Bids b ON a.Listing_ID = b.listing_id
+            GROUP BY a.Listing_ID
+            HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) >= a.Reserve_Price
+        )
+    ''')
+    
+    # Update listings where max bids are reached and reserve price is NOT met
+    cursor.execute('''
+        UPDATE Auction_Listings
+        SET Status = 3
+        WHERE Status = 1 AND Listing_ID IN (
+            SELECT a.Listing_ID
+            FROM Auction_Listings a
+            JOIN Bids b ON a.Listing_ID = b.listing_id
+            GROUP BY a.Listing_ID
+            HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) < a.Reserve_Price
+        )
+    ''')
+    
+    connection.commit()
+    connection.close()
+
+
+
+
 if __name__ == "__main__":
+    sync_listing_statuses()#syncronizing the database so the listing doesn't stay active if it should be sold or expired
     app.run()
