@@ -1304,8 +1304,151 @@ def profile():
         edit_address=edit_address,
         edit_card=edit_card,
         edit_password=edit_password,
-        message=message
+        message=message,
+        delete_error=None
     )
+
+@app.route('/profile/delete', methods=['POST'])
+def delete_bidder_account():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    delete_password = request.form.get('delete_password', '').strip()
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    try:
+        # Verify password first
+        cursor.execute("""
+            SELECT password, salt
+            FROM Users
+            WHERE email = ?
+        """, (user_email,))
+        user_row = cursor.fetchone()
+
+        if not user_row:
+            connection.close()
+            session.clear()
+            return redirect(url_for('authenticate'))
+
+        stored_hash = user_row['password']
+        salt = user_row['salt']
+        entered_hash = hashlib.sha256((delete_password + salt).encode('utf-8')).hexdigest()
+
+        if entered_hash != stored_hash:
+            # Reload profile data with delete_error so modal reopens
+            cursor.execute("""
+                SELECT
+                    B.email,
+                    B.first_name,
+                    B.last_name,
+                    B.age,
+                    B.major,
+                    (A.street_num || ' ' || A.street_name) AS street,
+                    A.zipcode AS zipcode,
+                    C.card_type AS card_type,
+                    C.credit_card_num AS card_number,
+                    (C.expire_month || '/' || C.expire_year) AS card_exp,
+                    C.security_code AS security_code
+                FROM Bidders B
+                LEFT JOIN Address A
+                    ON B.home_address_id = A.address_id
+                LEFT JOIN Credit_Cards C
+                    ON B.email = C.Owner_email
+                WHERE B.email = ?
+            """, (user_email,))
+            user = cursor.fetchone()
+
+            if user:
+                user = dict(user)
+
+                card_number = user.get('card_number')
+                if card_number:
+                    card_number = str(card_number)
+                    if len(card_number) > 4:
+                        user['masked_card_number'] = '*' * (len(card_number) - 4) + card_number[-4:]
+                    else:
+                        user['masked_card_number'] = card_number
+                else:
+                    user['masked_card_number'] = None
+
+                security_code = user.get('security_code')
+                if security_code:
+                    security_code = str(security_code)
+                    user['masked_security_code'] = '*' * len(security_code)
+                else:
+                    user['masked_security_code'] = None
+
+            connection.close()
+
+            return render_template(
+                'profile.html',
+                user=user,
+                edit_basic=False,
+                edit_address=False,
+                edit_card=False,
+                edit_password=False,
+                message=None,
+                delete_error='Current password is incorrect.'
+            )
+
+        # Delete bidder-related credit cards
+        cursor.execute("""
+            DELETE FROM Credit_Cards
+            WHERE Owner_email = ?
+        """, (user_email,))
+
+        # Delete bidder home address if it exists
+        cursor.execute("""
+            SELECT home_address_id
+            FROM Bidders
+            WHERE email = ?
+        """, (user_email,))
+        bidder_row = cursor.fetchone()
+
+        if bidder_row and bidder_row['home_address_id']:
+            home_address_id = bidder_row['home_address_id']
+            cursor.execute("""
+                DELETE FROM Address
+                WHERE address_id = ?
+            """, (home_address_id,))
+
+        # Delete bidder role
+        cursor.execute("""
+            DELETE FROM Bidders
+            WHERE email = ?
+        """, (user_email,))
+
+        # Only delete Users row if no other roles remain
+        cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (user_email,))
+        is_seller = cursor.fetchone()
+
+        cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (user_email,))
+        is_helpdesk = cursor.fetchone()
+
+        if not is_seller and not is_helpdesk:
+            cursor.execute("""
+                DELETE FROM Users
+                WHERE email = ?
+            """, (user_email,))
+            connection.commit()
+            connection.close()
+            session.clear()
+            return redirect(url_for('home'))
+
+        connection.commit()
+        connection.close()
+        session.clear()
+        return redirect(url_for('authenticate'))
+
+    except Exception as e:
+        connection.rollback()
+        connection.close()
+        print("Error deleting bidder account:", e)
+        return redirect(url_for('profile'))
 
 @app.route('/profile/update_basic', methods=['POST'])
 def update_basic():
