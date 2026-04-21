@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact Helpdesk | NittanyAuction</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          crossorigin="anonymous">
+    <style>
+        body { background-color: #f2f2f2; }
+        .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
+        }
+        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
+        .brand-text .auction { color: #28a745; font-weight: bold; }
+        .dashboard-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand brand-text" href="/">
+            <span class="nittany">Nittany</span><span class="auction">Auction</span>
+        </a>
+        <div class="ml-auto">
+            <a class="btn btn-sm btn-outline-danger" href="/logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 dashboard-card">
+            <h2 class="mb-4">Contact Helpdesk</h2>
+
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            {% if success %}
+                <div class="alert alert-success">{{ success }}</div>
+            {% endif %}
+
+            <form method="POST" action="/contact-helpdesk">
+                
+                <div class="form-group">
+                    <label>Request Type</label>
+                    <select class="form-control" name="request_type" id="requestType" required onchange="toggleCategoryFields()">
+                        <option value="ChangeID">Change ID</option>
+                        {% if is_seller %}
+                        <option value="AddCategory">Add Category</option>
+                        <option value="MarketAnalysis">Market Analysis</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div id="categoryFields" style="display: none;">
+                    <div class="form-group">
+                        <label>New Category Name</label>
+                        <input type="text" class="form-control" name="category_name" id="catName">
+                    </div>
+
+                    <div class="form-group">
+                      <label>Parent Category</label>
+                      <input type="text"
+                             class="form-control"
+                             name="parent_category"
+                             id="parentCat"
+                             placeholder="Enter the parent category name">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason / Description</label>
+                    <textarea class="form-control" name="reason" rows="4"
+                              placeholder="Please explain your request in detail..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success">Submit Request</button>
+                <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleCategoryFields() {
+        var reqType = document.getElementById('requestType').value;
+        var catFields = document.getElementById('categoryFields');
+        var catName = document.getElementById('catName');
+        var parentCat = document.getElementById('parentCat');
+
+        if (reqType === 'AddCategory') {
+            catFields.style.display = 'block';
+            catName.required = true;
+            parentCat.required = true;
+        } else {
+            catFields.style.display = 'none';
+            catName.required = false;
+            parentCat.required = false;
+        }
+    }
+    // Initialize state on load
+    window.onload = toggleCategoryFields;
+</script>
+
+</body>
+</html>

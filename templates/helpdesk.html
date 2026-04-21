@@ -43,12 +43,13 @@ body { background-color:#f2f2f2; }
 <div class="container">
 
     <div class="dashboard-card">
-        <h3>Unassigned AddCategory Requests</h3>
+        <h3>Unassigned Requests</h3>
         {% if unassigned_requests %}
             <table class="table table-bordered mt-3">
                 <thead>
                     <tr>
                         <th>Request ID</th>
+                        <th>Type</th>
                         <th>Sender</th>
                         <th>Description</th>
                         <th>Action</th>
@@ -58,6 +59,9 @@ body { background-color:#f2f2f2; }
                     {% for r in unassigned_requests %}
                     <tr>
                         <td>{{ r['request_id'] }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ r['request_type'] }}</span>
+                        </td>
                         <td>{{ r['sender_email'] }}</td>
                         <td>{{ r['request_desc'] }}</td>
                         <td>
@@ -70,17 +74,18 @@ body { background-color:#f2f2f2; }
                 </tbody>
             </table>
         {% else %}
-            <p class="text-muted mt-3">No unassigned AddCategory requests.</p>
+            <p class="text-muted mt-3">No unassigned requests.</p>
         {% endif %}
     </div>
 
     <div class="dashboard-card">
-        <h3>My AddCategory Requests</h3>
+        <h3>My Requests</h3>
         {% if my_requests %}
             <table class="table table-bordered mt-3">
                 <thead>
                     <tr>
                         <th>Request ID</th>
+                        <th>Type</th>
                         <th>Sender</th>
                         <th>Description</th>
                         <th>Status</th>
@@ -91,6 +96,9 @@ body { background-color:#f2f2f2; }
                     {% for r in my_requests %}
                     <tr>
                         <td>{{ r['request_id'] }}</td>
+                        <td>
+                            <span class="badge badge-info">{{ r['request_type'] }}</span>
+                        </td>
                         <td>{{ r['sender_email'] }}</td>
                         <td>{{ r['request_desc'] }}</td>
                         <td>
@@ -116,7 +124,7 @@ body { background-color:#f2f2f2; }
                 </tbody>
             </table>
         {% else %}
-            <p class="text-muted mt-3">No assigned AddCategory requests.</p>
+            <p class="text-muted mt-3">No assigned requests.</p>
         {% endif %}
     </div>
 

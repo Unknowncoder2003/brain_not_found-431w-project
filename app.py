@@ -838,36 +838,50 @@ def item_bid():
         in_watchlist=in_watchlist
     )
 
-@app.route('/request/add-category', methods=['GET', 'POST'])
-def add_category_request():
+@app.route('/contact-helpdesk', methods=['GET', 'POST'])
+def contact_helpdesk():
     user_email = session.get('email')
     if not user_email:
         return redirect(url_for('authenticate'))
 
     roles = session.get('roles', [])
     if 'bidder' not in roles and 'seller' not in roles:
-        return redirect(url_for('authenticate', error='Only bidders or sellers can submit category requests.'))
+        return redirect(url_for('authenticate', error='Only bidders or sellers can submit helpdesk requests.'))
 
     connection = get_connection()
     cursor = connection.cursor()
 
     if request.method == 'POST':
-        category_name = request.form.get('category_name', '').strip()
-        parent_category = request.form.get('parent_category', '').strip()
+        request_type = request.form.get('request_type', '').strip()
         reason = request.form.get('reason', '').strip()
 
-        if not category_name or not parent_category:
-            cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
-            categories = cursor.fetchall()
-            connection.close()
+        # Enforce seller-only constraint for AddCategory and MarketAnalysis
+        if request_type in ['AddCategory', 'MarketAnalysis'] and 'seller' not in roles:
             return render_template(
-                'add_category_request.html',
+                'contact-helpdesk.html',
                 email=user_email,
-                categories=categories,
-                error='Category name and parent category are required.'
+                is_seller=('seller' in roles),
+                error='Only sellers can request Market Analysis or Add New Category.'
             )
 
-        request_desc = f"Please add a new category {category_name} under {parent_category}. {reason}"
+        if request_type == 'AddCategory':
+            category_name = request.form.get('category_name', '').strip()
+            parent_category = request.form.get('parent_category', '').strip()
+
+            if not category_name or not parent_category:
+                cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
+                categories = cursor.fetchall()
+                connection.close()
+                return render_template(
+                    'contact-helpdesk.html',
+                    email=user_email,
+                    is_seller=('seller' in roles),
+                    categories=categories,
+                    error='Category name and parent category are required for AddCategory requests.'
+                )
+            request_desc = f"Please add a new category {category_name} under {parent_category}. {reason}"
+        else:
+            request_desc = reason
 
         cursor.execute("""
             INSERT INTO Requests (
@@ -881,31 +895,25 @@ def add_category_request():
         """, (
             user_email,
             'helpdeskteam@lsu.edu',
-            'AddCategory',
+            request_type,
             request_desc,
             0
         ))
 
         connection.commit()
-        cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
-        categories = cursor.fetchall()
         connection.close()
 
         return render_template(
-            'add_category_request.html',
+            'contact-helpdesk.html',
             email=user_email,
-            categories=categories,
-            success='Your category request has been submitted successfully.'
+            is_seller=('seller' in roles),
+            success='Your request has been submitted successfully.'
         )
 
-    cursor.execute("SELECT category_name FROM Categories ORDER BY category_name")
-    categories = cursor.fetchall()
-    connection.close()
-
     return render_template(
-        'add_category_request.html',
+        'contact-helpdesk.html',
         email=user_email,
-        categories=categories
+        is_seller=('seller' in roles)
     )
 
 @app.route('/helpdesk', methods=['GET'])
@@ -928,8 +936,7 @@ def helpdesk():
     cursor.execute("""
         SELECT *
         FROM Requests
-        WHERE request_type = 'AddCategory'
-          AND request_status = 0
+        WHERE request_status = 0
           AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
         ORDER BY request_id DESC
     """)
@@ -938,8 +945,7 @@ def helpdesk():
     cursor.execute("""
         SELECT *
         FROM Requests
-        WHERE request_type = 'AddCategory'
-          AND helpdesk_staff_email = ?
+        WHERE helpdesk_staff_email = ?
           AND request_status IN (1, 2)
         ORDER BY request_id DESC
     """, (user_email,))
@@ -972,7 +978,6 @@ def claim_request(request_id):
         UPDATE Requests
         SET helpdesk_staff_email = ?, request_status = 1
         WHERE request_id = ?
-          AND request_type = 'AddCategory'
           AND request_status = 0
           AND helpdesk_staff_email = 'helpdeskteam@lsu.edu'
     """, (user_email, request_id))
