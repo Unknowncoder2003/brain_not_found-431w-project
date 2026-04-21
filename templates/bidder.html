@@ -138,33 +138,9 @@
             <div class="collapse navbar-collapse" id="searchNavbar">
 
                 <!-- This macro dynamically builds out our category trees。 It calls itself to build child categories if they exist. -->
-                {% macro render_category(category) %}
-                <li class="dropdown-submenu">
-                    <a class="dropdown-item {% if category.children %}dropdown-toggle{% endif %}"
-                        href="/bidder?category={{ category.name | urlencode }}">
-                        <!-- Encode the URL so Flask receives the raw category string perfectly. -->
-                        {{ category.name }}
-                    </a>
-                    {% if category.children %}
-                    <ul class="dropdown-menu">
-                        {% for child in category.children %}
-                        {{ render_category(child) }}
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </li>
-                {% endmacro %}
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            All...
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
-                            {% for cate in categories %}
-                            {{ render_category(cate) }}
-                            {% endfor %}
-                        </ul>
+                    <li class="nav-item">
+                        <span class="nav-link text-muted font-weight-bold">Browsing: {{ current_category }}</span>
                     </li>
                 </ul>
 
@@ -194,20 +170,38 @@
 
 
 
-    <!-- welcome information -->
-    <div class="container">
+    <!-- Breadcrumbs and Subcategories -->
+    <div class="container mt-4">
         <div class="row justify-content-center">
-            <div class="col-md-10 dashboard-card">
-                <h2 class="welcome-header">Hi, {{ first_name }}!</h2>
+            <div class="col-md-10">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" style="background: transparent; padding: 0 0 1rem 0; border-bottom: 1px solid #eee;">
+                        <li class="breadcrumb-item"><a href="/bidder">All</a></li>
+                        {% for crumb in breadcrumbs %}
+                            {% if loop.last %}
+                                <li class="breadcrumb-item active" aria-current="page">{{ crumb }}</li>
+                            {% else %}
+                                <li class="breadcrumb-item"><a href="/bidder?category={{ crumb | urlencode }}">{{ crumb }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ol>
+                </nav>
 
-                <p class="lead">Welcome to your Bidder dashboard. </p>
-                <p class="lead">You can navigate through the categories by clicking
-                    the <b>All..</b> button at the upper left corner.</b></p>
-                <p class="lead">You can also search for items by typing in the search bar.</b></p>
+                {% if subcategories %}
+                <div class="mt-2 mb-4">
+                    <h5 class="text-muted small font-weight-bold text-uppercase mb-3" style="letter-spacing: 1px;">Explore Subcategories</h5>
+                    <div class="d-flex flex-wrap">
+                        {% for sub in subcategories %}
+                        <a href="/bidder?category={{ sub | urlencode }}" class="btn btn-sm btn-outline-primary mr-2 mb-2 px-3" style="border-radius: 15px; font-weight: 500;">
+                            {{ sub }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
-
     <!--place to display the items -->
     <div class="container mt-4">
         <div class="row justify-content-center">
