@@ -735,6 +735,22 @@ def item_bid():
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
         error = None
+
+        # Prevent seller from bidding on their own item
+        if user_email == seller_email:
+            error = "You cannot bid on your own item."
+            return render_template(
+                'listing-details-bidder.html',
+                item=item,
+                bid_count=current_bid_count,
+                current_price=highest_bid,
+                avg_rating=avg_rating,
+                rating_count=rating_count,
+                error=error,
+                in_watchlist=in_watchlist
+            )
+
+        # Prevent consecutive self-bidding
         if current_bid_count > 0:
             cursor.execute('''
                            SELECT MAX(bid_id)
@@ -1558,6 +1574,10 @@ def add_to_watchlist():
 
     seller_email = request.form.get('seller_email')
     listing_id = request.form.get('listing_id')
+
+    # Prevent seller from adding their own item to watchlist
+    if user_email == seller_email:
+        return redirect(url_for('item_bid', item=listing_id))
 
     if seller_email and listing_id:
         try:
