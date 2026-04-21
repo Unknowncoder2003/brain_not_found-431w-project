@@ -728,10 +728,40 @@ def item_bid():
         ''', (user_email, seller_email, listing_id))
         if cursor.fetchone():
             in_watchlist = True
-    #check for consecutive bidding
+
+    #---check for consecutive bidding
+    #getting the email for highest bidder
+
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
         error = None
+        if current_bid_count > 0:
+            cursor.execute('''
+                           SELECT MAX(bid_id)
+                           FROM Bids
+                           WHERE listing_id = ?
+                           ''', (listing_id,))
+            latest_bidder = cursor.fetchone()[0]
+
+            cursor.execute('''
+                           SELECT bidder_email
+                           FROM Bids
+                           WHERE listing_id = ?
+                             and bid_id = ?
+                           ''', (listing_id, latest_bidder))
+            latest_bidder_email = cursor.fetchone()[0]
+            if user_email == latest_bidder_email:
+                error = "You recently bid this item, wait for another bidder"
+                return render_template(
+                    'listing-details-bidder.html',
+                    item=item,
+                    bid_count=current_bid_count,
+                    current_price=highest_bid,
+                    avg_rating=avg_rating,
+                    rating_count=rating_count,
+                    error=error,
+                    in_watchlist=in_watchlist
+                )
         bid_price = request.form.get('bid_price')
         if float(bid_price) >= highest_bid + 1:
             connection = get_connection()
