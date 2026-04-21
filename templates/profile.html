@@ -541,6 +541,65 @@
                 {% endif %}
             </form>
 
+            <div class="section-actions mt-4 d-flex justify-content-end">
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        data-toggle="modal"
+                        data-target="#deleteAccountModal">
+                    Delete Account
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" role="dialog" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="/profile/delete" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger" id="deleteAccountModalLabel">Delete Account</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to permanently delete your bidder account?
+                        This action cannot be undone.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="delete_password">Enter your current password to confirm</label>
+                        <div class="input-group form-control-sm-custom">
+                            <input type="password"
+                                   class="form-control"
+                                   id="delete_password"
+                                   name="delete_password"
+                                   placeholder="Current password"
+                                   required>
+                            <div class="input-group-append">
+                                <span class="input-group-text password-toggle"
+                                      onclick="togglePassword('delete_password', this)">
+                                    <i class="fa fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if delete_error %}
+                    <div class="alert alert-danger mt-2">{{ delete_error }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Yes, Delete My Account</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -565,5 +624,14 @@ function togglePassword(fieldId, iconSpan) {
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+{% if delete_error %}
+<script>
+    $(document).ready(function () {
+        $('#deleteAccountModal').modal('show');
+    });
+</script>
+{% endif %}
+
 </body>
 </html>

@@ -69,6 +69,7 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
+            align-items: center;
         }
 
         .readonly-note {
@@ -319,9 +320,65 @@
                     <button type="button" class="btn btn-outline-secondary" id="cancel-btn" style="display:none;" onclick="cancelEditing()">
                         Cancel
                     </button>
+
+                    <div style="margin-left:auto;">
+                        <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#deleteAccountModal">
+                            Delete Account
+                        </button>
+                    </div>
                 </div>
 
                 <a href="/seller" class="btn btn-outline-secondary btn-block mt-3">Back to Seller Dashboard</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" role="dialog" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="/seller-account/delete" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger" id="deleteAccountModalLabel">Delete Account</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to permanently delete your account?
+                        This action cannot be undone.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="delete_password">Enter your current password to confirm</label>
+                        <div class="input-group">
+                            <input type="password"
+                                   class="form-control"
+                                   id="delete_password"
+                                   name="delete_password"
+                                   placeholder="Current password"
+                                   required>
+                            <div class="input-group-append">
+                                <span class="input-group-text password-toggle"
+                                      onclick="togglePassword('delete_password', this)">
+                                    <i class="fa fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if delete_error %}
+                    <div class="alert alert-danger mt-2">{{ delete_error }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Yes, Delete My Account</button>
+                </div>
             </form>
         </div>
     </div>
@@ -386,9 +443,7 @@ document.getElementById("customer_service_phone_number").addEventListener("input
 });
 
 document.getElementById("bank_routing_number").addEventListener("input", function(e) {
-    const isVisible = e.target.type === "text";
-    const formatted = formatRoutingNumber(e.target.value);
-    e.target.value = formatted;
+    e.target.value = formatRoutingNumber(e.target.value);
 });
 
 document.getElementById("bank_account_number").addEventListener("input", function(e) {
@@ -442,6 +497,18 @@ document.getElementById("seller-account-form").addEventListener("submit", functi
     }
 });
 </script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+{% if delete_error %}
+<script>
+    $(document).ready(function () {
+        $('#deleteAccountModal').modal('show');
+    });
+</script>
+{% endif %}
 
 </body>
 </html>

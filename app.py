@@ -401,8 +401,155 @@ def seller_account():
         local_vendor=local_vendor,
         business_address=business_address,
         error=error,
-        success=success
+        success=success,
+        delete_error=None
     )
+
+@app.route('/seller-account/delete', methods=['POST'])
+def delete_seller_account():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    delete_password = request.form.get('delete_password', '').strip()
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Verify current password first
+        cursor.execute("""
+            SELECT password, salt
+            FROM Users
+            WHERE email = ?
+        """, (user_email,))
+        user_row = cursor.fetchone()
+
+        if not user_row:
+            connection.close()
+            session.clear()
+            return redirect(url_for('authenticate'))
+
+        stored_hash, salt = user_row
+        entered_hash = hashlib.sha256((delete_password + salt).encode('utf-8')).hexdigest()
+
+        if entered_hash != stored_hash:
+            # Reload seller account page with delete-specific error
+            cursor.execute("""
+                SELECT email, bank_routing_number, bank_account_number, balance
+                FROM Sellers
+                WHERE email = ?
+            """, (user_email,))
+            seller_row = cursor.fetchone()
+
+            seller = None
+            if seller_row:
+                seller = {
+                    'email': seller_row[0],
+                    'bank_routing_number': seller_row[1],
+                    'bank_account_number': seller_row[2],
+                    'balance': seller_row[3]
+                }
+
+            cursor.execute("""
+                SELECT email, business_name, business_address_id, customer_service_phone_number
+                FROM Local_Vendors
+                WHERE email = ?
+            """, (user_email,))
+            vendor_row = cursor.fetchone()
+
+            local_vendor = None
+            business_address = None
+
+            if vendor_row:
+                local_vendor = {
+                    'email': vendor_row[0],
+                    'business_name': vendor_row[1],
+                    'business_address_id': vendor_row[2],
+                    'customer_service_phone_number': vendor_row[3]
+                }
+
+                cursor.execute("""
+                    SELECT zipcode, street_num, street_name
+                    FROM Address
+                    WHERE address_id = ?
+                """, (vendor_row[2],))
+                address_row = cursor.fetchone()
+
+                if address_row:
+                    business_address = {
+                        'zipcode': address_row[0],
+                        'street_num': address_row[1],
+                        'street_name': address_row[2]
+                    }
+
+            connection.close()
+            return render_template(
+                'seller_account.html',
+                email=user_email,
+                seller=seller,
+                local_vendor=local_vendor,
+                business_address=business_address,
+                error=None,
+                success=None,
+                delete_error="Current password is incorrect."
+            )
+
+        # Delete local vendor info if it exists
+        cursor.execute("""
+            SELECT business_address_id
+            FROM Local_Vendors
+            WHERE email = ?
+        """, (user_email,))
+        local_vendor_row = cursor.fetchone()
+
+        if local_vendor_row:
+            business_address_id = local_vendor_row[0]
+
+            cursor.execute("""
+                DELETE FROM Local_Vendors
+                WHERE email = ?
+            """, (user_email,))
+
+            cursor.execute("""
+                DELETE FROM Address
+                WHERE address_id = ?
+            """, (business_address_id,))
+
+        # Delete seller role
+        cursor.execute("""
+            DELETE FROM Sellers
+            WHERE email = ?
+        """, (user_email,))
+
+        # Only delete from Users if no other roles remain
+        cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (user_email,))
+        is_bidder = cursor.fetchone()
+
+        cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (user_email,))
+        is_helpdesk = cursor.fetchone()
+
+        if not is_bidder and not is_helpdesk:
+            cursor.execute("""
+                DELETE FROM Users
+                WHERE email = ?
+            """, (user_email,))
+            connection.commit()
+            connection.close()
+            session.clear()
+            return redirect(url_for('home'))
+
+        connection.commit()
+        connection.close()
+        session.clear()
+        return redirect(url_for('authenticate'))
+
+    except Exception as e:
+        connection.rollback()
+        connection.close()
+        print("Error deleting seller account:", e)
+        return redirect(url_for('seller_account'))
+
 @app.route('/seller-profile', methods=['GET'])
 def seller_profile():
     user_email = session.get('email')
@@ -1188,8 +1335,151 @@ def profile():
         edit_address=edit_address,
         edit_card=edit_card,
         edit_password=edit_password,
-        message=message
+        message=message,
+        delete_error=None
     )
+
+@app.route('/profile/delete', methods=['POST'])
+def delete_bidder_account():
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    delete_password = request.form.get('delete_password', '').strip()
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    try:
+        # Verify password first
+        cursor.execute("""
+            SELECT password, salt
+            FROM Users
+            WHERE email = ?
+        """, (user_email,))
+        user_row = cursor.fetchone()
+
+        if not user_row:
+            connection.close()
+            session.clear()
+            return redirect(url_for('authenticate'))
+
+        stored_hash = user_row['password']
+        salt = user_row['salt']
+        entered_hash = hashlib.sha256((delete_password + salt).encode('utf-8')).hexdigest()
+
+        if entered_hash != stored_hash:
+            # Reload profile data with delete_error so modal reopens
+            cursor.execute("""
+                SELECT
+                    B.email,
+                    B.first_name,
+                    B.last_name,
+                    B.age,
+                    B.major,
+                    (A.street_num || ' ' || A.street_name) AS street,
+                    A.zipcode AS zipcode,
+                    C.card_type AS card_type,
+                    C.credit_card_num AS card_number,
+                    (C.expire_month || '/' || C.expire_year) AS card_exp,
+                    C.security_code AS security_code
+                FROM Bidders B
+                LEFT JOIN Address A
+                    ON B.home_address_id = A.address_id
+                LEFT JOIN Credit_Cards C
+                    ON B.email = C.Owner_email
+                WHERE B.email = ?
+            """, (user_email,))
+            user = cursor.fetchone()
+
+            if user:
+                user = dict(user)
+
+                card_number = user.get('card_number')
+                if card_number:
+                    card_number = str(card_number)
+                    if len(card_number) > 4:
+                        user['masked_card_number'] = '*' * (len(card_number) - 4) + card_number[-4:]
+                    else:
+                        user['masked_card_number'] = card_number
+                else:
+                    user['masked_card_number'] = None
+
+                security_code = user.get('security_code')
+                if security_code:
+                    security_code = str(security_code)
+                    user['masked_security_code'] = '*' * len(security_code)
+                else:
+                    user['masked_security_code'] = None
+
+            connection.close()
+
+            return render_template(
+                'profile.html',
+                user=user,
+                edit_basic=False,
+                edit_address=False,
+                edit_card=False,
+                edit_password=False,
+                message=None,
+                delete_error='Current password is incorrect.'
+            )
+
+        # Delete bidder-related credit cards
+        cursor.execute("""
+            DELETE FROM Credit_Cards
+            WHERE Owner_email = ?
+        """, (user_email,))
+
+        # Delete bidder home address if it exists
+        cursor.execute("""
+            SELECT home_address_id
+            FROM Bidders
+            WHERE email = ?
+        """, (user_email,))
+        bidder_row = cursor.fetchone()
+
+        if bidder_row and bidder_row['home_address_id']:
+            home_address_id = bidder_row['home_address_id']
+            cursor.execute("""
+                DELETE FROM Address
+                WHERE address_id = ?
+            """, (home_address_id,))
+
+        # Delete bidder role
+        cursor.execute("""
+            DELETE FROM Bidders
+            WHERE email = ?
+        """, (user_email,))
+
+        # Only delete Users row if no other roles remain
+        cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (user_email,))
+        is_seller = cursor.fetchone()
+
+        cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (user_email,))
+        is_helpdesk = cursor.fetchone()
+
+        if not is_seller and not is_helpdesk:
+            cursor.execute("""
+                DELETE FROM Users
+                WHERE email = ?
+            """, (user_email,))
+            connection.commit()
+            connection.close()
+            session.clear()
+            return redirect(url_for('home'))
+
+        connection.commit()
+        connection.close()
+        session.clear()
+        return redirect(url_for('authenticate'))
+
+    except Exception as e:
+        connection.rollback()
+        connection.close()
+        print("Error deleting bidder account:", e)
+        return redirect(url_for('profile'))
 
 @app.route('/profile/update_basic', methods=['POST'])
 def update_basic():
@@ -1489,7 +1779,7 @@ def register_page():
     return render_template('register.html')
 
 
-@app.route('/my-bids', methods=['GET'])
+@app.route('/my-bids', methods=['GET','POST'])
 def my_bids():
     user_email = session.get('email')
     roles = session.get('roles', [])
@@ -1502,7 +1792,8 @@ def my_bids():
     cursor = connection.cursor()
     # This query retrieves the user's bid alongside the current highest bid for that item
     cursor.execute('''
-                   SELECT A.Listing_ID,
+                   SELECT A.Seller_Email,
+                          A.Listing_ID,
                           A.Auction_Title,
                           A.Product_Name,
                           B.bid_price,
@@ -1553,6 +1844,27 @@ def my_bids():
 
         processed_bids.append(bid)
 
+    #rating mechanics for bidders to sellers
+    if request.method == 'POST':
+        rating = request.form.get('rate')
+        description = request.form.get('description')
+        listing_id = request.form.get('listing_id')
+        seller_email = request.form.get('seller')
+        print("Rating:", rating)
+        print("Description:", description)
+        print("Listing ID:", listing_id)
+        print("Seller Email:", seller_email)
+
+        connection = get_connection()
+        cursor = connection.cursor()
+        # Insert stuff into the ratings table
+        cursor.execute('''INSERT INTO Rating(Bidder_Email, Seller_Email, Date, Rating, Rating_Desc)
+                          VALUES (?, ?, CURRENT_DATE, ?, ?)
+                       ''', (user_email, seller_email, rating, description))
+
+        connection.commit()
+
+        connection.close()
     return render_template('my-bids.html', email=user_email, listings=processed_bids)
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
