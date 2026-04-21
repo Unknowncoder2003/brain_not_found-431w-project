@@ -144,7 +144,9 @@
                               {% elif bid.display_status == "Won" and bid.is_paid %}
                                   <button disabled class="btn btn-sm btn-secondary ml-2">Paid</button>
 
-                                  <button class="btn btn-sm btn-secondary ml-2" data-toggle="modal" data-target="#exampleModal">Rate</button>
+                                  <button class="btn btn-sm btn-danger ml-2" data-toggle="modal" data-target="#exampleModal">
+                                        Rate
+                                  </button>
 
                                 <!-- Modal for Rating-->
                                   <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
