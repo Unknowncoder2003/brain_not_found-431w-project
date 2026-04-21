@@ -538,19 +538,20 @@ def bidder():
 
     category = request.args.get('category')
     search_term = request.args.get('search')
+    min_price = request.args.get('min_price')
+    max_price = request.args.get('max_price')
 
-    if search_term and search_term.strip():
-        items = search_items(search_term.strip())
-    elif category:
-        items = get_items(category)
-    else:
-        items = get_all_items()
     page = request.args.get('page', 1, type=int)
     per_page = 30
     offset = (page - 1) * per_page
-    
-    total_items = len(items)
-    items = items[offset : offset + per_page]
+
+    if search_term and search_term.strip():
+        items, total_items = search_items(search_term.strip(), min_price=min_price, max_price=max_price, limit=per_page, offset=offset)
+    elif category:
+        items, total_items = get_items(category, limit=per_page, offset=offset)
+    else:
+        items, total_items = get_all_items(limit=per_page, offset=offset)
+
     total_pages = (total_items + per_page - 1) // per_page
     
     pagination_pages = []
@@ -613,54 +614,84 @@ def get_all_subcategories(target_category):
     return all_names
 
 
-def get_items(category_name):
+def get_items(category_name, limit, offset):
     """fetch items from the selected category AND all subcategories."""
     # Get the full list of related categories
     category_list = get_all_subcategories(category_name)
     connection = get_connection()
     cursor = connection.cursor()
     placeholders = ', '.join(['?'] * len(category_list))
-    #query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
+    
+    count_query = f'SELECT COUNT(*) FROM Auction_Listings WHERE Category IN ({placeholders}) AND Status = 1'
+    cursor.execute(count_query, category_list)
+    total_count = cursor.fetchone()[0]
+
     query = f'''
-        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
-        FROM Auction_Listings
-        WHERE Category IN ({placeholders}) AND Status = 1
+        SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               A.Status
+        FROM Auction_Listings A
+        WHERE A.Category IN ({placeholders}) AND A.Status = 1
+        LIMIT ? OFFSET ?
     '''
-    cursor.execute(query, category_list)
+    cursor.execute(query, category_list + [limit, offset])
     data = cursor.fetchall()
     connection.close()
-    return data
+    return data, total_count
 
-def get_all_items():
+def get_all_items(limit, offset):
     connection = get_connection()
     cursor = connection.cursor()
-    #items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
-    #data = items.fetchall()
+    
+    cursor.execute('SELECT COUNT(*) FROM Auction_Listings WHERE Status = 1')
+    total_count = cursor.fetchone()[0]
+
     cursor.execute('''
-        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
-        FROM Auction_Listings
-        WHERE Status = 1
-    ''')
+        SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               A.Status
+        FROM Auction_Listings A
+        WHERE A.Status = 1
+        LIMIT ? OFFSET ?
+    ''', (limit, offset))
     data = cursor.fetchall()
     connection.close()
-    return data
+    return data, total_count
 
-def search_items(search_term):
+def search_items(search_term, min_price=None, max_price=None, limit=30, offset=0):
     connection = get_connection()
     cursor = connection.cursor()
 
     keyword = f"%{search_term}%"
 
-    cursor.execute("""
-        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
-        FROM Auction_Listings
-        WHERE (Auction_Title LIKE ? OR Product_Name LIKE ?)
-          AND Status = 1
-    """, (keyword, keyword))
+    where_clause = "WHERE (A.Auction_Title LIKE ? OR A.Product_Name LIKE ? OR A.Product_Description LIKE ? OR A.Category LIKE ? OR A.Seller_Email LIKE ?) AND A.Status = 1"
+    params = [keyword, keyword, keyword, keyword, keyword]
 
+    if min_price:
+        where_clause += " AND (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) >= ?"
+        params.append(float(min_price))
+    if max_price:
+        where_clause += " AND (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) <= ?"
+        params.append(float(max_price))
+
+    count_query = f"SELECT COUNT(*) FROM Auction_Listings A {where_clause}"
+    cursor.execute(count_query, params)
+    total_count = cursor.fetchone()[0]
+
+    query = f"""
+        SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               A.Status
+        FROM Auction_Listings A
+        {where_clause}
+        LIMIT ? OFFSET ?
+    """
+    params.extend([limit, offset])
+
+    cursor.execute(query, params)
     data = cursor.fetchall()
     connection.close()
-    return data
+    return data, total_count
 
 @app.route('/item-details', methods=['POST', 'GET'])
 def item_bid():
@@ -1625,9 +1656,25 @@ def deactivate_listing(seller_email, listing_id):
     if user_email != seller_email:
         return redirect(url_for('my_listing'))
 
+    removal_reason = request.form.get('removal_reason', 'No reason provided')
+
     try:
         connection = get_connection()
         cursor = connection.cursor()
+
+        cursor.execute('SELECT Max_bids FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
+        max_bids_row = cursor.fetchone()
+        max_bids = max_bids_row[0] if max_bids_row else 0
+
+        cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ?', (listing_id,))
+        bid_count = cursor.fetchone()[0]
+
+        remaining_bids = max(0, max_bids - bid_count)
+
+        cursor.execute('''
+            INSERT INTO Listing_Removals (seller_email, listing_id, remaining_bids, removal_reason)
+            VALUES (?, ?, ?, ?)
+        ''', (seller_email, listing_id, remaining_bids, removal_reason))
 
         cursor.execute('''
             UPDATE Auction_Listings
@@ -1652,6 +1699,22 @@ def edit_listing(seller_email, listing_id):
 
     if not user_email or user_email != seller_email or 'seller' not in roles:
         return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+    
+    cursor.execute('SELECT Status FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
+    item_status = cursor.fetchone()
+    if not item_status or item_status[0] != 1:
+        connection.close()
+        return "Error: Cannot edit an item that is inactive, sold, or ended.", 400
+
+    cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ?', (listing_id,))
+    if cursor.fetchone()[0] > 0:
+        connection.close()
+        return "Error: Cannot edit an active listing that already has bids.", 400
+    connection.close()
+
 
     if request.method == 'POST':
         connection = get_connection()

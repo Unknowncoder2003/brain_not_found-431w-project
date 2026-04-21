@@ -148,7 +148,16 @@
                             <p class="small text-muted mt-2 text-center">This will set status to Inactive and is not revertible.</p>
                             {% endif %}
 
-                            <a href="/edit-listing/{{ item[0] }}/{{ item[1] }}" class="btn btn-block btn-outline-primary mt-2">Edit Details</a>
+                            {% if item[9] != 1 %}
+                                <div class="alert alert-secondary mt-3 text-center small">
+                                    This item is inactive or the auction has ended. To relist, please use the <a href="/post-item">Post New Item</a> button.
+                                </div>
+                            {% elif bid_count > 0 %}
+                                <button type="button" class="btn btn-block btn-outline-secondary mt-2" disabled title="Bidding has started. Update is blocked.">Edit Details</button>
+                                <p class="small text-danger mt-1 text-center font-weight-bold">Cannot edit: Bidding has already started.</p>
+                            {% else %}
+                                <a href="/edit-listing/{{ item[0] }}/{{ item[1] }}" class="btn btn-block btn-outline-primary mt-2">Edit Details</a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -166,18 +175,21 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body">
-        Are you sure you want to take <strong>"{{ item[3] }}"</strong> off the market?
-        <br><br>
-          <p class="text-muted small">This will change the status to <strong>Inactive</strong>. You are <strong>not</strong> allowed to change it back to <strong>Active</strong>. You can relist it later from your dashboard.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-
-        <form action="/deactivate-listing/{{ item[0] }}/{{ item[1] }}" method="POST">
-            <button type="submit" class="btn btn-danger">Yes, Take Off Market</button>
-        </form>
-      </div>
+      <form action="/deactivate-listing/{{ item[0] }}/{{ item[1] }}" method="POST">
+        <div class="modal-body">
+          Are you sure you want to take <strong>"{{ item[3] }}"</strong> off the market?
+          <br><br>
+            <p class="text-muted small">This will change the status to <strong>Inactive</strong>. You are <strong>not</strong> allowed to change it back to <strong>Active</strong>. You can relist it later from your dashboard.</p>
+            <div class="form-group mt-3">
+                <label for="removal_reason"><strong>Reason for Removal <span class="text-danger">*</span></strong></label>
+                <textarea class="form-control" id="removal_reason" name="removal_reason" rows="3" required placeholder="Please explain why this listing is being removed..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Yes, Take Off Market</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

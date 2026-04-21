@@ -169,8 +169,23 @@
                 </ul>
 
                 <form class="form-inline mr-auto" action="/bidder" method="GET">
-                    <input class="form-control mr-sm-2" style="width: 600px;" type="search" name="search"
-                        placeholder="Search" aria-label="Search" value="{{ search_term }}">
+                    <input class="form-control mr-sm-2" style="width: 400px;" type="search" name="search"
+                        placeholder="Search items..." aria-label="Search" value="{{ search_term }}">
+                    
+                    <div class="input-group mr-sm-2" style="width: 130px;">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <input type="number" class="form-control" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ request.args.get('min_price', '') }}">
+                    </div>
+
+                    <div class="input-group mr-sm-2" style="width: 130px;">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <input type="number" class="form-control" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ request.args.get('max_price', '') }}">
+                    </div>
+
                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
                 </form>
             </div>
@@ -208,10 +223,27 @@
                         <div class="card h-100">
                             <div class="card-body text-center d-flex flex-column justify-content-between">
                                 <div>
-                                    <h5 class="card-title"
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        {% if i[5] == 1 %}
+                                            <span class="badge badge-success" style="font-size: 0.8rem;">Active</span>
+                                        {% elif i[5] == 0 %}
+                                            <span class="badge badge-secondary" style="font-size: 0.8rem;">Inactive</span>
+                                        {% elif i[5] == 2 %}
+                                            <span class="badge badge-info" style="font-size: 0.8rem;">Sold</span>
+                                        {% elif i[5] == 3 %}
+                                            <span class="badge badge-warning" style="font-size: 0.8rem;">Ended</span>
+                                        {% endif %}
+                                        {% if i[4] is not none %}
+                                            <h5 class="mb-0 text-success font-weight-bold">${{ "{:,.2f}".format(i[4] | float) }}</h5>
+                                        {% else %}
+                                            <h5 class="mb-0 text-secondary font-weight-bold" style="font-size: 1rem;">No Bids</h5>
+                                        {% endif %}
+                                    </div>
+                                    <h5 class="card-title mt-2"
                                         style="color: #1e4fa1; font-weight: 700; font-size: 1.15rem;">{{ i[2] }}</h5>
-                                    <h6 class="card-subtitle mb-4 text-muted"
+                                    <h6 class="card-subtitle mb-2 text-muted"
                                         style="font-size: 0.9rem; letter-spacing: 0.5px;">{{ i[3] }}</h6>
+                                    <p class="small text-muted mb-4">Sold by: <br>{{ i[0] }}</p>
                                 </div>
                                 <form action="/item-details" method="GET" class="mt-auto">
                                     <input type="hidden" name="item" value="{{ i[1] }}">
