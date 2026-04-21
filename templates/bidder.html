@@ -269,7 +269,7 @@
 
                     {% for p in pagination_pages %}
                         {% if p %}
-                            <a href="/bidder?page={{ p }}{% if request.args.get('search') %}&search={{ request.args.get('search') | urlencode }}{% endif %}{% if request.args.get('category') %}&category={{ request.args.get('category') | urlencode }}{% endif %}"
+                            <a href="/bidder?page={{ p }}{% if request.args.get('search') %}&search={{ request.args.get('search') | urlencode }}{% endif %}{% if request.args.get('category') %}&category={{ request.args.get('category') | urlencode }}{% endif %}{% if request.args.get('min_price') %}&min_price={{ request.args.get('min_price') | urlencode }}{% endif %}{% if request.args.get('max_price') %}&max_price={{ request.args.get('max_price') | urlencode }}{% endif %}"
                                 class="btn btn-sm {% if p == page %}btn-primary{% else %}btn-outline-primary{% endif %} mx-2"
                                 style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.2s;">
                                 {{ p }}

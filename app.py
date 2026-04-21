@@ -684,16 +684,18 @@ def bidder():
     cate = get_category_tree()
 
     category = request.args.get('category')
-    search_term = request.args.get('search')
-    min_price = request.args.get('min_price')
-    max_price = request.args.get('max_price')
+    # Extract and clean search parameters
+    search_term = request.args.get('search', '').strip()
+    min_price = request.args.get('min_price', '').strip()
+    max_price = request.args.get('max_price', '').strip()
 
     page = request.args.get('page', 1, type=int)
     per_page = 30
     offset = (page - 1) * per_page
 
-    if search_term and search_term.strip():
-        items, total_items = search_items(search_term.strip(), min_price=min_price, max_price=max_price, limit=per_page, offset=offset)
+    # Trigger search if ANY keyword or price filter is provided
+    if search_term or min_price or max_price:
+        items, total_items = search_items(search_term, min_price=min_price, max_price=max_price, limit=per_page, offset=offset)
     elif category:
         items, total_items = get_items(category, limit=per_page, offset=offset)
     else:
