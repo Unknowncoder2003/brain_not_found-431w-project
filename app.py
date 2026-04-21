@@ -621,7 +621,7 @@ def get_items(category_name):
     query = f'''
         SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
-        WHERE Category IN ({placeholders})
+        WHERE Category IN ({placeholders}) AND Status = 1
     '''
     cursor.execute(query, category_list)
     data = cursor.fetchall()
@@ -636,6 +636,7 @@ def get_all_items():
     cursor.execute('''
         SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
+        WHERE Status = 1
     ''')
     data = cursor.fetchall()
     connection.close()
@@ -650,8 +651,8 @@ def search_items(search_term):
     cursor.execute("""
         SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
         FROM Auction_Listings
-        WHERE Auction_Title LIKE ?
-           OR Product_Name LIKE ?
+        WHERE (Auction_Title LIKE ? OR Product_Name LIKE ?)
+          AND Status = 1
     """, (keyword, keyword))
 
     data = cursor.fetchall()
@@ -1282,7 +1283,13 @@ def my_listing():
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('''
-        SELECT A.Listing_ID, A.Auction_Title, A.Category, A.Reserve_Price, A.Max_bids, A.Status
+        SELECT A.Listing_ID, 
+               A.Auction_Title, 
+               A.Category, 
+               A.Reserve_Price, 
+               A.Max_bids, 
+               A.Status,
+               (SELECT COUNT(*) FROM Bids b WHERE b.listing_id = A.Listing_ID) as bid_count
         FROM Auction_Listings A
         WHERE A.Seller_Email = ?
     ''', (user_email,))
@@ -1407,6 +1414,12 @@ def edit_listing(seller_email, listing_id):
             connection.close()
             return "Error: Category does not exist.", 400
 
+        cursor.execute('SELECT Status FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
+        item_status = cursor.fetchone()
+        if not item_status or item_status[0] != 1:
+            connection.close()
+            return "Error: Cannot edit an item that is inactive, sold, or ended.", 400
+
         cursor.execute('''
             UPDATE Auction_Listings
             SET Auction_Title       = ?,
@@ -1419,6 +1432,18 @@ def edit_listing(seller_email, listing_id):
             WHERE Seller_Email = ?
               AND Listing_ID = ?
         ''', (title, prod_name, cat, desc, qty, reserve, max_b, seller_email, listing_id))
+
+        # Automatically check if the new lowered Max_bids or Reserve_Price causes the auction to end
+        cursor.execute('''
+            UPDATE Auction_Listings
+            SET Status = CASE
+                WHEN (SELECT MAX(bid_price) FROM Bids WHERE listing_id = ?) >= Reserve_Price THEN 2
+                ELSE 3
+            END
+            WHERE Listing_ID = ?
+              AND (SELECT COUNT(*) FROM Bids WHERE listing_id = ?) >= Max_bids
+              AND Status = 1
+        ''', (listing_id, listing_id, listing_id))
 
         connection.commit()
         connection.close()
@@ -1716,6 +1741,13 @@ def pay_item_post(listing_id):
         INSERT INTO Transactions (Transaction_ID, Seller_Email, Listing_ID, Buyer_Email, Date, Payment)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (next_tx_id, seller_email, listing_id, user_email, current_date, amount_paid))
+
+    # Credit the seller's balance
+    cursor.execute('''
+        UPDATE Sellers 
+        SET balance = balance + ? 
+        WHERE email = ?
+    ''', (float(amount_paid), seller_email))
 
     connection.commit()
     connection.close()
