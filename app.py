@@ -550,6 +550,17 @@ def bidder():
     items = items[offset : offset + per_page]
     total_pages = (total_items + per_page - 1) // per_page
     
+    pagination_pages = []
+    if total_pages <= 7:
+        pagination_pages = list(range(1, total_pages + 1))
+    else:
+        if page <= 4:
+            pagination_pages = [1, 2, 3, 4, 5, None, total_pages]
+        elif page >= total_pages - 3:
+            pagination_pages = [1, None, total_pages - 4, total_pages - 3, total_pages - 2, total_pages - 1, total_pages]
+        else:
+            pagination_pages = [1, None, page - 1, page, page + 1, None, total_pages]
+    
     connection.close()
     return render_template(
         'bidder.html',
@@ -558,7 +569,8 @@ def bidder():
         items=items,
         search_term=search_term if search_term else "",
         page=page,
-        total_pages=total_pages
+        total_pages=total_pages,
+        pagination_pages=pagination_pages
     )
 
 def categories():
