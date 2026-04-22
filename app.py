@@ -20,6 +20,22 @@ app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the ses
 DB_NAME = 'database.db'
 host = 'http://127.0.0.1:5000/'
 
+@app.before_request
+def ensure_roles_loaded():
+    """Ensure that the session['roles'] list is always available for logged-in users."""
+    if 'email' in session and 'roles' not in session:
+        connection = get_connection()
+        cursor = connection.cursor()
+        roles = []
+        cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (session['email'],))
+        if cursor.fetchone(): roles.append('helpdesk')
+        cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (session['email'],))
+        if cursor.fetchone(): roles.append('seller')
+        cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (session['email'],))
+        if cursor.fetchone(): roles.append('bidder')
+        connection.close()
+        session['roles'] = roles
+
 
 def get_connection():
     """
