@@ -1946,6 +1946,16 @@ def my_bids():
 
         connection = get_connection()
         cursor = connection.cursor()
+
+        # Check if this bidder has already rated this seller today (PK constraint)
+        cursor.execute('''
+            SELECT 1 FROM Rating
+            WHERE Bidder_Email = ? AND Seller_Email = ? AND Date = DATE('now')
+        ''', (user_email, seller_email))
+        if cursor.fetchone():
+            connection.close()
+            return redirect(url_for('my_bids'))
+
         # Insert stuff into the ratings table
         cursor.execute('''INSERT INTO Rating(Bidder_Email, Seller_Email, Date, Rating, Rating_Desc)
                           VALUES (?, ?, CURRENT_DATE, ?, ?)
@@ -1969,8 +1979,17 @@ def my_bids():
                    ''', (user_email,))
     rating_rows = cursor.fetchall()
     rated_listings = {(row[0], row[1]) for row in rating_rows}
+
+    # Check which sellers the bidder has already rated TODAY (Rating PK: Bidder_Email, Seller_Email, Date)
+    cursor.execute('''
+        SELECT Seller_Email FROM Rating
+        WHERE Bidder_Email = ? AND Date = DATE('now')
+    ''', (user_email,))
+    sellers_rated_today = {row[0] for row in cursor.fetchall()}
+
     connection.close()
-    return render_template('my-bids.html', email=user_email, listings=processed_bids, rated_listings = rated_listings)
+    return render_template('my-bids.html', email=user_email, listings=processed_bids,
+                           rated_listings=rated_listings, sellers_rated_today=sellers_rated_today)
 
 
 
