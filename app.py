@@ -1867,21 +1867,22 @@ def my_bids():
                           A.Listing_ID,
                           A.Auction_Title,
                           A.Product_Name,
-                          B.bid_price,
+                          B.Bid_price AS bid_price,
                           A.Status AS Auction_Status,
-                          (SELECT MAX(Bid_Price)
+                          (SELECT MAX(Bid_price)
                            FROM Bids
-                           WHERE Listing_ID = B.listing_id) AS Current_High_Bid,
+                           WHERE Listing_ID = B.Listing_ID AND Seller_Email = B.Seller_Email) AS Current_High_Bid,
                           CASE WHEN T.Transaction_ID IS NOT NULL THEN 1 ELSE 0 END AS is_paid
                    FROM Bids B 
-                   JOIN Auction_Listings A ON B.listing_id = A.Listing_ID
-                   LEFT JOIN Transactions T ON T.Listing_ID = A.Listing_ID AND T.Buyer_Email = B.bidder_email
-                   WHERE B.bidder_email = ?
-                     AND B.bid_id = (
-                         SELECT MAX(bid_id) 
+                   JOIN Auction_Listings A ON B.Listing_ID = A.Listing_ID AND B.Seller_Email = A.Seller_Email
+                   LEFT JOIN Transactions T ON T.Listing_ID = A.Listing_ID AND T.Buyer_Email = B.Bidder_email
+                   WHERE B.Bidder_email = ?
+                     AND B.Bid_ID = (
+                         SELECT MAX(Bid_ID) 
                          FROM Bids B2 
-                         WHERE B2.listing_id = B.listing_id 
-                           AND B2.bidder_email = B.bidder_email
+                         WHERE B2.Listing_ID = B.Listing_ID 
+                           AND B2.Seller_Email = B.Seller_Email
+                           AND B2.Bidder_email = B.Bidder_email
                      )
                    ORDER BY {order_clause}
                    ''', (user_email,))
