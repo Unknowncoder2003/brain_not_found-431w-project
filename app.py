@@ -921,9 +921,15 @@ def item_bid():
                    ''', (listing_id, seller_email))
     current_bid_count = cursor.fetchone()[0]
 
-    # Auto-repair: If max bids reached but status is still Active (1), mark as Sold (2)
+    # Auto-repair: If max bids reached but status is still Active (1), update accordingly
     if current_bid_count >= item[8] and item[9] == 1:
-        cursor.execute('UPDATE Auction_Listings SET Status = 2 WHERE Listing_ID = ? AND Seller_Email = ?', (listing_id, seller_email))
+        cursor.execute('''
+            SELECT MAX(Bid_price) FROM Bids
+            WHERE listing_id = ? AND seller_email = ?
+        ''', (listing_id, seller_email))
+        max_bid = cursor.fetchone()[0] or 0
+        new_status = 2 if max_bid >= item[7] else 3  # item[7] = Reserve_Price
+        cursor.execute('UPDATE Auction_Listings SET Status = ? WHERE Listing_ID = ? AND Seller_Email = ?', (new_status, listing_id, seller_email))
         connection.commit()
         # Refresh the item object after update
         cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
@@ -937,9 +943,9 @@ def item_bid():
     highest_bid = cursor.fetchone()[0] or 0
 
     cursor.execute("""
-                   SELECT AVG(rating), COUNT(*)
-                   FROM seller_ratings
-                   WHERE seller_email = ?
+                   SELECT AVG(Rating), COUNT(*)
+                   FROM Rating
+                   WHERE Seller_Email = ?
                    """, (seller_email,))
     rating_row = cursor.fetchone()
 
@@ -1052,11 +1058,16 @@ def item_bid():
             
             # Check if max bids reached, if so, close the auction
             if current_bid_count >= item[8]:
+                # Check reserve price to decide Sold (2) vs Reserve Not Met (3)
+                if highest_bid >= item[7]:  # item[7] = Reserve_Price
+                    new_auction_status = 2
+                else:
+                    new_auction_status = 3
                 cursor.execute('''
                     UPDATE Auction_Listings
-                    SET Status = 2
+                    SET Status = ?
                     WHERE Listing_ID = ? AND Seller_Email = ?
-                ''', (listing_id, seller_email))
+                ''', (new_auction_status, listing_id, seller_email))
                 connection.commit()
             
             cursor.execute('''
