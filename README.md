@@ -25,23 +25,34 @@ Technologies:
 - Version Control: GitHub
 
 # Project Structure
-/.idea
-/dataset
-/templates
-    bidder.html
-    seller.html
-    helpdesk.html
-    profile.html
-    seller_account.html
-    my-bids.html
-    my-listings.html
-    watchlist.html
-    ...
-app.py
-database.db
-passwordHasher.py
-CleanAuction_Listings.py
-README.md
+ 
+**/templates**
+- bidder.html  
+- contact-helpdesk.html  
+- edit-listing.html
+- helpdesk.html
+- index.html
+- listing-details.html
+- listing-details-bidder.html
+- login.html
+- my-bids.html
+- my-listings.html
+- pay.html
+- post-item.html
+- profile.html
+- rate_seller.html
+- register.html  
+- seller.html
+- seller_account.html
+- seller_profile.html
+- watchlist.html  
+
+**Files**
+- app.py  
+- CleanAuction_Listing.py  
+- database.db  
+- passwordHasher.py  
+- README.md  
 
 # Database Setup 
 
@@ -217,41 +228,6 @@ password: rrFKu7T
 HelpDesk:
 email: cantonacci6p@lsu.edu
 password: vKQmcc1y
-
-# File Structure 
-
-**/dataset**
-- Address.csv  
-- Auction_Listings.csv  
-- Bidders.csv  
-- Bids.csv  
-- Categories.csv  
-- Clean_Auction_listing.csv  
-- Credit_Cards.csv  
-- HashedUsers.csv  
-- Helpdesk.csv  
-- Local_Vendors.csv  
-- Ratings.csv  
-- Requests.csv  
-- Sellers.csv  
-- Transactions.csv  
-- Users.csv  
-- Zipcode_Info.csv  
-
-**/templates**
-- bidder.html  
-- helpdesk.html  
-- index.html  
-- login.html  
-- seller.html  
-
-**Files**
-- app.py  
-- CleanAuction_Listing.py  
-- database.db  
-- passwordHasher.py  
-- README.md  
-- test.py
 
 # Final Notes 
 This project demonstrates: 
