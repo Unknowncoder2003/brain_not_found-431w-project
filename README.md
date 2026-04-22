@@ -24,24 +24,35 @@ Technologies:
 - IDE: PyCharm
 - Version Control: GitHub
 
-#Project Structure
-/.idea
-/dataset
-/templates
-    bidder.html
-    seller.html
-    helpdesk.html
-    profile.html
-    seller_account.html
-    my-bids.html
-    my-listings.html
-    watchlist.html
-    ...
-app.py
-database.db
-passwordHasher.py
-CleanAuction_Listings.py
-README.md
+# Project Structure
+ 
+**/templates**
+- bidder.html  
+- contact-helpdesk.html  
+- edit-listing.html
+- helpdesk.html
+- index.html
+- listing-details.html
+- listing-details-bidder.html
+- login.html
+- my-bids.html
+- my-listings.html
+- pay.html
+- post-item.html
+- profile.html
+- rate_seller.html
+- register.html  
+- seller.html
+- seller_account.html
+- seller_profile.html
+- watchlist.html  
+
+**Files**
+- app.py  
+- CleanAuction_Listing.py  
+- database.db  
+- passwordHasher.py  
+- README.md  
 
 # Database Setup 
 
@@ -131,7 +142,64 @@ System Features:
   - Role-specific tables
   - Address and vendor info
 
- # User Profile Update 
+# User Profile Update
+Users can update: 
+ - Basic info
+ - Address
+ - Credit card
+ - Password (with verification)
+Constraints:
+ - Email cannot be changed
+ - Passwords always hashed
+
+# Product Search
+- Keyword search:
+  - Title
+  - Description
+  - Category
+  - Seller
+- Price filtering:
+  - min/max price
+- Pagination implemented
+
+# Rating System 
+- Bidders can rate sellers after winning
+- Ratings stored in:
+  - Rating
+  - seller_ratings
+- Displays:
+  - average rating
+  - rating count
+ 
+# Watchlist (Optional Feature) 
+- Add/remove items
+- Persistent in database
+- Cannot add own listings
+
+# Payment System 
+- Winning bidder proceeds to payment
+- Transaction recorded
+- Listing marked as "Sold"
+
+# HelpDesk System (Optional Feature) 
+- Users can submit requests:
+  - Add category
+  - General support
+- Helpdesk can:
+  - Claim requests
+  - Complete requests
+Special Feature:
+- Completeing "AddCategory" dynamically updates database
+
+# Account Deletion
+- Seperate flows for:
+  - Seller
+  - Bidder
+Features:
+- Requires password confirmation
+- Deletes:
+  - Role-specific data
+  - Address / credit card info 
 # How to Run the Application 
 1. Open the project in PyCharm (or any IDE)
 2. Make sure all dependencies are installed
@@ -153,60 +221,18 @@ Seller:
 email: nrideoutmi@lsu.edu
 password: CBCA4zXar
 
+Seller (Local Vendor) 
+email: mlempertz10@yandex.ru
+password: rrFKu7T
+
 HelpDesk:
 email: cantonacci6p@lsu.edu
 password: vKQmcc1y
 
-# Features Implemented for Progress Review
-Implemented Features:
-
-- User Login System
-- Secure password hashing (SHA256 + salt)
-- Database population from CSV / script
-- Role-based login:
-  - Bidder → bidder.html
-  - Seller → seller.html
-  - HelpDesk → helpdesk.html
-- Error handling for invalid login
-
-# Known Limitations 
-Limitations:
-
-- Search functionality is not fully implemented
-- Listings are currently static (not database-driven yet)
-- UI is still under development
-
-# File Structure 
-
-**/dataset**
-- Address.csv  
-- Auction_Listings.csv  
-- Bidders.csv  
-- Bids.csv  
-- Categories.csv  
-- Clean_Auction_listing.csv  
-- Credit_Cards.csv  
-- HashedUsers.csv  
-- Helpdesk.csv  
-- Local_Vendors.csv  
-- Ratings.csv  
-- Requests.csv  
-- Sellers.csv  
-- Transactions.csv  
-- Users.csv  
-- Zipcode_Info.csv  
-
-**/templates**
-- bidder.html  
-- helpdesk.html  
-- index.html  
-- login.html  
-- seller.html  
-
-**Files**
-- app.py  
-- CleanAuction_Listing.py  
-- database.db  
-- passwordHasher.py  
-- README.md  
-- test.py  
+# Final Notes 
+This project demonstrates: 
+- Full-stack web development
+- Secure authentication
+- Dynamic SQL querying
+- Database-driven design
+- Role-based architecture 
