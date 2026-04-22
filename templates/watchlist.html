@@ -103,9 +103,15 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-11 dashboard-card">
-                <div class="section-header">
-                    <h2>My Watchlist</h2>
-                    <p class="text-muted small">Items you are keeping an eye on.</p>
+                <div class="section-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">My Watchlist</h2>
+                        <p class="text-muted small mb-0">Items you are keeping an eye on.</p>
+                    </div>
+                    <div class="btn-group">
+                        <a href="/watchlist?sort=date" class="btn btn-sm btn-outline-secondary">Date Added</a>
+                        <a href="/watchlist?sort=status" class="btn btn-sm btn-outline-secondary">Sort by Status</a>
+                    </div>
                 </div>
 
                 <div class="table-responsive">
@@ -139,7 +145,8 @@
                                     {% elif item.Status == 2 %}
                                     <span class="badge badge-info" style="background-color: #1e4fa1;">Sold</span>
                                     {% elif item.Status == 3 %}
-                                    <span class="badge badge-warning" style="background-color: #ffc107; color: #212529;">Reserve Not Met</span>
+                                    <span class="badge badge-warning"
+                                        style="background-color: #ffc107; color: #212529;">Reserve Not Met</span>
                                     {% endif %}
                                 </td>
 

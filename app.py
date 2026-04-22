@@ -48,8 +48,13 @@ def get_connection():
 @app.route('/')
 def home():
     """
-    This is our landing page. It redirects directly to the login.
+    Landing page. If logged in, redirects to the appropriate dashboard.
+    Otherwise, redirects to the login page.
     """
+    user_email = session.get('email')
+    if user_email:
+        # Use find_user_html logic to find the highest priority dashboard
+        return redirect(url_for(find_user_html(user_email)))
     return redirect(url_for('authenticate'))
 
 
@@ -912,6 +917,14 @@ def item_bid():
                    ''', (listing_id,))
     current_bid_count = cursor.fetchone()[0]
 
+    # Auto-repair: If max bids reached but status is still Active (1), mark as Sold (2)
+    if current_bid_count >= item[8] and item[9] == 1:
+        cursor.execute('UPDATE Auction_Listings SET Status = 2 WHERE Listing_ID = ?', (listing_id,))
+        connection.commit()
+        # Refresh the item object after update
+        cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
+        item = cursor.fetchone()
+
     cursor.execute('''
                    SELECT MAX(Bid_price)
                    FROM Bids
@@ -1019,7 +1032,16 @@ def item_bid():
                            WHERE listing_id = ?
                            ''', (listing_id,))
             current_bid_count = cursor.fetchone()[0]
-            print(current_bid_count)
+            
+            # Check if max bids reached, if so, close the auction
+            if current_bid_count >= item[8]:
+                cursor.execute('''
+                    UPDATE Auction_Listings
+                    SET Status = 2
+                    WHERE Listing_ID = ?
+                ''', (listing_id,))
+                connection.commit()
+            
             cursor.execute('''
                            SELECT Status
                            FROM Auction_Listings
@@ -1826,8 +1848,13 @@ def my_bids():
     # Use sqlite3.Row to access columns by their database names
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
+    sort = request.args.get('sort', 'id')
+    order_clause = "B.bid_id DESC"
+    if sort == 'status':
+        order_clause = "A.Status ASC, B.bid_id DESC"
+
     # This query retrieves the user's bid alongside the current highest bid for that item
-    cursor.execute('''
+    cursor.execute(f'''
                    SELECT A.Seller_Email,
                           A.Listing_ID,
                           A.Auction_Title,
@@ -1848,7 +1875,7 @@ def my_bids():
                          WHERE B2.listing_id = B.listing_id 
                            AND B2.bidder_email = B.bidder_email
                      )
-                   ORDER BY B.bid_id DESC
+                   ORDER BY {order_clause}
                    ''', (user_email,))
 
     raw_results = cursor.fetchall()
@@ -1929,7 +1956,12 @@ def my_listing():
 
     connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute('''
+    sort = request.args.get('sort', 'id')
+    order_clause = "A.Listing_ID DESC"
+    if sort == 'status':
+        order_clause = "A.Status ASC, A.Listing_ID DESC"
+
+    cursor.execute(f'''
         SELECT A.Listing_ID, 
                A.Auction_Title, 
                A.Category, 
@@ -1939,6 +1971,7 @@ def my_listing():
                (SELECT COUNT(*) FROM Bids b WHERE b.listing_id = A.Listing_ID) as bid_count
         FROM Auction_Listings A
         WHERE A.Seller_Email = ?
+        ORDER BY {order_clause}
     ''', (user_email,))
     result = cursor.fetchall()
     connection.close()
@@ -2288,13 +2321,18 @@ def watchlist():
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
 
-    cursor.execute("""
+    sort = request.args.get('sort', 'date')
+    order_clause = "W.Added_At DESC"
+    if sort == 'status':
+        order_clause = "A.Status ASC, W.Added_At DESC"
+
+    cursor.execute(f"""
         SELECT W.Seller_Email, W.Listing_ID, W.Added_At, 
                A.Auction_Title, A.Product_Name, A.Status 
         FROM Watchlist W
         JOIN Auction_Listings A ON W.Listing_ID = A.Listing_ID AND W.Seller_Email = A.Seller_Email
         WHERE W.Bidder_Email = ?
-        ORDER BY W.Added_At DESC
+        ORDER BY {order_clause}
     """, (user_email,))
     
     saved_items = cursor.fetchall()

@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>User Profile | NittanyAuction</title>
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          crossorigin="anonymous">
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
         body {
@@ -34,7 +33,7 @@
         .dashboard-card {
             background: white;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             padding: 2rem;
             margin-bottom: 50px;
         }
@@ -70,7 +69,8 @@
             color: #333;
         }
 
-        .table td, .table th {
+        .table td,
+        .table th {
             vertical-align: middle;
         }
 
@@ -100,555 +100,514 @@
         }
     </style>
 </head>
+
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light">
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-text" href="/bidder">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#profileNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="profileNavbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/bidder">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/my-bids">My Bids</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/watchlist">Watch list</a>
+                    </li>
+
+                    <li>
+                        <a class="nav-link active" href="/profile">
+                            User Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contact-helpdesk">Contact HelpDesk</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <span class="nav-link text-muted">
+                            Bidder: <strong>{{ user['first_name'] if user and user['first_name'] else '' }}</strong>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
-        <a class="navbar-brand brand-text" href="/bidder">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </a>
+        <div class="row justify-content-center">
+            <div class="col-md-11 dashboard-card">
 
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#profileNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+                <div class="section-header">
+                    <h2>User Profile</h2>
+                </div>
 
-        <div class="collapse navbar-collapse" id="profileNavbar">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/bidder">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/my-bids">My Bids</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/watchlist">Watch list</a>
-                </li>
-
-                <li>
-                    <a class="nav-link active" href="/profile">
-                        User Profile
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/contact-helpdesk">Contact HelpDesk</a>
-                </li>
-            </ul>
-
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <span class="nav-link text-muted">
-                        Bidder: <strong>{{ user['first_name'] if user and user['first_name'] else '' }}</strong>
-                    </span>
-                </li>
-                {% if session.get('roles') %}
-                    {% if 'bidder' in session['roles'] and request.path != '/bidder' %}
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-outline-primary ml-2" href="/bidder">Switch to Bidder</a>
-                    </li>
-                    {% endif %}
-                    {% if 'seller' in session['roles'] %}
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
-                    </li>
-                    {% endif %}
-                    {% if 'helpdesk' in session['roles'] %}
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
-                    </li>
-                    {% endif %}
-                {% endif %}
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
-
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-11 dashboard-card">
-
-            <div class="section-header">
-                <h2>User Profile</h2>
-            </div>
-
-            {% if message %}
+                {% if message %}
                 {% if 'successfully' in message %}
-                    <div class="alert alert-success">{{ message }}</div>
+                <div class="alert alert-success">{{ message }}</div>
                 {% else %}
-                    <div class="alert alert-danger">{{ message }}</div>
+                <div class="alert alert-danger">{{ message }}</div>
                 {% endif %}
-            {% endif %}
+                {% endif %}
 
-            <div class="info-note">
-                <strong>Profile Rules:</strong><br>
-                Email cannot be edited directly. To update your email, please contact HelpDesk.
-            </div>
+                <div class="info-note">
+                    <strong>Profile Rules:</strong><br>
+                    Email cannot be edited directly. To update your email, please contact HelpDesk.
+                </div>
 
-            <!-- Account Information -->
-            <div class="section-subtitle">
-                <span>Account Information</span>
-            </div>
+                <!-- Account Information -->
+                <div class="section-subtitle">
+                    <span>Account Information</span>
+                </div>
 
-            <div class="table-responsive mb-4">
-                <table class="table table-hover profile-table">
-                    <thead>
-                    <tr>
-                        <th style="width: 35%;">Field</th>
-                        <th style="width: 65%;">Value</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>Email</td>
-                        <td>
-                            <div class="readonly-value">
-                                {{ user['email'] if user and user['email'] else 'N/A' }}
-                            </div>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover profile-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Field</th>
+                                <th style="width: 65%;">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Email</td>
+                                <td>
+                                    <div class="readonly-value">
+                                        {{ user['email'] if user and user['email'] else 'N/A' }}
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Basic Personal Information -->
-            <div class="section-subtitle">
-                <span>Basic Personal Information</span>
-                {% if not edit_basic %}
+                <!-- Basic Personal Information -->
+                <div class="section-subtitle">
+                    <span>Basic Personal Information</span>
+                    {% if not edit_basic %}
                     <a href="/profile?edit=basic" class="btn btn-sm btn-outline-primary">Edit</a>
-                {% endif %}
-            </div>
-
-            <form method="POST" action="/profile/update_basic">
-                <div class="table-responsive mb-4">
-                    <table class="table table-hover profile-table">
-                        <thead>
-                        <tr>
-                            <th style="width: 35%;">Field</th>
-                            <th style="width: 65%;">Value</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td>First Name</td>
-                            <td>
-                                {% if edit_basic %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="first_name"
-                                           value="{{ user['first_name'] if user and user['first_name'] else '' }}"
-                                           required>
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['first_name'] if user and user['first_name'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Last Name</td>
-                            <td>
-                                {% if edit_basic %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="last_name"
-                                           value="{{ user['last_name'] if user and user['last_name'] else '' }}"
-                                           required>
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['last_name'] if user and user['last_name'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Age</td>
-                            <td>
-                                {% if edit_basic %}
-                                    <input type="number"
-                                           class="form-control form-control-sm-custom"
-                                           name="age"
-                                           value="{{ user['age'] if user and user['age'] else '' }}"
-                                           min="0">
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['age'] if user and user['age'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Major</td>
-                            <td>
-                                {% if edit_basic %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="major"
-                                           value="{{ user['major'] if user and user['major'] else '' }}">
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['major'] if user and user['major'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                    {% endif %}
                 </div>
 
-                {% if edit_basic %}
+                <form method="POST" action="/profile/update_basic">
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover profile-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">Field</th>
+                                    <th style="width: 65%;">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>First Name</td>
+                                    <td>
+                                        {% if edit_basic %}
+                                        <input type="text" class="form-control form-control-sm-custom" name="first_name"
+                                            value="{{ user['first_name'] if user and user['first_name'] else '' }}"
+                                            required>
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['first_name'] if user and user['first_name'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Last Name</td>
+                                    <td>
+                                        {% if edit_basic %}
+                                        <input type="text" class="form-control form-control-sm-custom" name="last_name"
+                                            value="{{ user['last_name'] if user and user['last_name'] else '' }}"
+                                            required>
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['last_name'] if user and user['last_name'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Age</td>
+                                    <td>
+                                        {% if edit_basic %}
+                                        <input type="number" class="form-control form-control-sm-custom" name="age"
+                                            value="{{ user['age'] if user and user['age'] else '' }}" min="0">
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['age'] if user and user['age'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Major</td>
+                                    <td>
+                                        {% if edit_basic %}
+                                        <input type="text" class="form-control form-control-sm-custom" name="major"
+                                            value="{{ user['major'] if user and user['major'] else '' }}">
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['major'] if user and user['major'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if edit_basic %}
                     <div class="section-actions">
                         <button type="submit" class="btn btn-success">Save</button>
                         <a href="/profile" class="btn btn-secondary">Cancel</a>
                     </div>
-                {% endif %}
-            </form>
+                    {% endif %}
+                </form>
 
-            <!-- Address Information -->
-            <div class="section-subtitle">
-                <span>Address Information</span>
-                {% if not edit_address %}
+                <!-- Address Information -->
+                <div class="section-subtitle">
+                    <span>Address Information</span>
+                    {% if not edit_address %}
                     <a href="/profile?edit=address" class="btn btn-sm btn-outline-primary">Edit</a>
-                {% endif %}
-            </div>
-
-            <form method="POST" action="/profile/update_address">
-                <div class="table-responsive mb-4">
-                    <table class="table table-hover profile-table">
-                        <thead>
-                        <tr>
-                            <th style="width: 35%;">Field</th>
-                            <th style="width: 65%;">Value</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td>Street Address</td>
-                            <td>
-                                {% if edit_address %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="street"
-                                           value="{{ user['street'] if user and user['street'] else '' }}">
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['street'] if user and user['street'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Zip Code</td>
-                            <td>
-                                {% if edit_address %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="zipcode"
-                                           value="{{ user['zipcode'] if user and user['zipcode'] else '' }}">
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['zipcode'] if user and user['zipcode'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                    {% endif %}
                 </div>
 
-                {% if edit_address %}
+                <form method="POST" action="/profile/update_address">
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover profile-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">Field</th>
+                                    <th style="width: 65%;">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Street Address</td>
+                                    <td>
+                                        {% if edit_address %}
+                                        <input type="text" class="form-control form-control-sm-custom" name="street"
+                                            value="{{ user['street'] if user and user['street'] else '' }}">
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['street'] if user and user['street'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Zip Code</td>
+                                    <td>
+                                        {% if edit_address %}
+                                        <input type="text" class="form-control form-control-sm-custom" name="zipcode"
+                                            value="{{ user['zipcode'] if user and user['zipcode'] else '' }}">
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['zipcode'] if user and user['zipcode'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if edit_address %}
                     <div class="section-actions">
                         <button type="submit" class="btn btn-success">Save</button>
                         <a href="/profile" class="btn btn-secondary">Cancel</a>
                     </div>
-                {% endif %}
-            </form>
+                    {% endif %}
+                </form>
 
-            <!-- Credit Card Information -->
-            <div class="section-subtitle">
-                <span>Credit Card Information</span>
-                {% if not edit_card %}
+                <!-- Credit Card Information -->
+                <div class="section-subtitle">
+                    <span>Credit Card Information</span>
+                    {% if not edit_card %}
                     <a href="/profile?edit=card" class="btn btn-sm btn-outline-primary">Edit</a>
-                {% endif %}
-            </div>
-
-            <form method="POST" action="/profile/update_card">
-                <div class="table-responsive">
-                    <table class="table table-hover profile-table">
-                        <thead>
-                        <tr>
-                            <th style="width: 35%;">Field</th>
-                            <th style="width: 65%;">Value</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td>Card Type</td>
-                            <td>
-                                {% if edit_card %}
-                                    <select class="form-control form-control-sm-custom" name="card_type">
-                                        <option value="Visa" {% if user and user['card_type'] == 'Visa' %}selected{% endif %}>Visa</option>
-                                        <option value="Master" {% if user and user['card_type'] == 'Master' %}selected{% endif %}>Master</option>
-                                        <option value="American Express" {% if user and user['card_type'] == 'American Express' %}selected{% endif %}>American Express</option>
-                                        <option value="Discover" {% if user and user['card_type'] == 'Discover' %}selected{% endif %}>Discover</option>
-                                    </select>
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['card_type'] if user and user['card_type'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Card Number</td>
-                            <td>
-                                {% if edit_card %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="card_number"
-                                           value="{{ user['card_number'] if user and user['card_number'] else '' }}">
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['masked_card_number'] if user and user['masked_card_number'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Expiration</td>
-                            <td>
-                                {% if edit_card %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="card_exp"
-                                           value="{{ user['card_exp'] if user and user['card_exp'] else '' }}"
-                                           placeholder="MM/YYYY">
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['card_exp'] if user and user['card_exp'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td>Security Code</td>
-                            <td>
-                                {% if edit_card %}
-                                    <input type="text"
-                                           class="form-control form-control-sm-custom"
-                                           name="security_code"
-                                           value="{{ user['security_code'] if user and user['security_code'] else '' }}">
-                                {% else %}
-                                    <div class="readonly-value">
-                                        {{ user['masked_security_code'] if user and user['masked_security_code'] else 'N/A' }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                    {% endif %}
                 </div>
 
-                {% if edit_card %}
+                <form method="POST" action="/profile/update_card">
+                    <div class="table-responsive">
+                        <table class="table table-hover profile-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">Field</th>
+                                    <th style="width: 65%;">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Card Type</td>
+                                    <td>
+                                        {% if edit_card %}
+                                        <select class="form-control form-control-sm-custom" name="card_type">
+                                            <option value="Visa" {% if user and user['card_type']=='Visa' %}selected{%
+                                                endif %}>Visa</option>
+                                            <option value="Master" {% if user and user['card_type']=='Master'
+                                                %}selected{% endif %}>Master</option>
+                                            <option value="American Express" {% if user and
+                                                user['card_type']=='American Express' %}selected{% endif %}>American
+                                                Express</option>
+                                            <option value="Discover" {% if user and user['card_type']=='Discover'
+                                                %}selected{% endif %}>Discover</option>
+                                        </select>
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['card_type'] if user and user['card_type'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Card Number</td>
+                                    <td>
+                                        {% if edit_card %}
+                                        <input type="text" class="form-control form-control-sm-custom"
+                                            name="card_number"
+                                            value="{{ user['card_number'] if user and user['card_number'] else '' }}">
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['masked_card_number'] if user and user['masked_card_number'] else
+                                            'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Expiration</td>
+                                    <td>
+                                        {% if edit_card %}
+                                        <input type="text" class="form-control form-control-sm-custom" name="card_exp"
+                                            value="{{ user['card_exp'] if user and user['card_exp'] else '' }}"
+                                            placeholder="MM/YYYY">
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['card_exp'] if user and user['card_exp'] else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Security Code</td>
+                                    <td>
+                                        {% if edit_card %}
+                                        <input type="text" class="form-control form-control-sm-custom"
+                                            name="security_code"
+                                            value="{{ user['security_code'] if user and user['security_code'] else '' }}">
+                                        {% else %}
+                                        <div class="readonly-value">
+                                            {{ user['masked_security_code'] if user and user['masked_security_code']
+                                            else 'N/A' }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if edit_card %}
                     <div class="section-actions">
                         <button type="submit" class="btn btn-success">Save</button>
                         <a href="/profile" class="btn btn-secondary">Cancel</a>
                     </div>
-                {% endif %}
-            </form>
+                    {% endif %}
+                </form>
 
-            <!-- Password Information -->
-            <div class="section-subtitle">
-                <span>Password Information</span>
-                {% if not edit_password %}
+                <!-- Password Information -->
+                <div class="section-subtitle">
+                    <span>Password Information</span>
+                    {% if not edit_password %}
                     <a href="/profile?edit=password" class="btn btn-sm btn-outline-primary">Edit</a>
-                {% endif %}
-            </div>
-
-            <form method="POST" action="/profile/update_password">
-                <div class="table-responsive mb-4">
-                    <table class="table table-hover profile-table">
-                        <thead>
-                        <tr>
-                            <th style="width: 35%;">Field</th>
-                            <th style="width: 65%;">Value</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td>Current Password</td>
-                            <td>
-                                {% if edit_password %}
-                                    <div class="input-group form-control-sm-custom">
-                                        <input type="password"
-                                               class="form-control"
-                                               id="old_password"
-                                               name="old_password"
-                                               placeholder="Enter current password"
-                                               required>
-                                        <div class="input-group-append">
-                                            <span class="input-group-text password-toggle"
-                                                  onclick="togglePassword('old_password', this)">
-                                                <i class="fa fa-eye"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <div class="readonly-value">********</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>New Password</td>
-                            <td>
-                                {% if edit_password %}
-                                    <div class="input-group form-control-sm-custom">
-                                        <input type="password"
-                                               class="form-control"
-                                               id="new_password"
-                                               name="new_password"
-                                               placeholder="Enter new password"
-                                               required>
-                                        <div class="input-group-append">
-                                            <span class="input-group-text password-toggle"
-                                                  onclick="togglePassword('new_password', this)">
-                                                <i class="fa fa-eye"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <div class="readonly-value">********</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Confirm New Password</td>
-                            <td>
-                                {% if edit_password %}
-                                    <div class="input-group form-control-sm-custom">
-                                        <input type="password"
-                                               class="form-control"
-                                               id="confirm_new_password"
-                                               name="confirm_new_password"
-                                               placeholder="Re-enter new password"
-                                               required>
-                                        <div class="input-group-append">
-                                            <span class="input-group-text password-toggle"
-                                                  onclick="togglePassword('confirm_new_password', this)">
-                                                <i class="fa fa-eye"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <div class="readonly-value">********</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                    {% endif %}
                 </div>
 
-                {% if edit_password %}
+                <form method="POST" action="/profile/update_password">
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover profile-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">Field</th>
+                                    <th style="width: 65%;">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Current Password</td>
+                                    <td>
+                                        {% if edit_password %}
+                                        <div class="input-group form-control-sm-custom">
+                                            <input type="password" class="form-control" id="old_password"
+                                                name="old_password" placeholder="Enter current password" required>
+                                            <div class="input-group-append">
+                                                <span class="input-group-text password-toggle"
+                                                    onclick="togglePassword('old_password', this)">
+                                                    <i class="fa fa-eye"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="readonly-value">********</div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>New Password</td>
+                                    <td>
+                                        {% if edit_password %}
+                                        <div class="input-group form-control-sm-custom">
+                                            <input type="password" class="form-control" id="new_password"
+                                                name="new_password" placeholder="Enter new password" required>
+                                            <div class="input-group-append">
+                                                <span class="input-group-text password-toggle"
+                                                    onclick="togglePassword('new_password', this)">
+                                                    <i class="fa fa-eye"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="readonly-value">********</div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Confirm New Password</td>
+                                    <td>
+                                        {% if edit_password %}
+                                        <div class="input-group form-control-sm-custom">
+                                            <input type="password" class="form-control" id="confirm_new_password"
+                                                name="confirm_new_password" placeholder="Re-enter new password"
+                                                required>
+                                            <div class="input-group-append">
+                                                <span class="input-group-text password-toggle"
+                                                    onclick="togglePassword('confirm_new_password', this)">
+                                                    <i class="fa fa-eye"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="readonly-value">********</div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if edit_password %}
                     <div class="section-actions">
                         <button type="submit" class="btn btn-success">Save</button>
                         <a href="/profile" class="btn btn-secondary">Cancel</a>
                     </div>
-                {% endif %}
-            </form>
+                    {% endif %}
+                </form>
 
-            <div class="section-actions mt-4 d-flex justify-content-end">
-                <button type="button"
-                        class="btn btn-outline-danger"
-                        data-toggle="modal"
+                <div class="section-actions mt-4 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-danger" data-toggle="modal"
                         data-target="#deleteAccountModal">
-                    Delete Account
-                </button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<!-- Delete Account Modal -->
-<div class="modal fade" id="deleteAccountModal" tabindex="-1" role="dialog" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form action="/profile/delete" method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title text-danger" id="deleteAccountModalLabel">Delete Account</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                        Delete Account
                     </button>
                 </div>
 
-                <div class="modal-body">
-                    <p>
-                        Are you sure you want to permanently delete your bidder account?
-                        This action cannot be undone.
-                    </p>
-
-                    <div class="form-group">
-                        <label for="delete_password">Enter your current password to confirm</label>
-                        <div class="input-group form-control-sm-custom">
-                            <input type="password"
-                                   class="form-control"
-                                   id="delete_password"
-                                   name="delete_password"
-                                   placeholder="Current password"
-                                   required>
-                            <div class="input-group-append">
-                                <span class="input-group-text password-toggle"
-                                      onclick="togglePassword('delete_password', this)">
-                                    <i class="fa fa-eye"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if delete_error %}
-                    <div class="alert alert-danger mt-2">{{ delete_error }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Yes, Delete My Account</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-function togglePassword(fieldId, iconSpan) {
-    const field = document.getElementById(fieldId);
-    const icon = iconSpan.querySelector("i");
+    <!-- Delete Account Modal -->
+    <div class="modal fade" id="deleteAccountModal" tabindex="-1" role="dialog"
+        aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form action="/profile/delete" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-danger" id="deleteAccountModalLabel">Delete Account</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
 
-    if (field.type === "password") {
-        field.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-    } else {
-        field.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
-    }
-}
-</script>
+                    <div class="modal-body">
+                        <p>
+                            Are you sure you want to permanently delete your bidder account?
+                            This action cannot be undone.
+                        </p>
 
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+                        <div class="form-group">
+                            <label for="delete_password">Enter your current password to confirm</label>
+                            <div class="input-group form-control-sm-custom">
+                                <input type="password" class="form-control" id="delete_password" name="delete_password"
+                                    placeholder="Current password" required>
+                                <div class="input-group-append">
+                                    <span class="input-group-text password-toggle"
+                                        onclick="togglePassword('delete_password', this)">
+                                        <i class="fa fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
-{% if delete_error %}
-<script>
-    $(document).ready(function () {
-        $('#deleteAccountModal').modal('show');
-    });
-</script>
-{% endif %}
+                        {% if delete_error %}
+                        <div class="alert alert-danger mt-2">{{ delete_error }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Yes, Delete My Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(fieldId, iconSpan) {
+            const field = document.getElementById(fieldId);
+            const icon = iconSpan.querySelector("i");
+
+            if (field.type === "password") {
+                field.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                field.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+    {% if delete_error %}
+    <script>
+        $(document).ready(function () {
+            $('#deleteAccountModal').modal('show');
+        });
+    </script>
+    {% endif %}
 
 </body>
+
 </html>
