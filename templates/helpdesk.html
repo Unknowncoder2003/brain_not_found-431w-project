@@ -33,8 +33,16 @@ body { background-color:#f2f2f2; }
         <span class="nittany">Nittany</span><span class="auction">Auction</span>
     </a>
 
-    <div class="ml-auto">
+    <div class="ml-auto d-flex align-items-center">
         <span class="text-muted mr-3">HelpDesk: <strong>{{ email }}</strong></span>
+        {% if session.get('roles') %}
+            {% if 'bidder' in session['roles'] %}
+                <a class="btn btn-sm btn-outline-primary mr-2" href="/bidder">Switch to Bidder</a>
+            {% endif %}
+            {% if 'seller' in session['roles'] %}
+                <a class="btn btn-sm btn-outline-info mr-2" href="/seller">Switch to Seller</a>
+            {% endif %}
+        {% endif %}
         <a class="btn btn-sm btn-outline-danger" href="/logout">Logout</a>
     </div>
 </div>

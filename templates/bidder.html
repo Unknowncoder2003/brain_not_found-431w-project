@@ -120,10 +120,17 @@
                     <li class="nav-item">
                         <span class="nav-link text-muted mb-0">Bidder: <strong>{{ first_name }}</strong></span>
                     </li>
-                    {% if session.get('roles') and 'seller' in session['roles'] %}
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
-                    </li>
+                    {% if session.get('roles') %}
+                        {% if 'seller' in session['roles'] %}
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
+                        </li>
+                        {% endif %}
+                        {% if 'helpdesk' in session['roles'] %}
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
+                        </li>
+                        {% endif %}
                     {% endif %}
                     <li class="nav-item">
                         <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>

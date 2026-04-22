@@ -91,8 +91,20 @@
                 <li class="nav-item">
                     <span class="nav-link text-muted">Seller: <strong>{{ email }}</strong></span>
                 </li>
+                {% if session.get('roles') %}
+                    {% if 'bidder' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-primary ml-2" href="/bidder">Switch to Bidder</a>
+                    </li>
+                    {% endif %}
+                    {% if 'helpdesk' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
+                    </li>
+                    {% endif %}
+                {% endif %}
                 <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                    <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
                 </li>
             </ul>
         </div>
