@@ -1832,9 +1832,23 @@ def my_bids():
                        ''', (user_email, seller_email, rating, description))
 
         connection.commit()
+        # mechanics for checking if listing id is in or not
+        cursor.execute('''INSERT INTO seller_ratings(auction_id, bidder_email, seller_email, rating, created_at)
+                          VALUES (?, ?, ?, ?, CURRENT_DATE)
+                       ''', (listing_id, user_email, seller_email, rating))
+        connection.commit()
 
         connection.close()
-    return render_template('my-bids.html', email=user_email, listings=processed_bids)
+        return redirect(url_for('my_bids'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute('''SELECT auction_id 
+                      FROM seller_ratings
+                   ''')
+    auction_id = cursor.fetchall()
+    connection.close()
+    return render_template('my-bids.html', email=user_email, listings=processed_bids, auction_id = auction_id)
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')

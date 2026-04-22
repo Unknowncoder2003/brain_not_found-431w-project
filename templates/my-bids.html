@@ -143,13 +143,17 @@
                                   <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success ml-2">Pay Now</a>
                               {% elif bid.display_status == "Won" and bid.is_paid %}
                                   <button disabled class="btn btn-sm btn-secondary ml-2">Paid</button>
+                                  {% for id in auction_id %}
+                                    {% if id[0] == bid.Listing_ID %}
+                                        <button disabled class="btn btn-sm btn-secondary ml-2">Rate</button>
+                                    {% else %}
 
-                                  <button class="btn btn-sm btn-danger ml-2" data-toggle="modal" data-target="#exampleModal">
+                                  <button class="btn btn-sm btn-danger ml-2" data-toggle="modal" data-target="#rateModal{{ bid.Listing_ID }}">
                                         Rate
                                   </button>
 
                                 <!-- Modal for Rating-->
-                                  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                  <div class="modal fade" id="rateModal{{ bid.Listing_ID }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                       <div class="modal-dialog" role="document">
                                         <div class="modal-content">
                                           <div class="modal-header">
@@ -189,6 +193,9 @@
                                         </div>
                                       </div>
                                     </div>
+                              {% endif %}
+                              {% endfor %}
+
                               {% endif %}
                           </td>
                         </tr>
