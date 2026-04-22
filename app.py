@@ -916,8 +916,8 @@ def item_bid():
     cursor.execute('''
                    SELECT COUNT(*)
                    FROM Bids
-                   WHERE listing_id = ?
-                   ''', (listing_id,))
+                   WHERE listing_id = ? AND seller_email = ?
+                   ''', (listing_id, seller_email))
     current_bid_count = cursor.fetchone()[0]
 
     # Auto-repair: If max bids reached but status is still Active (1), mark as Sold (2)
@@ -931,8 +931,8 @@ def item_bid():
     cursor.execute('''
                    SELECT MAX(Bid_price)
                    FROM Bids
-                   WHERE listing_id = ?
-                   ''', (listing_id,))
+                   WHERE listing_id = ? AND seller_email = ?
+                   ''', (listing_id, seller_email))
     highest_bid = cursor.fetchone()[0] or 0
 
     cursor.execute("""
@@ -1025,15 +1025,15 @@ def item_bid():
             highest_bid_id = highest_bid_id + 1
             #Insert a new bid
             cursor.execute('''
-                           INSERT INTO Bids (bid_id, bidder_email, listing_id, bid_price)
-                           VALUES (?,?,?,?);
-                           ''', (highest_bid_id,user_email,listing_id,highest_bid))
+                           INSERT INTO Bids (bid_id, bidder_email, listing_id, seller_email, bid_price)
+                           VALUES (?,?,?,?,?);
+                           ''', (highest_bid_id,user_email,listing_id,seller_email,highest_bid))
             connection.commit()
             cursor.execute('''
                            SELECT COUNT(*)
                            FROM Bids
-                           WHERE listing_id = ?
-                           ''', (listing_id,))
+                           WHERE listing_id = ? AND seller_email = ?
+                           ''', (listing_id, seller_email))
             current_bid_count = cursor.fetchone()[0]
             
             # Check if max bids reached, if so, close the auction
@@ -1041,15 +1041,15 @@ def item_bid():
                 cursor.execute('''
                     UPDATE Auction_Listings
                     SET Status = 2
-                    WHERE Listing_ID = ?
-                ''', (listing_id,))
+                    WHERE Listing_ID = ? AND Seller_Email = ?
+                ''', (listing_id, seller_email))
                 connection.commit()
             
             cursor.execute('''
                            SELECT Status
                            FROM Auction_Listings
-                           WHERE Listing_ID = ?
-                           ''', (listing_id,))
+                           WHERE Listing_ID = ? AND Seller_Email = ?
+                           ''', (listing_id, seller_email))
             new_status = cursor.fetchone()[0]
             item = list(item)
             item[9] = new_status
@@ -1978,7 +1978,7 @@ def my_listing():
                A.Reserve_Price, 
                A.Max_bids, 
                A.Status,
-               (SELECT COUNT(*) FROM Bids b WHERE b.listing_id = A.Listing_ID) as bid_count
+               (SELECT COUNT(*) FROM Bids b WHERE b.listing_id = A.Listing_ID AND b.seller_email = A.Seller_Email) as bid_count
         FROM Auction_Listings A
         WHERE A.Seller_Email = ?
         ORDER BY {order_clause}
@@ -2017,15 +2017,15 @@ def listing_details(seller_email, listing_id):
     cursor.execute('''
         SELECT COUNT(*)
         FROM Bids
-        WHERE listing_id = ?
-    ''', (listing_id,))
+        WHERE listing_id = ? AND seller_email = ?
+    ''', (listing_id, seller_email))
     current_bid_count = cursor.fetchone()[0]
 
     cursor.execute('''
         SELECT MAX(Bid_price)
         FROM Bids
-        WHERE listing_id = ?
-    ''', (listing_id,))
+        WHERE listing_id = ? AND seller_email = ?
+    ''', (listing_id, seller_email))
     highest_bid = cursor.fetchone()[0] or 0
 
     cursor.execute("""
@@ -2563,11 +2563,11 @@ def sync_listing_statuses():
     cursor.execute('''
         UPDATE Auction_Listings
         SET Status = 2
-        WHERE Status = 1 AND Listing_ID IN (
-            SELECT a.Listing_ID
+        WHERE Status = 1 AND (Listing_ID, Seller_Email) IN (
+            SELECT a.Listing_ID, a.Seller_Email
             FROM Auction_Listings a
-            JOIN Bids b ON a.Listing_ID = b.listing_id
-            GROUP BY a.Listing_ID
+            JOIN Bids b ON a.Listing_ID = b.listing_id AND a.Seller_Email = b.seller_email
+            GROUP BY a.Listing_ID, a.Seller_Email
             HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) >= a.Reserve_Price
         )
     ''')
@@ -2576,11 +2576,11 @@ def sync_listing_statuses():
     cursor.execute('''
         UPDATE Auction_Listings
         SET Status = 3
-        WHERE Status = 1 AND Listing_ID IN (
-            SELECT a.Listing_ID
+        WHERE Status = 1 AND (Listing_ID, Seller_Email) IN (
+            SELECT a.Listing_ID, a.Seller_Email
             FROM Auction_Listings a
-            JOIN Bids b ON a.Listing_ID = b.listing_id
-            GROUP BY a.Listing_ID
+            JOIN Bids b ON a.Listing_ID = b.listing_id AND a.Seller_Email = b.seller_email
+            GROUP BY a.Listing_ID, a.Seller_Email
             HAVING COUNT(b.bid_id) >= a.Max_bids AND MAX(b.bid_price) < a.Reserve_Price
         )
     ''')
