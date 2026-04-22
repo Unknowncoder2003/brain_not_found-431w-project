@@ -2493,78 +2493,97 @@ def pay_item_post(listing_id):
     if not user_email or 'bidder' not in roles:
         return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
-    cc_num = request.form.get('credit_card_num')
-    card_type = request.form.get('card_type')
-    exp_month = request.form.get('expire_month')
-    exp_year = request.form.get('expire_year')
-    sec_code = request.form.get('security_code')
-    amount_paid = request.form.get('amount_paid')
-    seller_email = request.form.get('seller_email')
+    cc_num = request.form.get('credit_card_num', '').strip()
+    card_type = request.form.get('card_type', '').strip()
+    exp_month = request.form.get('expire_month', '').strip()
+    exp_year = request.form.get('expire_year', '').strip()
+    sec_code = request.form.get('security_code', '').strip()
+    amount_paid = request.form.get('amount_paid', '').strip()
+    seller_email = request.form.get('seller_email', '').strip()
 
-    street_num = request.form.get('street_num')
-    street_name = request.form.get('street_name')
-    city = request.form.get('city')
-    state = request.form.get('state')
-    zipcode = request.form.get('zipcode')
+    street_num = request.form.get('street_num', '').strip()
+    street_name = request.form.get('street_name', '').strip()
+    city = request.form.get('city', '').strip()
+    state = request.form.get('state', '').strip()
+    zipcode = request.form.get('zipcode', '').strip()
+
+    # Basic validation
+    if not all([cc_num, card_type, exp_month, exp_year, sec_code, amount_paid, seller_email]):
+        return "Missing payment or credit card information.", 400
+
+    try:
+        amount_paid = float(amount_paid)
+    except ValueError:
+        return "Invalid payment amount.", 400
 
     connection = get_connection()
     cursor = connection.cursor()
 
-    cursor.execute("DELETE FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
-    cursor.execute('''
-        INSERT INTO Credit_Cards 
-        (credit_card_num, card_type, expire_month, expire_year, security_code, Owner_email)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (cc_num, card_type, exp_month, exp_year, sec_code, user_email))
-
-    if street_num and street_name and city and state and zipcode:
+    try:
+        # Replace saved credit card
+        cursor.execute("DELETE FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
         cursor.execute('''
-            INSERT OR IGNORE INTO Zipcode_Info (zipcode, city, state)
-            VALUES (?, ?, ?)
-        ''', (zipcode, city, state))
+            INSERT INTO Credit_Cards
+            (credit_card_num, card_type, expire_month, expire_year, security_code, Owner_email)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (cc_num, card_type, exp_month, exp_year, sec_code, user_email))
 
-        cursor.execute('SELECT home_address_id FROM Bidders WHERE email = ?', (user_email,))
-        bidder_record = cursor.fetchone()
-        home_address_id = bidder_record[0] if bidder_record else None
-
-        if home_address_id:
+        # Optional address update if all address fields are provided
+        if street_num and street_name and city and state and zipcode:
             cursor.execute('''
-                UPDATE Address 
-                SET street_num = ?, street_name = ?, zipcode = ?
-                WHERE address_id = ?
-            ''', (street_num, street_name, zipcode, home_address_id))
-        else:
-            import uuid
-            new_address_id = uuid.uuid4().hex
-            cursor.execute('''
-                INSERT INTO Address (address_id, street_num, street_name, zipcode)
-                VALUES (?, ?, ?, ?)
-            ''', (new_address_id, street_num, street_name, zipcode))
-            cursor.execute('''
-                UPDATE Bidders SET home_address_id = ? WHERE email = ?
-            ''', (new_address_id, user_email))
+                INSERT OR IGNORE INTO Zipcode_Info (zipcode, city, state)
+                VALUES (?, ?, ?)
+            ''', (zipcode, city, state))
 
-    cursor.execute("SELECT MAX(Transaction_ID) FROM Transactions")
-    highest_tx = cursor.fetchone()[0]
-    next_tx_id = (highest_tx or 0) + 1
+            cursor.execute('SELECT home_address_id FROM Bidders WHERE email = ?', (user_email,))
+            bidder_record = cursor.fetchone()
+            home_address_id = bidder_record[0] if bidder_record else None
 
-    current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            if home_address_id:
+                cursor.execute('''
+                    UPDATE Address
+                    SET street_num = ?, street_name = ?, zipcode = ?
+                    WHERE address_id = ?
+                ''', (street_num, street_name, zipcode, home_address_id))
+            else:
+                new_address_id = generate_address_id()
+                cursor.execute('''
+                    INSERT INTO Address (address_id, street_num, street_name, zipcode)
+                    VALUES (?, ?, ?, ?)
+                ''', (new_address_id, street_num, street_name, zipcode))
+                cursor.execute('''
+                    UPDATE Bidders
+                    SET home_address_id = ?
+                    WHERE email = ?
+                ''', (new_address_id, user_email))
 
-    cursor.execute('''
-        INSERT INTO Transactions (Transaction_ID, Seller_Email, Listing_ID, Buyer_Email, Date, Payment)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (next_tx_id, seller_email, listing_id, user_email, current_date, amount_paid))
+        cursor.execute("SELECT MAX(Transaction_ID) FROM Transactions")
+        highest_tx = cursor.fetchone()[0]
+        next_tx_id = (highest_tx or 0) + 1
 
-    # Credit the seller's balance
-    cursor.execute('''
-        UPDATE Sellers 
-        SET balance = balance + ? 
-        WHERE email = ?
-    ''', (float(amount_paid), seller_email))
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    connection.commit()
+        cursor.execute('''
+            INSERT INTO Transactions (Transaction_ID, Seller_Email, Listing_ID, Buyer_Email, Date, Payment)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (next_tx_id, seller_email, listing_id, user_email, current_date, amount_paid))
+
+        # Credit the seller's balance
+        cursor.execute('''
+            UPDATE Sellers
+            SET balance = balance + ?
+            WHERE email = ?
+        ''', (amount_paid, seller_email))
+
+        connection.commit()
+
+    except Exception as e:
+        connection.rollback()
+        connection.close()
+        print("Payment error:", e)
+        return f"Payment failed: {e}", 500
+
     connection.close()
-
     return redirect(url_for('my_bids'))
 
 def sync_listing_statuses():
