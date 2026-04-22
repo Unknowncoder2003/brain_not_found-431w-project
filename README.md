@@ -8,17 +8,40 @@ Team Members:
 - Chentian Zhu
 
 # Project Description 
-This project is a prototype of NittanyAuction, an online auction platform
-designed for university students and local vendors. In Phase 2, we implemented
-user login functionality with secure password hashing and role-based access
-for bidders, sellers, and helpdesk users.
+NittanyAuction is a full-stack web application that simulates an online auction platform for bidder, sellers, and helpdesk staff.
+This project includes:
+ - Database design and poplulation from raw CSV data
+ - A Flask-based web application
+ - Dynamic querying and real-time interaction with the database
+The system follows the Phase II requirements provided in the project description. 
 
 # Technologies Used 
 Technologies:
-- Python (Flask)
-- SQLite
-- PyCharm
-- HTML/CSS (Bootstrap)
+- Backend: Python (Flask)
+- Database: SQLite (database.db)
+- Frontend: HTML, CSS, Bootstrap
+- Security: SHA256 password hashing with salt
+- IDE: PyCharm
+- Version Control: GitHub
+
+#Project Structure
+/.idea
+/dataset
+/templates
+    bidder.html
+    seller.html
+    helpdesk.html
+    profile.html
+    seller_account.html
+    my-bids.html
+    my-listings.html
+    watchlist.html
+    ...
+app.py
+database.db
+passwordHasher.py
+CleanAuction_Listings.py
+README.md
 
 # Database Setup 
 
@@ -59,6 +82,56 @@ During login:
 - The entered password is hashed with the stored salt
 - The hash is compared with the stored value
 
+# User Login
+- Role-based login using:
+   - Users table
+   - Bidders / Sellers / Helpdesk tables
+- Session-based authentication
+- Automatic role detection
+
+# Category Hierarchy (Dynamic)
+- Categories stored in Categories table
+- Traversal uses:
+  - get_subcategories()
+  - get_all_subcategories() (BFS)
+  - get_category_path() (breadcrumbs)
+
+# Auction Listing Management (Seller)
+Sellers can: 
+ - Create listings
+ - View listings
+ - Edit listings
+ - Deactivate listings
+Rules Enforced:
+ - Cannot edit if:
+   - It has bids
+   - It is inactive or sold
+- Deactivation stores:
+   - remaining bids
+   - removal reason (audit table)
+# Auction Bidding (Bidder) 
+Bidding Rules:
+ - Must be at least $1 higher
+ - Cannot bid on own listing
+ - Cannot bid consecutively
+System Features:
+ - Displays:
+   - current highest bid
+   - remaining bids
+- Automatically updates listing status when:
+  - Max bids reached
+  - Reserve met or not met
+
+# User Registration
+- Supports:
+  - Bidder registration
+  - Seller registration
+- Dynamically inserts:
+  - Users
+  - Role-specific tables
+  - Address and vendor info
+
+ # User Profile Update 
 # How to Run the Application 
 1. Open the project in PyCharm (or any IDE)
 2. Make sure all dependencies are installed
