@@ -46,6 +46,31 @@ def get_connection():
     return conn
 
 
+def create_notification(cursor, user_email, message, link=None):
+    """Helper to insert a notification for a user."""
+    cursor.execute('''
+        INSERT INTO Notifications (user_email, message, link, is_read, created_at)
+        VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)
+    ''', (user_email, message, link))
+
+
+@app.context_processor
+def inject_notification_count():
+    """Make unread notification count available in every template."""
+    count = 0
+    user_email = session.get('email')
+    if user_email:
+        try:
+            connection = get_connection()
+            cursor = connection.cursor()
+            cursor.execute('SELECT COUNT(*) FROM Notifications WHERE user_email = ? AND is_read = 0', (user_email,))
+            count = cursor.fetchone()[0]
+            connection.close()
+        except Exception:
+            pass
+    return dict(notification_count=count)
+
+
 @app.route('/')
 def home():
     """
@@ -106,6 +131,72 @@ def authenticate():
 def logout():
     session.clear()
     return redirect(url_for('authenticate'))
+
+
+@app.route('/notifications')
+def notifications():
+    """Display all notifications for the logged-in user."""
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    cursor.execute('''
+        SELECT * FROM Notifications
+        WHERE user_email = ?
+        ORDER BY created_at DESC
+    ''', (user_email,))
+    notifs = cursor.fetchall()
+    connection.close()
+
+    return render_template('notifications.html', notifications=notifs, email=user_email)
+
+
+@app.route('/notifications/read/<int:notif_id>', methods=['POST'])
+def mark_notification_read(notif_id):
+    """Mark a single notification as read and redirect to its link (if any)."""
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('''
+        SELECT link FROM Notifications
+        WHERE id = ? AND user_email = ?
+    ''', (notif_id, user_email))
+    row = cursor.fetchone()
+
+    cursor.execute('''
+        UPDATE Notifications SET is_read = 1
+        WHERE id = ? AND user_email = ?
+    ''', (notif_id, user_email))
+    connection.commit()
+    connection.close()
+
+    if row and row[0]:
+        return redirect(row[0])
+    return redirect(url_for('notifications'))
+
+
+@app.route('/notifications/read-all', methods=['POST'])
+def mark_all_notifications_read():
+    """Mark all notifications as read for the logged-in user."""
+    user_email = session.get('email')
+    if not user_email:
+        return redirect(url_for('authenticate'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute('UPDATE Notifications SET is_read = 1 WHERE user_email = ?', (user_email,))
+    connection.commit()
+    connection.close()
+
+    return redirect(url_for('notifications'))
 
 
 def password_to_hash_checker(email, password):
@@ -1069,6 +1160,52 @@ def item_bid():
                     WHERE Listing_ID = ? AND Seller_Email = ?
                 ''', (new_auction_status, listing_id, seller_email))
                 connection.commit()
+
+                # --- Send notifications to all bidders and the seller ---
+                auction_title = item[3]  # Auction_Title
+
+                # Get all unique bidders on this listing
+                cursor.execute('''
+                    SELECT DISTINCT bidder_email FROM Bids
+                    WHERE listing_id = ? AND seller_email = ?
+                ''', (listing_id, seller_email))
+                all_bidders = [row[0] for row in cursor.fetchall()]
+
+                # Find the winner (highest bidder)
+                cursor.execute('''
+                    SELECT bidder_email FROM Bids
+                    WHERE listing_id = ? AND seller_email = ?
+                    ORDER BY bid_price DESC LIMIT 1
+                ''', (listing_id, seller_email))
+                winner_email = cursor.fetchone()[0]
+
+                if new_auction_status == 2:
+                    # Auction sold — notify winner with payment link
+                    pay_link = f'/pay/{listing_id}?seller={seller_email}'
+                    create_notification(cursor, winner_email,
+                        f'🎉 Congratulations! You won the auction "{auction_title}"! Click to pay now.',
+                        link=pay_link)
+
+                    # Notify other bidders they lost
+                    for bidder in all_bidders:
+                        if bidder != winner_email:
+                            create_notification(cursor, bidder,
+                                f'The auction "{auction_title}" has ended. Unfortunately, you did not win.')
+
+                    # Notify seller
+                    create_notification(cursor, seller_email,
+                        f'Your auction "{auction_title}" has been sold! Waiting for buyer payment.')
+                else:
+                    # Reserve not met — notify all bidders
+                    for bidder in all_bidders:
+                        create_notification(cursor, bidder,
+                            f'The auction "{auction_title}" has ended. The reserve price was not met.')
+
+                    # Notify seller
+                    create_notification(cursor, seller_email,
+                        f'Your auction "{auction_title}" ended but the reserve price was not met.')
+
+                connection.commit()
             
             cursor.execute('''
                            SELECT Status
@@ -1351,6 +1488,13 @@ def complete_request(request_id):
         SET request_status = 2
         WHERE request_id = ?
     """, (request_id,))
+
+    # Notify the requester that their request was approved
+    cursor.execute('SELECT sender_email FROM Requests WHERE request_id = ?', (request_id,))
+    sender_row = cursor.fetchone()
+    if sender_row:
+        create_notification(cursor, sender_row[0],
+            f'✅ Your helpdesk request has been approved! Category "{category_name}" has been added under "{parent_category}".')
 
     connection.commit()
     connection.close()
@@ -2616,6 +2760,15 @@ def pay_item_post(listing_id):
             SET balance = balance + ?
             WHERE email = ?
         ''', (amount_paid, seller_email))
+
+        # Notify the seller that payment was received
+        cursor.execute('SELECT Auction_Title FROM Auction_Listings WHERE Listing_ID = ? AND Seller_Email = ?',
+                       (listing_id, seller_email))
+        title_row = cursor.fetchone()
+        auction_title = title_row[0] if title_row else f'Listing #{listing_id}'
+        create_notification(cursor, seller_email,
+            f'💰 Payment of ${amount_paid:,.2f} received for "{auction_title}" from {user_email}. Please prepare the item for shipping!',
+            link='/my-listings')
 
         connection.commit()
 

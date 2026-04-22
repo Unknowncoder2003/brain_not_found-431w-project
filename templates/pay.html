@@ -75,23 +75,57 @@
     </style>
 </head>
 <body>
+ <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-text" href="/bidder">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
 
-<nav class="navbar navbar-expand-lg navbar-light">
-    <div class="container">
-        <a class="navbar-brand brand-text" href="/bidder">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link" href="/bidder">Dashboard</a></li>
-                <li class="nav-item active"><a class="nav-link" href="/my-bids">My Bids</a></li>
-            </ul>
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item"><span class="nav-link text-muted">Buyer: <strong>{{ email }}</strong></span></li>
-            </ul>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#bidderNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="bidderNavbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/bidder">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/my-bids">My Bids</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/watchlist">Watch list</a>
+                    </li>
+
+                    <li>
+                        <a class="nav-link" href="/profile">
+                            User Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contact-helpdesk">Contact HelpDesk</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <span class="nav-link text-muted">Bidder: <strong>{{ email }}</strong></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link ml-2 position-relative" href="/notifications" title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            {% if notification_count > 0 %}
+                            <span class="badge badge-danger" style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{ notification_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
+                    </li>
+                </ul>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
+
 
 <div class="container">
     <div class="row">

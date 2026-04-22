@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notifications | NittanyAuction</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
+        }
+
+        .brand-text .nittany {
+            color: #1e4fa1;
+            font-weight: bold;
+        }
+
+        .brand-text .auction {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .notif-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            padding: 30px;
+            border-top: 4px solid #1e4fa1;
+        }
+
+        .notif-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 4px solid transparent;
+            transition: background 0.2s;
+        }
+
+        .notif-item:hover {
+            background: #f0f4ff;
+        }
+
+        .notif-item.unread {
+            background: #f0f7ff;
+            border-left-color: #1e4fa1;
+        }
+
+        .notif-item.read {
+            opacity: 0.7;
+        }
+
+        .notif-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+
+        .notif-icon.info {
+            background: #e3f2fd;
+            color: #1e4fa1;
+        }
+
+        .notif-icon.success {
+            background: #e8f5e9;
+            color: #28a745;
+        }
+
+        .notif-icon.warning {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .notif-body {
+            flex-grow: 1;
+        }
+
+        .notif-message {
+            color: #333;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .notif-time {
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        .notif-actions {
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        .notification-badge {
+            position: relative;
+            display: inline-block;
+        }
+
+        .notification-badge .badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            font-size: 0.65rem;
+            padding: 3px 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-text" href="/">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <span class="nav-link text-muted">{{ email }}</span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="notif-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="mb-0" style="font-weight: 700; color: #333;">
+                            <i class="fas fa-bell mr-2" style="color: #1e4fa1;"></i>Notifications
+                        </h2>
+                        {% if notifications|length > 0 %}
+                        <form action="/notifications/read-all" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-check-double mr-1"></i> Mark all as read
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    {% if notifications|length > 0 %}
+                        {% for notif in notifications %}
+                        <div class="notif-item {{ 'unread' if notif['is_read'] == 0 else 'read' }}">
+                            <div class="notif-icon {{ 'success' if '🎉' in notif['message'] or '✅' in notif['message'] or '💰' in notif['message'] else 'info' }}">
+                                {% if '🎉' in notif['message'] %}
+                                    <i class="fas fa-trophy"></i>
+                                {% elif '💰' in notif['message'] %}
+                                    <i class="fas fa-dollar-sign"></i>
+                                {% elif '✅' in notif['message'] %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                            </div>
+                            <div class="notif-body">
+                                <div class="notif-message">{{ notif['message'] }}</div>
+                                <div class="notif-time">{{ notif['created_at'] }}</div>
+                            </div>
+                            <div class="notif-actions">
+                                {% if notif['is_read'] == 0 %}
+                                <form action="/notifications/read/{{ notif['id'] }}" method="POST" class="d-inline">
+                                    {% if notif['link'] %}
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-arrow-right"></i> Go
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% endif %}
+                                </form>
+                                {% elif notif['link'] %}
+                                <a href="{{ notif['link'] }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash d-block"></i>
+                            <h5>No notifications yet</h5>
+                            <p class="text-muted">You're all caught up! Notifications about auctions, payments, and requests will appear here.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+
+</html>

@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         body {
             background-color: #f2f2f2;
@@ -132,6 +133,14 @@
                     </li>
                     {% endif %}
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link ml-2 position-relative" href="/notifications" title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            {% if notification_count > 0 %}
+                            <span class="badge badge-danger" style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{ notification_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
                     </li>
