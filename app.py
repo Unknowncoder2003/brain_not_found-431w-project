@@ -14,9 +14,10 @@ from passwordHasher import hashed_password
 sql = sqlite3
 
 app = Flask(__name__)
-# This secret key is super important. It lets us securely track who is logged in via cookies.
+# This secret key lets us securely track who is logged in via cookies.
 app.secret_key = 'Do the best you can until you know better. Then when you know better, do better'  # for the session (the memory) to work
 
+# name of our local sqlite database file
 DB_NAME = 'database.db'
 host = 'http://127.0.0.1:5000/'
 
@@ -24,9 +25,11 @@ host = 'http://127.0.0.1:5000/'
 def ensure_roles_loaded():
     """Ensure that the session['roles'] list is always available for logged-in users."""
     if 'email' in session and 'roles' not in session:
+        # rebuilding roles from db whenever session is missing them (like after server restart)
         connection = get_connection()
         cursor = connection.cursor()
         roles = []
+        # checking each role table to see which ones this user belongs to
         cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (session['email'],))
         if cursor.fetchone(): roles.append('helpdesk')
         cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (session['email'],))
@@ -34,6 +37,7 @@ def ensure_roles_loaded():
         cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (session['email'],))
         if cursor.fetchone(): roles.append('bidder')
         connection.close()
+        # saving roles back into the session so we don't query again on the next request
         session['roles'] = roles
 
 
@@ -61,6 +65,7 @@ def inject_notification_count():
     user_email = session.get('email')
     if user_email:
         try:
+            # counting unread notifications so the bell badge is always up to date
             connection = get_connection()
             cursor = connection.cursor()
             cursor.execute('SELECT COUNT(*) FROM Notifications WHERE user_email = ? AND is_read = 0', (user_email,))
@@ -68,6 +73,7 @@ def inject_notification_count():
             connection.close()
         except Exception:
             pass
+    # passing the count to every template automatically
     return dict(notification_count=count)
 
 
@@ -114,13 +120,17 @@ def authenticate():
     error = request.args.get('error')
 
     if request.method == 'POST':
+        # grabbing the submitted credentials from the form
         email = request.form['email']
         password = request.form['password']
         print(f"[LOGIN DEBUG] Attempting login for: {email}")
+        # checking password against the stored hash
         result = password_to_hash_checker(email, password)
         print(f"[LOGIN DEBUG] Password check result: {result}")
         if result:
+            # saving email to session so the user stays logged in
             session['email'] = email
+            # figuring out which dashboard to send this user to based on their roles
             target = find_user_html(email)
             print(f"[LOGIN DEBUG] Target endpoint: {target}")
             print(f"[LOGIN DEBUG] Session roles: {session.get('roles')}")
@@ -209,17 +219,21 @@ def password_to_hash_checker(email, password):
     """Helper function for checking the user entered password and verify it against the database"""
     connection = get_connection()
     cursor = connection.cursor()
+    # pulling the stored hash and salt for this email
     cursor.execute('SELECT password, salt FROM Users WHERE email = ?', (email,))
     result = cursor.fetchone()
     connection.close()
 
+    # no user found with that email
     if result is None:
         print("No matching user.")
         return False
 
     stored_hash, salt = result
+    # combining the entered password with the stored salt then hashing it
     password_and_salt = (password.strip() + salt).encode('utf-8')
     user_input_hash = hashlib.sha256(password_and_salt).hexdigest()
+    # comparing the hashes to see if the password matches
     return user_input_hash == stored_hash
 
 
@@ -230,34 +244,40 @@ def find_user_html(email):
     cursor = connection.cursor()
 
     roles = []
-    
+
+    # checking if user is a helpdesk member
     cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (email,))
     if cursor.fetchone():
         roles.append('helpdesk')
         print(f"[ROLE DEBUG] {email} has helpdesk role")
 
+    # checking if user is a seller
     cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (email,))
     if cursor.fetchone():
         roles.append('seller')
         print(f"[ROLE DEBUG] {email} has seller role")
 
+    # checking if user is a bidder
     cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (email,))
     if cursor.fetchone():
         roles.append('bidder')
         print(f"[ROLE DEBUG] {email} has bidder role")
 
     connection.close()
-    
+
+    # saving roles into the session for future requests
     session['roles'] = roles
     print(f"[ROLE DEBUG] {email} final roles: {roles}")
 
+    # redirecting based on priority: helpdesk > seller > bidder
     if 'helpdesk' in roles:
         return "helpdesk"
     if 'seller' in roles:
         return "seller"
     if 'bidder' in roles:
         return "bidder"
-        
+
+    # user has no role — send them back to login
     print(f"[ROLE DEBUG] WARNING: {email} has NO roles, falling back to authenticate")
     return "authenticate"
 
@@ -800,9 +820,9 @@ def bidder():
 
     connection = get_connection()
     cursor = connection.cursor()
+    # grabbing bidder's first name from db to personalize the dashboard
     cursor.execute('SELECT first_name FROM Bidders WHERE email = ?', (user_email,))
     result = cursor.fetchone()
-
 
     if result:
         fname = result[0]
@@ -811,12 +831,14 @@ def bidder():
 
     cate = get_category_tree()
 
+    # reading category and search filters from the URL query string
     category = request.args.get('category')
     # Extract and clean search parameters
     search_term = request.args.get('search', '').strip()
     min_price = request.args.get('min_price', '').strip()
     max_price = request.args.get('max_price', '').strip()
 
+    # figuring out which page we're on for pagination
     page = request.args.get('page', 1, type=int)
     per_page = 30
     offset = (page - 1) * per_page
@@ -825,10 +847,13 @@ def bidder():
     if search_term or min_price or max_price:
         items, total_items = search_items(search_term, min_price=min_price, max_price=max_price, limit=per_page, offset=offset)
     elif category:
+        # filtering by category and all its subcategories
         items, total_items = get_items(category, limit=per_page, offset=offset)
     else:
+        # no filter: showing all active listings
         items, total_items = get_all_items(limit=per_page, offset=offset)
 
+    # calculating total pages for the pagination controls
     total_pages = (total_items + per_page - 1) // per_page
     
     pagination_pages = []
@@ -997,6 +1022,7 @@ def item_bid():
     connection = get_connection()
     cursor = connection.cursor()
 
+    # fetching the full listing details using both listing_id and seller_email
     cursor.execute('''
                    SELECT Seller_Email,
                           Listing_ID,
@@ -1013,9 +1039,11 @@ def item_bid():
             
                    ''', (listing_id, seller_email))
     item = cursor.fetchone()
+    # refreshing listing_id and seller_email from the db record to prevent tampering
     listing_id = item[1]
     seller_email = item[0]
 
+    # counting how many bids have already been placed on this listing
     cursor.execute('''
                    SELECT COUNT(*)
                    FROM Bids
@@ -1037,6 +1065,7 @@ def item_bid():
         cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
         item = cursor.fetchone()
 
+    # getting the current highest bid price for this listing
     cursor.execute('''
                    SELECT MAX(Bid_price)
                    FROM Bids
@@ -1044,6 +1073,7 @@ def item_bid():
                    ''', (listing_id, seller_email))
     highest_bid = cursor.fetchone()[0] or 0
 
+    # fetching seller's average rating and total rating count from the Rating table
     cursor.execute("""
                    SELECT AVG(Rating), COUNT(*)
                    FROM Rating
@@ -1068,7 +1098,7 @@ def item_bid():
     """, (seller_email,))
     seller_reviews = [{'bidder': row[0], 'rating': row[1], 'comment': row[2], 'date': row[3]} for row in cursor.fetchall()]
 
-    #getting the max bid_id
+    # getting the max bid_id so we can assign the next sequential bid id
     cursor.execute('''
                    SELECT MAX(bid_id)
                    FROM Bids
@@ -1078,6 +1108,7 @@ def item_bid():
     user_email = session.get('email')
     in_watchlist = False
     if user_email:
+        # checking if this listing is already on the bidder's watchlist
         cursor.execute('''
             SELECT 1 FROM Watchlist
             WHERE Bidder_Email = ? AND Seller_Email = ? AND Listing_ID = ?
@@ -1085,8 +1116,8 @@ def item_bid():
         if cursor.fetchone():
             in_watchlist = True
 
-    #check for consecutive bidding
-    #getting the email for highest bidder
+    # check for consecutive bidding — a bidder cannot bid twice in a row
+    # getting the email for the last bidder on this listing
 
     #for adding a price to the bids, when clicking the button
     if request.method == 'POST':
@@ -1139,18 +1170,21 @@ def item_bid():
                     seller_reviews=seller_reviews
                 )
         bid_price = request.form.get('bid_price')
+        # making sure the new bid is at least $1 higher than the current highest bid
         if float(bid_price) >= highest_bid + 1:
             connection = get_connection()
             cursor = connection.cursor()
             current_bid_count += 1
             highest_bid = float(bid_price)
+            # incrementing the bid id by 1 from the current max
             highest_bid_id = highest_bid_id + 1
-            #Insert a new bid
+            # inserting the new bid into the database
             cursor.execute('''
                            INSERT INTO Bids (bid_id, bidder_email, listing_id, seller_email, bid_price)
                            VALUES (?,?,?,?,?);
                            ''', (highest_bid_id,user_email,listing_id,seller_email,highest_bid))
             connection.commit()
+            # re-counting bids after the insert to get the accurate total
             cursor.execute('''
                            SELECT COUNT(*)
                            FROM Bids
@@ -1937,6 +1971,7 @@ def register_page():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
+        # making sure the two password fields match before doing anything
         if password != confirm_password:
             error = "Passwords do not match"
             return render_template('register.html', error=error)
@@ -1944,22 +1979,25 @@ def register_page():
         connection = get_connection()
         cursor = connection.cursor()
 
+        # checking if this email is already in use
         cursor.execute('SELECT email FROM Users WHERE email = ?', (email,))
         if cursor.fetchone():
             connection.close()
             error = "Email already exists."
             return render_template('register.html', error=error)
 
+        # generating a unique salt and hashing the password before storing it
         salt = secrets.token_urlsafe(16)
         hashed_pw = hashlib.sha256((password.strip() + salt).encode('utf-8')).hexdigest()
 
+        # inserting the base user record
         cursor.execute(
             "INSERT INTO Users (email, password, salt) VALUES (?, ?, ?)",
             (email, hashed_pw, salt)
         )
 
         if role == "bidder":
-
+            # creating a placeholder address row to attach to the bidder
             home_address_id = generate_address_id()
 
             cursor.execute("""
@@ -2035,6 +2073,7 @@ def my_bids():
     if not user_email or 'bidder' not in roles:
         return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
+    # checking if the user is a bidder before granting access
     connection = get_connection()
     # Use sqlite3.Row to access columns by their database names
     connection.row_factory = sqlite3.Row
@@ -2045,6 +2084,7 @@ def my_bids():
         order_clause = "A.Status ASC, B.bid_id DESC"
 
     # This query retrieves the user's bid alongside the current highest bid for that item
+    # only showing the user's most recent bid per listing (using MAX bid_id per bidder per listing)
     cursor.execute(f'''
                    SELECT A.Seller_Email,
                           A.Listing_ID,
@@ -2072,7 +2112,7 @@ def my_bids():
 
     raw_results = cursor.fetchall()
     connection.close()
-    # Determine the status label for each bid
+    # Determine the status label for each bid based on price and auction state
     processed_bids = []
     for row in raw_results:
         bid = dict(row)
@@ -2099,8 +2139,9 @@ def my_bids():
 
         processed_bids.append(bid)
 
-    #rating mechanics for bidders to sellers
+    # rating mechanics for bidders to sellers
     if request.method == 'POST':
+        # grabbing the rating details from the submitted form
         rating = request.form.get('rate')
         description = request.form.get('description')
         listing_id = request.form.get('listing_id')
@@ -2139,6 +2180,7 @@ def my_bids():
 
     connection = get_connection()
     cursor = connection.cursor()
+    # pulling all listings this user has already rated (to gray out the button)
     cursor.execute('''SELECT auction_id, seller_email 
                       FROM seller_ratings
                       WHERE bidder_email = ?
@@ -2717,7 +2759,7 @@ def pay_item_post(listing_id):
     cursor = connection.cursor()
 
     try:
-        # Replace saved credit card
+        # saving or replacing the user's credit card on file
         cursor.execute("DELETE FROM Credit_Cards WHERE Owner_email = ?", (user_email,))
         cursor.execute('''
             INSERT INTO Credit_Cards
@@ -2727,22 +2769,26 @@ def pay_item_post(listing_id):
 
         # Optional address update if all address fields are provided
         if street_num and street_name and city and state and zipcode:
+            # making sure the zipcode exists in the reference table
             cursor.execute('''
                 INSERT OR IGNORE INTO Zipcode_Info (zipcode, city, state)
                 VALUES (?, ?, ?)
             ''', (zipcode, city, state))
 
+            # getting the bidder's current home address id
             cursor.execute('SELECT home_address_id FROM Bidders WHERE email = ?', (user_email,))
             bidder_record = cursor.fetchone()
             home_address_id = bidder_record[0] if bidder_record else None
 
             if home_address_id:
+                # updating the existing address record
                 cursor.execute('''
                     UPDATE Address
                     SET street_num = ?, street_name = ?, zipcode = ?
                     WHERE address_id = ?
                 ''', (street_num, street_name, zipcode, home_address_id))
             else:
+                # creating a new address record and linking it to the bidder
                 new_address_id = generate_address_id()
                 cursor.execute('''
                     INSERT INTO Address (address_id, street_num, street_name, zipcode)
