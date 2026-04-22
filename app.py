@@ -45,6 +45,7 @@ def get_connection():
     conn = sql.connect(DB_NAME)
     return conn
 
+
 @app.route('/')
 def home():
     """
@@ -684,6 +685,7 @@ def seller_profile():
     )
 @app.route('/bidder', methods=['GET'])
 def bidder():
+    sync_listing_statuses()
     """
     Main Dashboard for Bidders.
     Implements dynamic category traversal, advanced keyword/price search,
@@ -888,6 +890,7 @@ def item_bid():
     if not user_email or ('bidder' not in roles and 'seller' not in roles):
         return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
     listing_id = request.args.get('item')
+    seller_email = request.args.get('seller')
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -903,9 +906,9 @@ def item_bid():
                           Max_bids,
                           Status
                    FROM Auction_Listings
-                   WHERE Listing_ID = ?
+                   WHERE Listing_ID = ? AND Seller_Email = ?
             
-                   ''', (listing_id,))
+                   ''', (listing_id, seller_email))
     item = cursor.fetchone()
     listing_id = item[1]
     seller_email = item[0]
@@ -1158,6 +1161,10 @@ def contact_helpdesk():
         email=user_email,
         is_seller=('seller' in roles)
     )
+
+
+
+
 
 @app.route('/helpdesk', methods=['GET'])
 def helpdesk():
@@ -1839,6 +1846,7 @@ def register_page():
 
 @app.route('/my-bids', methods=['GET','POST'])
 def my_bids():
+    sync_listing_statuses()
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'bidder' not in roles:
@@ -1950,6 +1958,7 @@ def my_bids():
 """The dashboard for sellers to view their listings"""
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
+    sync_listing_statuses()
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'seller' not in roles:
@@ -2313,6 +2322,7 @@ def post_item():
     return render_template('post-item.html', category_tree=category_tree,email = user_email)
 @app.route('/watchlist', methods=['GET'])
 def watchlist():
+    sync_listing_statuses()
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'bidder' not in roles:

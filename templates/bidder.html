@@ -121,16 +121,16 @@
                         <span class="nav-link text-muted mb-0">Bidder: <strong>{{ first_name }}</strong></span>
                     </li>
                     {% if session.get('roles') %}
-                        {% if 'seller' in session['roles'] %}
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
-                        </li>
-                        {% endif %}
-                        {% if 'helpdesk' in session['roles'] %}
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
-                        </li>
-                        {% endif %}
+                    {% if 'seller' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
+                    </li>
+                    {% endif %}
+                    {% if 'helpdesk' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
+                    </li>
+                    {% endif %}
                     {% endif %}
                     <li class="nav-item">
                         <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
@@ -154,19 +154,21 @@
                 <form class="form-inline mr-auto" action="/bidder" method="GET">
                     <input class="form-control mr-sm-2" style="width: 400px;" type="search" name="search"
                         placeholder="Search items..." aria-label="Search" value="{{ search_term }}">
-                    
+
                     <div class="input-group mr-sm-2" style="width: 130px;">
                         <div class="input-group-prepend">
                             <span class="input-group-text">$</span>
                         </div>
-                        <input type="number" class="form-control" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ request.args.get('min_price', '') }}">
+                        <input type="number" class="form-control" name="min_price" placeholder="Min" min="0" step="0.01"
+                            value="{{ request.args.get('min_price', '') }}">
                     </div>
 
                     <div class="input-group mr-sm-2" style="width: 130px;">
                         <div class="input-group-prepend">
                             <span class="input-group-text">$</span>
                         </div>
-                        <input type="number" class="form-control" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ request.args.get('max_price', '') }}">
+                        <input type="number" class="form-control" name="max_price" placeholder="Max" min="0" step="0.01"
+                            value="{{ request.args.get('max_price', '') }}">
                     </div>
 
                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
@@ -182,24 +184,29 @@
         <div class="row justify-content-center">
             <div class="col-md-10">
                 <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb" style="background: transparent; padding: 0 0 1rem 0; border-bottom: 1px solid #eee;">
+                    <ol class="breadcrumb"
+                        style="background: transparent; padding: 0 0 1rem 0; border-bottom: 1px solid #eee;">
                         <li class="breadcrumb-item"><a href="/bidder">All</a></li>
                         {% for crumb in breadcrumbs %}
-                            {% if loop.last %}
-                                <li class="breadcrumb-item active" aria-current="page">{{ crumb }}</li>
-                            {% else %}
-                                <li class="breadcrumb-item"><a href="/bidder?category={{ crumb | urlencode }}">{{ crumb }}</a></li>
-                            {% endif %}
+                        {% if loop.last %}
+                        <li class="breadcrumb-item active" aria-current="page">{{ crumb }}</li>
+                        {% else %}
+                        <li class="breadcrumb-item"><a href="/bidder?category={{ crumb | urlencode }}">{{ crumb }}</a>
+                        </li>
+                        {% endif %}
                         {% endfor %}
                     </ol>
                 </nav>
 
                 {% if subcategories %}
                 <div class="mt-2 mb-4">
-                    <h5 class="text-muted small font-weight-bold text-uppercase mb-3" style="letter-spacing: 1px;">Explore Subcategories</h5>
+                    <h5 class="text-muted small font-weight-bold text-uppercase mb-3" style="letter-spacing: 1px;">
+                        Explore Subcategories</h5>
                     <div class="d-flex flex-wrap">
                         {% for sub in subcategories %}
-                        <a href="/bidder?category={{ sub | urlencode }}" class="btn btn-sm btn-outline-primary mr-2 mb-2 px-3" style="border-radius: 15px; font-weight: 500;">
+                        <a href="/bidder?category={{ sub | urlencode }}"
+                            class="btn btn-sm btn-outline-primary mr-2 mb-2 px-3"
+                            style="border-radius: 15px; font-weight: 500;">
                             {{ sub }}
                         </a>
                         {% endfor %}
@@ -226,18 +233,20 @@
                                 <div>
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         {% if i[5] == 1 %}
-                                            <span class="badge badge-success" style="font-size: 0.8rem;">Active</span>
+                                        <span class="badge badge-success" style="font-size: 0.8rem;">Active</span>
                                         {% elif i[5] == 0 %}
-                                            <span class="badge badge-secondary" style="font-size: 0.8rem;">Inactive</span>
+                                        <span class="badge badge-secondary" style="font-size: 0.8rem;">Inactive</span>
                                         {% elif i[5] == 2 %}
-                                            <span class="badge badge-info" style="font-size: 0.8rem;">Sold</span>
+                                        <span class="badge badge-info" style="font-size: 0.8rem;">Sold</span>
                                         {% elif i[5] == 3 %}
-                                            <span class="badge badge-warning" style="font-size: 0.8rem;">Ended</span>
+                                        <span class="badge badge-warning" style="font-size: 0.8rem;">Ended</span>
                                         {% endif %}
                                         {% if i[4] is not none %}
-                                            <h5 class="mb-0 text-success font-weight-bold">${{ "{:,.2f}".format(i[4] | float) }}</h5>
+                                        <h5 class="mb-0 text-success font-weight-bold">${{ "{:,.2f}".format(i[4] |
+                                            float) }}</h5>
                                         {% else %}
-                                            <h5 class="mb-0 text-secondary font-weight-bold" style="font-size: 1rem;">No Bids</h5>
+                                        <h5 class="mb-0 text-secondary font-weight-bold" style="font-size: 1rem;">No
+                                            Bids</h5>
                                         {% endif %}
                                     </div>
                                     <h5 class="card-title mt-2"
@@ -248,6 +257,7 @@
                                 </div>
                                 <form action="/item-details" method="GET" class="mt-auto">
                                     <input type="hidden" name="item" value="{{ i[1] }}">
+                                    <input type="hidden" name="seller" value="{{ i[0] }}">
                                     <button type="submit" class="btn btn-primary btn-block"
                                         style="font-weight: bold; border-radius: 20px;">
                                         View Item
@@ -269,15 +279,15 @@
                 <div class="d-flex justify-content-center mt-5 mb-4 align-items-center">
 
                     {% for p in pagination_pages %}
-                        {% if p %}
-                            <a href="/bidder?page={{ p }}{% if request.args.get('search') %}&search={{ request.args.get('search') | urlencode }}{% endif %}{% if request.args.get('category') %}&category={{ request.args.get('category') | urlencode }}{% endif %}{% if request.args.get('min_price') %}&min_price={{ request.args.get('min_price') | urlencode }}{% endif %}{% if request.args.get('max_price') %}&max_price={{ request.args.get('max_price') | urlencode }}{% endif %}"
-                                class="btn btn-sm {% if p == page %}btn-primary{% else %}btn-outline-primary{% endif %} mx-2"
-                                style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.2s;">
-                                {{ p }}
-                            </a>
-                        {% else %}
-                            <span class="mx-2 text-muted" style="font-weight: bold; letter-spacing: 2px;">...</span>
-                        {% endif %}
+                    {% if p %}
+                    <a href="/bidder?page={{ p }}{% if request.args.get('search') %}&search={{ request.args.get('search') | urlencode }}{% endif %}{% if request.args.get('category') %}&category={{ request.args.get('category') | urlencode }}{% endif %}{% if request.args.get('min_price') %}&min_price={{ request.args.get('min_price') | urlencode }}{% endif %}{% if request.args.get('max_price') %}&max_price={{ request.args.get('max_price') | urlencode }}{% endif %}"
+                        class="btn btn-sm {% if p == page %}btn-primary{% else %}btn-outline-primary{% endif %} mx-2"
+                        style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.2s;">
+                        {{ p }}
+                    </a>
+                    {% else %}
+                    <span class="mx-2 text-muted" style="font-weight: bold; letter-spacing: 2px;">...</span>
+                    {% endif %}
                     {% endfor %}
 
                 </div>

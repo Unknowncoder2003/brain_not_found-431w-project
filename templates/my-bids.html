@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
         crossorigin="anonymous">
     <style>
-        body { background-color: #f2f2f2; }
+        body {
+            background-color: #f2f2f2;
+        }
 
         .navbar {
             background-color: white;
@@ -153,45 +155,48 @@
                                     {% endif %}
                                 </td>
 
-                          <td>
-                              <a href="/item-details?item={{ bid.Listing_ID }}"
-                                 class="btn btn-sm btn-outline-primary">View Item</a>
-                              {% if bid.display_status == "Won" and not bid.is_paid %}
-                                  <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success ml-2">Pay Now</a>
-                              {% elif bid.display_status == "Won" and bid.is_paid %}
-                                  <button disabled class="btn btn-sm btn-secondary ml-2">Paid</button>
-                                  {% if bid.Listing_ID in rated_listings %}
-                                        <button disabled class="btn btn-sm btn-secondary ml-2">Rate</button>
+                                <td>
+                                    <a href="/item-details?item={{ bid.Listing_ID }}&seller={{ bid.Seller_Email }}"
+                                        class="btn btn-sm btn-outline-primary">View</a>
+                                    {% if bid.display_status == "Won" and not bid.is_paid %}
+                                    <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success ml-2">Pay</a>
+                                    {% elif bid.display_status == "Won" and bid.is_paid %}
+                                    <button disabled class="btn btn-sm btn-secondary ml-2">Paid</button>
+                                    {% if bid.Listing_ID in rated_listings %}
+                                    <button disabled class="btn btn-sm btn-secondary ml-2">Rate</button>
                                     {% else %}
 
-                                  <button class="btn btn-sm btn-danger ml-2" data-toggle="modal" data-target="#rateModal{{ bid.Listing_ID }}">
+                                    <button class="btn btn-sm btn-danger ml-2" data-toggle="modal"
+                                        data-target="#rateModal{{ bid.Listing_ID }}">
                                         Rate
                                     </button>
 
-                                <!-- Modal for Rating-->
-                                  <div class="modal fade" id="rateModal{{ bid.Listing_ID }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                      <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                          <div class="modal-header">
-                                            <h5 class="modal-title" id="exampleModalLabel">Rate the Seller</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                              <span aria-hidden="true">&times;</span>
-                                            </button>
-                                          </div>
-                                          <form method="POST">
-                                          <div class="modal-body">
+                                    <!-- Modal for Rating-->
+                                    <div class="modal fade" id="rateModal{{ bid.Listing_ID }}" tabindex="-1"
+                                        role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="exampleModalLabel">Rate the Seller</h5>
+                                                    <button type="button" class="close" data-dismiss="modal"
+                                                        aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <form method="POST">
+                                                    <div class="modal-body">
 
-                                              <div class="form-group">
-                                                  <!-- source w3school select-->
-                                                      <label for="rate">Choose a rating:</label>
-                                                      <select name="rate" id="rate">
-                                                        <option value="1">1</option>
-                                                        <option value="2">2</option>
-                                                        <option value="3">3</option>
-                                                        <option value="4">4</option>
-                                                        <option value="5">5</option>
-                                                      </select>
-                                                       <br><br>
+                                                        <div class="form-group">
+                                                            <!-- source w3school select-->
+                                                            <label for="rate">Choose a rating:</label>
+                                                            <select name="rate" id="rate">
+                                                                <option value="1">1</option>
+                                                                <option value="2">2</option>
+                                                                <option value="3">3</option>
+                                                                <option value="4">4</option>
+                                                                <option value="5">5</option>
+                                                            </select>
+                                                            <br><br>
 
                                                             <label for="description"
                                                                 class="col-form-label">Description:</label>
@@ -214,36 +219,37 @@
                                             </div>
                                         </div>
                                     </div>
-                              {% endif %}
+                                    {% endif %}
 
-                              {% endif %}
-                          </td>
-                        </tr>
-                      {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
-                                You haven't placed any bids yet. <br>
-                                <a href="/bidder" class="btn btn-primary btn-sm mt-3">Browse Items</a>
-                            </td>
-                        </tr>
-                      {% endfor %}
-                      </tbody>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    You haven't placed any bids yet. <br>
+                                    <a href="/bidder" class="btn btn-primary btn-sm mt-3">Browse Items</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
 
-                </table>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-<script>
-  $('#myModal').on('shown.bs.modal', function () {
-    $('#myInput').trigger('focus')
-  })
-</script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script>
+        $('#myModal').on('shown.bs.modal', function () {
+            $('#myInput').trigger('focus')
+        })
+    </script>
 
 </body>
+
 </html>
