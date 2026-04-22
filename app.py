@@ -951,6 +951,15 @@ def item_bid():
         if avg_rating is not None:
             avg_rating = round(avg_rating, 2)
 
+    # Fetch seller reviews from the Rating table
+    cursor.execute("""
+        SELECT Bidder_Email, Rating, Rating_Desc, Date
+        FROM Rating
+        WHERE Seller_Email = ?
+        ORDER BY Date DESC
+    """, (seller_email,))
+    seller_reviews = [{'bidder': row[0], 'rating': row[1], 'comment': row[2], 'date': row[3]} for row in cursor.fetchall()]
+
     #getting the max bid_id
     cursor.execute('''
                    SELECT MAX(bid_id)
@@ -987,7 +996,8 @@ def item_bid():
                 avg_rating=avg_rating,
                 rating_count=rating_count,
                 error=error,
-                in_watchlist=in_watchlist
+                in_watchlist=in_watchlist,
+                seller_reviews=seller_reviews
             )
 
         # Prevent consecutive self-bidding
@@ -1017,7 +1027,8 @@ def item_bid():
                     avg_rating=avg_rating,
                     rating_count=rating_count,
                     error=error,
-                    in_watchlist=in_watchlist
+                    in_watchlist=in_watchlist,
+                    seller_reviews=seller_reviews
                 )
         bid_price = request.form.get('bid_price')
         if float(bid_price) >= highest_bid + 1:
@@ -1074,7 +1085,8 @@ def item_bid():
             rating_count=rating_count,
             error=error,
             in_watchlist=in_watchlist,
-            source=source
+            source=source,
+            seller_reviews=seller_reviews
         )
     connection.close()
     return render_template(
@@ -1086,7 +1098,8 @@ def item_bid():
         rating_count=rating_count,
         error=None,
         in_watchlist=in_watchlist,
-        source=source
+        source=source,
+        seller_reviews=seller_reviews
     )
 
 @app.route('/contact-helpdesk', methods=['GET', 'POST'])

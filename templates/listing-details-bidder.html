@@ -1,22 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Listing Details | NittanyAuction</title>
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
     <style>
-        body { background-color: #f2f2f2; }
-        .navbar { background-color: white; border-bottom: 2px solid #1e4fa1; margin-bottom: 30px; }
-        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
-        .brand-text .auction { color: #28a745; font-weight: bold; }
+        body {
+            background-color: #f2f2f2;
+        }
+
+        .navbar {
+            background-color: white;
+            border-bottom: 2px solid #1e4fa1;
+            margin-bottom: 30px;
+        }
+
+        .brand-text .nittany {
+            color: #1e4fa1;
+            font-weight: bold;
+        }
+
+        .brand-text .auction {
+            color: #28a745;
+            font-weight: bold;
+        }
 
         .details-card {
             background: white;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             padding: 2.5rem;
             margin-bottom: 50px;
         }
@@ -36,7 +51,12 @@
             margin-bottom: 4px;
         }
 
-        .data-value { color: #333; font-size: 1.1rem; margin-bottom: 25px; }
+        .data-value {
+            color: #333;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+        }
+
         .description-box {
             background-color: #f9f9f9;
             padding: 15px;
@@ -52,189 +72,367 @@
             font-size: 0.85rem;
             display: inline-block;
         }
-        .status-1 { background-color: #d4edda; color: #28a745; border: 1px solid #28a745; } /* Active */
-        .status-0 { background-color: #e2e3e5; color: #6c757d; border: 1px solid #6c757d; } /* Inactive */
-        .status-2 { background-color: #d1ecf1; color: #1e4fa1; border: 1px solid #1e4fa1; } /* Sold */
-        .status-3 { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* Reserve Not Met */
-        .status-3 { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* Reserve Not Met */
+
+        .status-1 {
+            background-color: #d4edda;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+
+        /* Active */
+        .status-0 {
+            background-color: #e2e3e5;
+            color: #6c757d;
+            border: 1px solid #6c757d;
+        }
+
+        /* Inactive */
+        .status-2 {
+            background-color: #d1ecf1;
+            color: #1e4fa1;
+            border: 1px solid #1e4fa1;
+        }
+
+        /* Sold */
+        .status-3 {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        /* Reserve Not Met */
+        .status-3 {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        /* Reserve Not Met */
+
+        .reviews-section {
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .reviews-title {
+            color: #1e4fa1;
+        }
+
+        .reviews-title svg {
+            margin-right: 6px;
+        }
+
+        .rating-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .rating-stars {
+            color: #f5a623;
+            font-size: 1.3rem;
+            margin-right: 10px;
+        }
+
+        .rating-count {
+            font-size: 0.9rem;
+        }
+
+        .reviews-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .review-card {
+            background: #f9f9f9;
+            border-radius: 6px;
+            border-left: 3px solid #f5a623;
+        }
+
+        .review-stars {
+            color: #f5a623;
+            font-size: 1rem;
+        }
+
+        .review-author {
+            font-size: 0.85rem;
+        }
+
+        .review-comment {
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .review-no-comment {
+            font-size: 0.9rem;
+        }
+
+        .back-link {
+            color: #1e4fa1;
+            text-decoration: none;
+        }
+
+        .progress-bar-wrapper {
+            height: 12px;
+            border-radius: 10px;
+        }
     </style>
 </head>
+
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light">
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-text" href="/bidder">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
+        </div>
+    </nav>
+
     <div class="container">
-        <a class="navbar-brand brand-text" href="/bidder">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </a>
-    </div>
-</nav>
+        <div class="row justify-content-center">
+            <div class="col-md-10 details-card">
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-10 details-card">
+                <div class="item-header d-flex justify-content-between align-items-start">
+                    <div>
+                        {% if source == 'my-bids' %}
+                        <a href="/my-bids" class="btn btn-sm btn-link p-0 mb-2"
+                            style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to My Bids</a>
+                        {% elif source == 'watchlist' %}
+                        <a href="/watchlist" class="btn btn-sm btn-link p-0 mb-2"
+                            style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to Watchlist</a>
+                        {% else %}
+                        <a href="/bidder" class="btn btn-sm btn-link p-0 mb-2"
+                            style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to Dashboard</a>
+                        {% endif %}
+                        <h1 class="h3 mb-1">{{ item[3] }}</h1>
+                        <p class="text-muted">Listing ID: #{{ item[1] }} | Seller: {{ item[0] }}</p>
+                    </div>
 
-            <div class="item-header d-flex justify-content-between align-items-start">
-                <div>
-                    {% if source == 'my-bids' %}
-                        <a href="/my-bids" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to My Bids</a>
-                    {% elif source == 'watchlist' %}
-                        <a href="/watchlist" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to Watchlist</a>
-                    {% else %}
-                        <a href="/bidder" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to Dashboard</a>
-                    {% endif %}
-                    <h1 class="h3 mb-1">{{ item[3] }}</h1> <p class="text-muted">Listing ID: #{{ item[1] }} | Seller: {{ item[0] }}</p>
-                </div>
-
-                <div class="text-right">
-                    {% if item[9] == 1 %}
+                    <div class="text-right">
+                        {% if item[9] == 1 %}
                         <span class="status-pill status-1">ACTIVE</span>
-                    {% elif item[9] == 0 %}
+                        {% elif item[9] == 0 %}
                         <span class="status-pill status-0">INACTIVE</span>
-                    {% elif item[9] == 2 %}
+                        {% elif item[9] == 2 %}
                         <span class="status-pill status-2">SOLD</span>
-                    {% elif item[9] == 3 %}
+                        {% elif item[9] == 3 %}
                         <span class="status-pill status-3">RESERVE NOT MET</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-7">
-                    <div class="label-text">Product Name</div>
-                    <div class="data-value font-weight-bold">{{ item[4] }}</div>
-
-                    <div class="label-text">Description</div>
-                    <div class="description-box">
-                        {{ item[5] }}
-                    </div>
-
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="label-text">Category</div>
-                            <div class="data-value">{{ item[2] }}</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="label-text">Quantity</div>
-                            <div class="data-value">{{ item[6] }}</div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="col-md-5 border-left">
-                    <div class="pl-md-3">
-                        <div class="label-text">Current High Bid</div>
-                        <div class="data-value h4 font-weight-bold text-primary">
-                            ${{ "{:,.2f}".format(current_price) }}
+
+                <div class="row">
+                    <div class="col-md-7">
+                        <div class="label-text">Product Name</div>
+                        <div class="data-value font-weight-bold">{{ item[4] }}</div>
+
+                        <div class="label-text">Description</div>
+                        <div class="description-box">
+                            {{ item[5] }}
                         </div>
 
-                        <!-- <div class="label-text">Reserve Prices</div> -->
-                        <!-- <div class="data-value text-muted font-weight-bold">${{ "{:,.2f}".format(item[7]) }}</div> -->
-
-                        <div class="label-text">Auction Progress</div>
-                        <div class="progress mb-2" style="height: 12px; border-radius: 10px;">
-                            {% set percent = (bid_count / item[8]) * 100 %}
-                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ percent }}%;"></div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="label-text">Category</div>
+                                <div class="data-value">{{ item[2] }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="label-text">Quantity</div>
+                                <div class="data-value">{{ item[6] }}</div>
+                            </div>
                         </div>
-                        <div class="data-value">{{ bid_count }} / {{ item[8] }} Max Bids reached</div>
+                    </div>
+                    <div class="col-md-5 border-left">
+                        <div class="pl-md-3">
+                            <div class="label-text">Current High Bid</div>
+                            <div class="data-value h4 font-weight-bold text-primary">
+                                ${{ "{:,.2f}".format(current_price) }}
+                            </div>
 
-                        <hr>
+                            <!-- <div class="label-text">Reserve Prices</div> -->
+                            <!-- <div class="data-value text-muted font-weight-bold">${{ "{:,.2f}".format(item[7]) }}</div> -->
 
-                        <div class="mt-4">
+                            <div class="label-text">Auction Progress</div>
+                            <div class="progress mb-2" style="height: 12px; border-radius: 10px;">
+                                {% set percent = (bid_count / item[8]) * 100 %}
+                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ percent }}%;">
+                                </div>
+                            </div>
+                            <div class="data-value">{{ bid_count }} / {{ item[8] }} Max Bids reached</div>
 
-                            {% if session.get('email') != item[0] %}
+                            <hr>
+
+                            <div class="mt-4">
+
+                                {% if session.get('email') != item[0] %}
 
                                 {% if item[9] == 1 %}
-                                    {% if item[9] == 1 and bid_count != item[8]%}
+                                {% if item[9] == 1 and bid_count != item[8]%}
 
-                                        <!-- Modal -->
-                                        <button type="button" class="btn btn-block btn-outline-danger" data-toggle="modal" data-target="#exampleModal">
-                                        Bid
-                                        </button>
+                                <!-- Modal -->
+                                <button type="button" class="btn btn-block btn-outline-danger" data-toggle="modal"
+                                    data-target="#exampleModal">
+                                    Bid
+                                </button>
 
-                                        <!-- Modal -->
-                                        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                          <div class="modal-dialog" role="document">
-                                            <div class="modal-content">
-                                              <div class="modal-header">
+                                <!-- Modal -->
+                                <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog"
+                                    aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
                                                 <h5 class="modal-title" id="exampleModalLabel">Enter your bid price</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                  <span aria-hidden="true">&times;</span>
+                                                <button type="button" class="close" data-dismiss="modal"
+                                                    aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
                                                 </button>
-                                              </div>
-                                              <form method="POST">
+                                            </div>
+                                            <form method="POST">
                                                 <input type="hidden" name="item" value="{{ item[1] }}">
                                                 <input type="hidden" name="seller" value="{{ item[0] }}">
                                                 <input type="hidden" name="source" value="{{ source }}">
-                                              <div class="modal-body">
-                                                  {% if error %}
-                                                      <div class="alert alert-danger">
+                                                <div class="modal-body">
+                                                    {% if error %}
+                                                    <div class="alert alert-danger">
                                                         {{ error }}
-                                                      </div>
-                                                  {% endif %}
+                                                    </div>
+                                                    {% endif %}
 
-                                                  <div class="form-group">
-                                                    <label for="bid_price" class="col-form-label">Price:</label>
-                                                      <!--settings to limit the decimal of the input-->
-                                                    <input type="text" class="form-control" id="bid_price" name="bid_price" min="0" step="0.01" placeholder="0.00">
-                                                  </div>
+                                                    <div class="form-group">
+                                                        <label for="bid_price" class="col-form-label">Price:</label>
+                                                        <!--settings to limit the decimal of the input-->
+                                                        <input type="text" class="form-control" id="bid_price"
+                                                            name="bid_price" min="0" step="0.01" placeholder="0.00">
+                                                    </div>
 
-                                              </div>
-                                              <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                                <button type="submit" class="btn btn-primary">Bid</button>
-                                              </div>
-                                              </form>
-                                            </div>
-                                          </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-primary">Bid</button>
+                                                </div>
+                                            </form>
                                         </div>
-                                    {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
                                 {% endif %}
 
                                 {% if in_watchlist %}
                                 <form action="/watchlist/remove" method="POST" class="mt-2 text-center">
                                     <input type="hidden" name="seller_email" value="{{ item[0] }}">
                                     <input type="hidden" name="listing_id" value="{{ item[1] }}">
-                                    <button type="submit" class="btn btn-block btn-outline-danger">Remove from Watchlist</button>
+                                    <button type="submit" class="btn btn-block btn-outline-danger">Remove from
+                                        Watchlist</button>
                                 </form>
                                 {% else %}
                                 <form action="/watchlist/add" method="POST" class="mt-2 text-center">
                                     <input type="hidden" name="seller_email" value="{{ item[0] }}">
                                     <input type="hidden" name="listing_id" value="{{ item[1] }}">
-                                    <button type="submit" class="btn btn-block btn-outline-primary">Add to Watchlist</button>
+                                    <button type="submit" class="btn btn-block btn-outline-primary">Add to
+                                        Watchlist</button>
                                 </form>
                                 {% endif %}
-                            {% else %}
+                                {% else %}
                                 <div class="alert alert-info text-center mt-3">
                                     You cannot interact with your own listing.
                                 </div>
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
+                <!-- Seller Rating & Reviews Section -->
+                <div class="reviews-section mt-4 pt-4">
+                    <h4 class="reviews-title mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                            viewBox="0 0 16 16">
+                            <path
+                                d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                        </svg>
+                        Seller Reviews
+                    </h4>
+
+                    {% if avg_rating is not none %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rating-score">
+                            {{ avg_rating }}
+                        </div>
+                        <div class="rating-stars">
+                            {% for i in range(1, 6) %}
+                            {% if avg_rating >= i %}&#9733;{% elif avg_rating >= i - 0.5 %}&#9733;{% else %}&#9734;{%
+                            endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="text-muted rating-count">
+                            ({{ rating_count }} review{{ 's' if rating_count != 1 else '' }})
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-3">No ratings yet for this seller.</p>
+                    {% endif %}
+
+                    {% if seller_reviews and seller_reviews|length > 0 %}
+                    <div class="reviews-scroll">
+                        {% for review in seller_reviews %}
+                        <div class="review-card mb-3 p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div>
+                                    <span class="review-stars">
+                                        {% for i in range(1, 6) %}
+                                        {% if review.rating >= i %}&#9733;{% else %}&#9734;{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                    <span class="ml-2 text-muted review-author">
+                                        by {{ review.bidder[:3] }}***{{ review.bidder.split('@')[1] if '@' in
+                                        review.bidder else '' }}
+                                    </span>
+                                </div>
+                                <small class="text-muted">{{ review.date }}</small>
+                            </div>
+                            {% if review.comment %}
+                            <p class="review-comment mb-0 mt-1">
+                                "{{ review.comment }}"
+                            </p>
+                            {% else %}
+                            <p class="review-no-comment mb-0 mt-1 text-muted font-italic">No comment provided.
+                            </p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% elif avg_rating is not none %}
+                    <p class="text-muted">No written reviews available.</p>
+                    {% endif %}
+                </div>
+
+            </div>
         </div>
     </div>
-</div>
 
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-<script>
-  $('#myModal').on('shown.bs.modal', function () {
-    $('#myInput').trigger('focus')
-  })
-</script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script>
+        $('#myModal').on('shown.bs.modal', function () {
+            $('#myInput').trigger('focus')
+        })
+    </script>
 
-{% if error %}
-<script>
-  $(document).ready(function () {
-    $('#exampleModal').modal('show');
-  });
-</script>
-{% endif %}
+    {% if error %}
+    <script>
+        $(document).ready(function () {
+            $('#exampleModal').modal('show');
+        });
+    </script>
+    {% endif %}
 
 </body>
 </body>
+
 </html>
