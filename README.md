@@ -24,7 +24,7 @@ Technologies:
 - IDE: PyCharm
 - Version Control: GitHub
 
-#Project Structure
+# Project Structure
 /.idea
 /dataset
 /templates
@@ -210,28 +210,13 @@ Seller:
 email: nrideoutmi@lsu.edu
 password: CBCA4zXar
 
+Seller (Local Vendor) 
+email: mlempertz10@yandex.ru
+password: rrFKu7T
+
 HelpDesk:
 email: cantonacci6p@lsu.edu
 password: vKQmcc1y
-
-# Features Implemented for Progress Review
-Implemented Features:
-
-- User Login System
-- Secure password hashing (SHA256 + salt)
-- Database population from CSV / script
-- Role-based login:
-  - Bidder → bidder.html
-  - Seller → seller.html
-  - HelpDesk → helpdesk.html
-- Error handling for invalid login
-
-# Known Limitations 
-Limitations:
-
-- Search functionality is not fully implemented
-- Listings are currently static (not database-driven yet)
-- UI is still under development
 
 # File Structure 
 
@@ -266,4 +251,12 @@ Limitations:
 - database.db  
 - passwordHasher.py  
 - README.md  
-- test.py  
+- test.py
+
+# Final Notes 
+This project demonstrates: 
+- Full-stack web development
+- Secure authentication
+- Dynamic SQL querying
+- Database-driven design
+- Role-based architecture 
