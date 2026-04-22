@@ -15,7 +15,7 @@ sql = sqlite3
 
 app = Flask(__name__)
 # This secret key is super important. It lets us securely track who is logged in via cookies.
-app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the session (the memory) to work
+app.secret_key = 'Do the best you can until you know better. Then when you know better, do better'  # for the session (the memory) to work
 
 DB_NAME = 'database.db'
 host = 'http://127.0.0.1:5000/'
@@ -116,11 +116,17 @@ def authenticate():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        print(f"[LOGIN DEBUG] Attempting login for: {email}")
         result = password_to_hash_checker(email, password)
+        print(f"[LOGIN DEBUG] Password check result: {result}")
         if result:
             session['email'] = email
-            return redirect(url_for(find_user_html(email)))
+            target = find_user_html(email)
+            print(f"[LOGIN DEBUG] Target endpoint: {target}")
+            print(f"[LOGIN DEBUG] Session roles: {session.get('roles')}")
+            return redirect(url_for(target))
         else:
+            print(f"[LOGIN DEBUG] Login FAILED for: {email}")
             error = 'Invalid username or password.'
             return render_template('login.html', error=error)
 
@@ -228,18 +234,22 @@ def find_user_html(email):
     cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (email,))
     if cursor.fetchone():
         roles.append('helpdesk')
+        print(f"[ROLE DEBUG] {email} has helpdesk role")
 
     cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (email,))
     if cursor.fetchone():
         roles.append('seller')
+        print(f"[ROLE DEBUG] {email} has seller role")
 
     cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (email,))
     if cursor.fetchone():
         roles.append('bidder')
+        print(f"[ROLE DEBUG] {email} has bidder role")
 
     connection.close()
     
     session['roles'] = roles
+    print(f"[ROLE DEBUG] {email} final roles: {roles}")
 
     if 'helpdesk' in roles:
         return "helpdesk"
@@ -248,7 +258,8 @@ def find_user_html(email):
     if 'bidder' in roles:
         return "bidder"
         
-    return "index"
+    print(f"[ROLE DEBUG] WARNING: {email} has NO roles, falling back to authenticate")
+    return "authenticate"
 
 
 @app.route('/seller', methods=['POST', 'GET'])
