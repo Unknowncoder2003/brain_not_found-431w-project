@@ -92,6 +92,10 @@
     <div class="row justify-content-center">
         <div class="col-md-10 post-card">
             <h2 class="mb-4">Post a New Auction</h2>
+
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
             <form id="postItemForm" action="/post-item" method="POST">
                 <div class="form-section-title">Product Information</div>
                 <div class="row">

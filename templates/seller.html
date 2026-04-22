@@ -101,22 +101,24 @@
                         <span class="nav-link text-muted mb-0">Seller: <strong>{{ email }}</strong></span>
                     </li>
                     {% if session.get('roles') %}
-                        {% if 'bidder' in session['roles'] %}
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-outline-primary ml-2" href="/bidder">Switch to Bidder</a>
-                        </li>
-                        {% endif %}
-                        {% if 'helpdesk' in session['roles'] %}
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
-                        </li>
-                        {% endif %}
+                    {% if 'bidder' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-primary ml-2" href="/bidder">Switch to Bidder</a>
+                    </li>
+                    {% endif %}
+                    {% if 'helpdesk' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
+                    </li>
+                    {% endif %}
                     {% endif %}
                     <li class="nav-item">
                         <a class="nav-link ml-2 position-relative" href="/notifications" title="Notifications">
                             <i class="fas fa-bell"></i>
                             {% if notification_count > 0 %}
-                            <span class="badge badge-danger" style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{ notification_count }}</span>
+                            <span class="badge badge-danger"
+                                style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{
+                                notification_count }}</span>
                             {% endif %}
                         </a>
                     </li>
@@ -132,6 +134,9 @@
         <div class="row justify-content-center">
             <div class="col-md-10">
                 <div class="dashboard-card">
+                    {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
                     <h2 class="welcome-header">Hi, {{ first_name }}!</h2>
 
                     <div class="rating-box">

@@ -342,13 +342,15 @@ def seller():
     except Exception as e:
         print("ERROR in /seller:", e)
 
+    error = request.args.get('error')
     return render_template(
         'seller.html',
         first_name=first_name,
         email=user_email,
         avg_rating=avg_rating,
         rating_count=rating_count,
-        balance = balance
+        balance=balance,
+        error=error
     )
 """The main Dashboard for Sellers."""
 @app.route('/seller-account', methods=['GET', 'POST'])
@@ -361,8 +363,8 @@ def seller_account():
     connection = sql.connect('database.db')
     cursor = connection.cursor()
 
-    error = None
-    success = None
+    error = request.args.get('error')
+    success = request.args.get('success')
 
     if request.method == 'POST':
         current_password = request.form.get('current_password', '').strip()
@@ -636,7 +638,7 @@ def delete_seller_account():
                 seller=seller,
                 local_vendor=local_vendor,
                 business_address=business_address,
-                error=None,
+                error='Incorrect password. Your account was not deleted.',
                 success=None,
                 delete_error="Current password is incorrect."
             )
@@ -883,7 +885,8 @@ def bidder():
         search_term=search_term if search_term else "",
         page=page,
         total_pages=total_pages,
-        pagination_pages=pagination_pages
+        pagination_pages=pagination_pages,
+        error=request.args.get('error')
     )
 
 def categories():
@@ -1414,11 +1417,13 @@ def helpdesk():
 
     connection.close()
 
+    error = request.args.get('error')
     return render_template(
         'helpdesk.html',
         email=user_email,
         unassigned_requests=unassigned_requests,
-        my_requests=my_requests
+        my_requests=my_requests,
+        error=error
     )
 
 @app.route('/helpdesk/claim/<int:request_id>', methods=['POST'])
@@ -1555,6 +1560,7 @@ def profile():
 
     edit = request.args.get("edit")
     message = request.args.get("message")
+    error = request.args.get("error")
 
     edit_basic = edit == "basic"
     edit_address = edit == "address"
@@ -1619,6 +1625,7 @@ def profile():
         edit_card=edit_card,
         edit_password=edit_password,
         message=message,
+        error=error,
         delete_error=None
     )
 
@@ -2196,8 +2203,9 @@ def my_bids():
     sellers_rated_today = {row[0] for row in cursor.fetchall()}
 
     connection.close()
+    error = request.args.get('error')
     return render_template('my-bids.html', email=user_email, listings=processed_bids,
-                           rated_listings=rated_listings, sellers_rated_today=sellers_rated_today)
+                           rated_listings=rated_listings, sellers_rated_today=sellers_rated_today, error=error)
 
 
 
@@ -2230,7 +2238,8 @@ def my_listing():
     ''', (user_email,))
     result = cursor.fetchall()
     connection.close()
-    return render_template('my-listings.html', email=user_email, listings=result)
+    error = request.args.get('error')
+    return render_template('my-listings.html', email=user_email, listings=result, error=error)
 
 
 @app.route('/listing-details/<seller_email>/<int:listing_id>')
@@ -2371,12 +2380,12 @@ def edit_listing(seller_email, listing_id):
     item_status = cursor.fetchone()
     if not item_status or item_status[0] != 1:
         connection.close()
-        return "Error: Cannot edit an item that is inactive, sold, or ended.", 400
+        return redirect(url_for('my_listing', error='Cannot edit an item that is inactive, sold, or ended.'))
 
     cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ? AND seller_email = ?', (listing_id, seller_email))
     if cursor.fetchone()[0] > 0:
         connection.close()
-        return "Error: Cannot edit an active listing that already has bids.", 400
+        return redirect(url_for('my_listing', error='Cannot edit an active listing that already has bids.'))
     connection.close()
 
 
@@ -2394,18 +2403,18 @@ def edit_listing(seller_email, listing_id):
         
         if max_b < 1:
             connection.close()
-            return "Error: Max Bids must be at least 1.", 400
+            return redirect(url_for('edit_listing', seller_email=seller_email, listing_id=listing_id, error='Max Bids must be at least 1.'))
 
         cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
         if not cursor.fetchone():
             connection.close()
-            return "Error: Category does not exist.", 400
+            return redirect(url_for('edit_listing', seller_email=seller_email, listing_id=listing_id, error='Category does not exist.'))
 
         cursor.execute('SELECT Status FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
         item_status = cursor.fetchone()
         if not item_status or item_status[0] != 1:
             connection.close()
-            return "Error: Cannot edit an item that is inactive, sold, or ended.", 400
+            return redirect(url_for('my_listing', error='Cannot edit an item that is no longer active.'))
 
         cursor.execute('''
             UPDATE Auction_Listings
@@ -2448,7 +2457,8 @@ def edit_listing(seller_email, listing_id):
         connection.close()
 
         category_tree = get_category_tree()
-        return render_template('edit-listing.html', item=item, category_tree=category_tree)
+        error = request.args.get('error')
+        return render_template('edit-listing.html', item=item, category_tree=category_tree, error=error)
 
 
 def get_subcategories(parent_name):
@@ -2533,11 +2543,11 @@ def post_item():
         max_b = int(request.form.get('max_bids'))
         
         if max_b < 1:
-            return "Error: Max Bids must be at least 1.", 400
+            return redirect(url_for('post_item', error='Max Bids must be at least 1.'))
 
         data = [title, p_name, cat, desc, qty, reserve, max_b]
         if any(v is None or v == "" for v in data):
-            return "All fields are required!", 400
+            return redirect(url_for('post_item', error='All fields are required.'))
 
         connection = get_connection()
         cursor = connection.cursor()
@@ -2545,7 +2555,7 @@ def post_item():
         cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
         if not cursor.fetchone():
             connection.close()
-            return "Invalid Category selected", 400
+            return redirect(url_for('post_item', error='Invalid category selected.'))
 
         cursor.execute('SELECT MAX(Listing_ID) FROM Auction_Listings WHERE Seller_Email = ?', (user_email,))
         result = cursor.fetchone()[0]
@@ -2568,10 +2578,11 @@ def post_item():
         except sql.Error as e:
             connection.close()
             print(f"Database error: {e}")
-            return "An error occurred while posting your item.", 500
+            return redirect(url_for('post_item', error='An error occurred while posting your item. Please try again.'))
 
     category_tree = get_category_tree()
-    return render_template('post-item.html', category_tree=category_tree,email = user_email)
+    error = request.args.get('error')
+    return render_template('post-item.html', category_tree=category_tree, email=user_email, error=error)
 @app.route('/watchlist', methods=['GET'])
 def watchlist():
     user_email = session.get('email')
@@ -2613,7 +2624,8 @@ def watchlist():
         
         processed_items.append(item)
 
-    return render_template('watchlist.html', listings=processed_items, email=user_email)
+    error = request.args.get('error')
+    return render_template('watchlist.html', listings=processed_items, email=user_email, error=error)
 
 @app.route('/watchlist/add', methods=['POST'])
 def add_to_watchlist():
@@ -2719,7 +2731,8 @@ def pay_item_get(listing_id):
     address = cursor.fetchone()
 
     connection.close()
-    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, address=address, listing_id=listing_id, email=user_email)
+    error = request.args.get('error')
+    return render_template('pay.html', item=item, amount_owed=amount_owed, card=card, address=address, listing_id=listing_id, email=user_email, error=error)
 
 @app.route('/pay/<int:listing_id>', methods=['POST'])
 def pay_item_post(listing_id):
@@ -2746,14 +2759,14 @@ def pay_item_post(listing_id):
     state = request.form.get('state', '').strip()
     zipcode = request.form.get('zipcode', '').strip()
 
-    # Basic validation
+    # making sure all required payment fields are present before processing
     if not all([cc_num, card_type, exp_month, exp_year, sec_code, amount_paid, seller_email]):
-        return "Missing payment or credit card information.", 400
+        return redirect(url_for('pay_item_get', listing_id=listing_id, seller=seller_email, error='Missing payment or credit card information.'))
 
     try:
         amount_paid = float(amount_paid)
     except ValueError:
-        return "Invalid payment amount.", 400
+        return redirect(url_for('pay_item_get', listing_id=listing_id, seller=seller_email, error='Invalid payment amount.'))
 
     connection = get_connection()
     cursor = connection.cursor()

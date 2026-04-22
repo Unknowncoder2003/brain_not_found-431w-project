@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>My Listings | NittanyAuction</title>
-    <link rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body { background-color: #f2f2f2; }
+        body {
+            background-color: #f2f2f2;
+        }
 
         .navbar {
             background-color: white;
@@ -17,13 +19,20 @@
             margin-bottom: 30px;
         }
 
-        .brand-text .nittany { color: #1e4fa1; font-weight: bold; }
-        .brand-text .auction { color: #28a745; font-weight: bold; }
+        .brand-text .nittany {
+            color: #1e4fa1;
+            font-weight: bold;
+        }
+
+        .brand-text .auction {
+            color: #28a745;
+            font-weight: bold;
+        }
 
         .dashboard-card {
             background: white;
             border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             padding: 2rem;
             margin-bottom: 50px;
         }
@@ -38,8 +47,15 @@
             align-items: center;
         }
 
-        .status-active { color: #28a745; font-weight: 600; }
-        .status-closed { color: #6c757d; font-weight: 600; }
+        .status-active {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-closed {
+            color: #6c757d;
+            font-weight: 600;
+        }
 
         .table thead th {
             border-top: none;
@@ -50,49 +66,50 @@
         }
     </style>
 </head>
+
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light">
-    <div class="container">
-        <a class="navbar-brand brand-text" href="/seller">
-            <span class="nittany">Nittany</span><span class="auction">Auction</span>
-        </a>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand brand-text" href="/seller">
+                <span class="nittany">Nittany</span><span class="auction">Auction</span>
+            </a>
 
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#sellerNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <div class="collapse navbar-collapse" id="sellerNavbar">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/seller">Dashboard</a>
-                </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="/my-listings">My Listings</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/post-item">Post New Item</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="settings"
-                       role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Seller Tools
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="settings">
-                        <a class="dropdown-item" href="{{ url_for('seller_account') }}">Edit Account</a>
-                        <a class="dropdown-item" href="{{ url_for('seller_profile') }}">View Seller Profile</a>
-                        <a class="dropdown-item" href="{{ url_for('my_listing') }}">View Listing History</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{{ url_for('contact_helpdesk') }}">Contact HelpDesk</a>
-                    </div>
-                </li>
-            </ul>
+            <div class="collapse navbar-collapse" id="sellerNavbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/seller">Dashboard</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/my-listings">My Listings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/post-item">Post New Item</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="settings" role="button" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                            Seller Tools
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="settings">
+                            <a class="dropdown-item" href="{{ url_for('seller_account') }}">Edit Account</a>
+                            <a class="dropdown-item" href="{{ url_for('seller_profile') }}">View Seller Profile</a>
+                            <a class="dropdown-item" href="{{ url_for('my_listing') }}">View Listing History</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{{ url_for('contact_helpdesk') }}">Contact HelpDesk</a>
+                        </div>
+                    </li>
+                </ul>
 
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <span class="nav-link text-muted">Seller: <strong>{{ email }}</strong></span>
-                </li>
-                {% if session.get('roles') %}
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <span class="nav-link text-muted">Seller: <strong>{{ email }}</strong></span>
+                    </li>
+                    {% if session.get('roles') %}
                     {% if 'bidder' in session['roles'] %}
                     <li class="nav-item">
                         <a class="btn btn-sm btn-outline-primary ml-2" href="/bidder">Switch to Bidder</a>
@@ -103,101 +120,110 @@
                         <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
                     </li>
                     {% endif %}
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link ml-2 position-relative" href="/notifications" title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            {% if notification_count > 0 %}
+                            <span class="badge badge-danger"
+                                style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{
+                                notification_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-11 dashboard-card">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
-                <li class="nav-item">
-                    <a class="nav-link ml-2 position-relative" href="/notifications" title="Notifications">
-                        <i class="fas fa-bell"></i>
-                        {% if notification_count > 0 %}
-                        <span class="badge badge-danger" style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{ notification_count }}</span>
-                        {% endif %}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
-
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-11 dashboard-card">
-            <div class="section-header d-flex justify-content-between align-items-center">
-                <h2>My Listings</h2>
-                <div>
-                    <div class="btn-group mr-3">
-                        <a href="/my-listings?sort=id" class="btn btn-sm btn-outline-secondary">Newest</a>
-                        <a href="/my-listings?sort=status" class="btn btn-sm btn-outline-secondary">Sort by Status</a>
+                <div class="section-header d-flex justify-content-between align-items-center">
+                    <h2>My Listings</h2>
+                    <div>
+                        <div class="btn-group mr-3">
+                            <a href="/my-listings?sort=id" class="btn btn-sm btn-outline-secondary">Newest</a>
+                            <a href="/my-listings?sort=status" class="btn btn-sm btn-outline-secondary">Sort by
+                                Status</a>
+                        </div>
+                        <a href="/post-item" class="btn btn-success btn-sm">+ Post New Item</a>
                     </div>
-                    <a href="/post-item" class="btn btn-success btn-sm">+ Post New Item</a>
                 </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Reserve Price</th>
+                                <th>Total Bids</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in listings %}
+                            <tr>
+                                <td>{{ row[1] }}</td>
+
+                                <td>{{ row[2] }}</td>
+
+                                <td><strong>${{ "{:,.2f}".format(row[3] | float) }}</strong></td>
+
+                                <td>{{ row[6] }} / {{ row[4] }} bids</td>
+
+                                <td>
+                                    {% if row[5] == 1 %}
+                                    <span class="badge badge-success" style="background-color: #28a745;">Active</span>
+                                    {% elif row[5] == 0 %}
+                                    <span class="badge badge-secondary">Inactive</span>
+                                    {% elif row[5] == 2 %}
+                                    <span class="badge badge-info" style="background-color: #1e4fa1;">Sold</span>
+                                    {% elif row[5] == 3 %}
+                                    <span class="badge badge-warning"
+                                        style="background-color: #ffc107; color: #212529;">Reserve Not Met</span>
+                                    {% else %}
+                                    <span class="badge badge-light">Unknown</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <a href="/listing-details/{{ email }}/{{ row[0] }}"
+                                        class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No listings found. <a href="/post-item">Start selling!</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if not listings %}
+                <div class="text-center py-4">
+                    <p class="text-muted">You don't have any active listings yet.</p>
+                </div>
+                {% endif %}
+
             </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Category</th>
-                            <th>Reserve Price</th>
-                            <th>Total Bids</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                      {% for row in listings %}
-                        <tr>
-                          <td>{{ row[1] }}</td>
-
-                          <td>{{ row[2] }}</td>
-
-                          <td><strong>${{ "{:,.2f}".format(row[3] | float) }}</strong></td>
-
-                          <td>{{ row[6] }} / {{ row[4] }} bids</td>
-
-                          <td>
-                              {% if row[5] == 1 %}
-                                  <span class="badge badge-success" style="background-color: #28a745;">Active</span>
-                              {% elif row[5] == 0 %}
-                                  <span class="badge badge-secondary">Inactive</span>
-                              {% elif row[5] == 2 %}
-                                  <span class="badge badge-info" style="background-color: #1e4fa1;">Sold</span>
-                              {% elif row[5] == 3 %}
-                                  <span class="badge badge-warning" style="background-color: #ffc107; color: #212529;">Reserve Not Met</span>
-                              {% else %}
-                                  <span class="badge badge-light">Unknown</span>
-                              {% endif %}
-                          </td>
-
-                          <td>
-                              <a href="/listing-details/{{ email }}/{{ row[0] }}" class="btn btn-sm btn-outline-primary">View</a>
-                          </td>
-                        </tr>
-                      {% else %}
-                      <tr>
-                          <td colspan="6" class="text-center py-4 text-muted">
-                              No listings found. <a href="/post-item">Start selling!</a>
-                          </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            {% if not listings %}
-            <div class="text-center py-4">
-                <p class="text-muted">You don't have any active listings yet.</p>
-            </div>
-            {% endif %}
-
         </div>
     </div>
-</div>
 
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 </body>
+
 </html>

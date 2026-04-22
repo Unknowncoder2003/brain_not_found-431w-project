@@ -118,6 +118,9 @@
             <div class="col-md-11 dashboard-card">
                 <div class="section-header d-flex justify-content-between align-items-center">
                     <div>
+                        {% if error %}
+                            <div class="alert alert-danger mt-3">{{ error }}</div>
+                        {% endif %}
                         <h2 class="mb-0">My Active & Past Bids</h2>
                         <p class="text-muted small mb-0">Track your items and see if you're winning!</p>
                     </div>

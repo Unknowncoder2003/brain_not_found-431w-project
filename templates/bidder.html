@@ -137,7 +137,9 @@
                         <a class="nav-link ml-2 position-relative" href="/notifications" title="Notifications">
                             <i class="fas fa-bell"></i>
                             {% if notification_count > 0 %}
-                            <span class="badge badge-danger" style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{ notification_count }}</span>
+                            <span class="badge badge-danger"
+                                style="position:absolute;top:2px;right:-4px;font-size:0.6rem;padding:2px 5px;">{{
+                                notification_count }}</span>
                             {% endif %}
                         </a>
                     </li>
@@ -228,7 +230,11 @@
     <!--place to display the items -->
     <div class="container mt-4">
         <div class="row justify-content-center">
+
             <div class="col-md-10 dashboard-card">
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
                 <h4 class="mb-3">Items</h4> <!-- mb- indicates the bottom margin -->
 
                 <div class="row">

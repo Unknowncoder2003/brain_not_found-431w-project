@@ -105,6 +105,9 @@
             <div class="col-md-11 dashboard-card">
                 <div class="section-header d-flex justify-content-between align-items-center">
                     <div>
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
                         <h2 class="mb-0">My Watchlist</h2>
                         <p class="text-muted small mb-0">Items you are keeping an eye on.</p>
                     </div>

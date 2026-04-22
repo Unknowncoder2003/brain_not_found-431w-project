@@ -158,11 +158,11 @@
                 </div>
 
                 {% if message %}
-                {% if 'successfully' in message %}
                 <div class="alert alert-success">{{ message }}</div>
-                {% else %}
-                <div class="alert alert-danger">{{ message }}</div>
                 {% endif %}
+
+                {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
 
                 <div class="info-note">
