@@ -3,8 +3,8 @@ NittanyAuction project for Cmpsc431w
 
 Team Members:
 - Nicholas Russo
-- Kevin Yu
 - Anon Tongngam
+- Kevin Yu
 - Chentian Zhu
 
 # Project Description 
@@ -37,6 +37,7 @@ Technologies:
 - login.html
 - my-bids.html
 - my-listings.html
+- notifications.html
 - pay.html
 - post-item.html
 - profile.html
@@ -45,7 +46,7 @@ Technologies:
 - seller.html
 - seller_account.html
 - seller_profile.html
-- watchlist.html  
+- watchlist.html
 
 **Files**
 - app.py  
@@ -61,6 +62,9 @@ The database file is named `database.db`.
 
 The database is populated using the provided CSV dataset from Canvas,
 specifically the `users.csv` file for login functionality.
+
+The database was built by PyCharm's built in Query Console.
+Also including the trigger to check the status of an Auction Listing. 
 
 Instead of using a Python script, the data was imported manually using
 PyCharm’s built-in “Import Data” feature. The CSV file was mapped to the
@@ -85,7 +89,7 @@ SELECT * FROM Users;
 Passwords are NOT stored in plain text.
 
 We use SHA256 hashing with a salt:
-- When storing passwords, we generate a salt
+- When storing passwords, we randomly generate a salt
 - The password is combined with the salt
 - The result is hashed and stored in the database
 
@@ -170,6 +174,11 @@ Constraints:
 - Displays:
   - average rating
   - rating count
+# Notification System
+- Users will be notified when:
+  - an Auction Listing they participated ends
+  - when the Bidder completes the payment
+  - when the HelpDesk completes their request
  
 # Watchlist (Optional Feature) 
 - Add/remove items
