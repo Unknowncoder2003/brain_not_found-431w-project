@@ -105,6 +105,8 @@ def password_to_hash_checker(email, password):
 
 
 def find_user_html(email):
+    """Find the landing page the user should go to
+    If a user has multiple roles the priority is: Helpdesk, Seller, Bidder"""
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -204,7 +206,7 @@ def seller():
         rating_count=rating_count,
         balance = balance
     )
-
+"""The main Dashboard for Sellers."""
 @app.route('/seller-account', methods=['GET', 'POST'])
 def seller_account():
     user_email = session.get('email')
@@ -278,7 +280,7 @@ def seller_account():
                 SET bank_routing_number = ?, bank_account_number = ?
                 WHERE email = ?
             """, (bank_routing_number, bank_account_number, user_email))
-
+            #get extra stuff if they are a local vendor
             is_local_vendor = 'is_local_vendor' in request.form
 
             cursor.execute("""
@@ -1884,6 +1886,9 @@ def my_bids():
 
         connection.close()
     return render_template('my-bids.html', email=user_email, listings=processed_bids)
+
+
+"""The dashboard for sellers to view their listings"""
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
@@ -1908,7 +1913,7 @@ def my_listing():
     connection.close()
     return render_template('my-listings.html', email=user_email, listings=result)
 
-
+"""The page to view listing details"""
 @app.route('/listing-details/<seller_email>/<int:listing_id>')
 def listing_details(seller_email, listing_id):
     user_email = session.get('email')
@@ -1975,7 +1980,7 @@ def listing_details(seller_email, listing_id):
         rating_count=rating_count
     )
 
-
+"""The endpoint for deactivating a listing"""
 @app.route('/deactivate-listing/<seller_email>/<int:listing_id>', methods=['POST'])
 def deactivate_listing(seller_email, listing_id):
     """
@@ -2026,6 +2031,7 @@ def deactivate_listing(seller_email, listing_id):
     return redirect(request.referrer)
 
 
+"""Allow sellers to edit their listings"""
 @app.route('/edit-listing/<seller_email>/<int:listing_id>', methods=['GET', 'POST'])
 def edit_listing(seller_email, listing_id):
     """
