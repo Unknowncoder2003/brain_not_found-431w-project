@@ -131,7 +131,64 @@ System Features:
   - Role-specific tables
   - Address and vendor info
 
- # User Profile Update 
+# User Profile Update
+Users can update: 
+ - Basic info
+ - Address
+ - Credit card
+ - Password (with verification)
+Constraints:
+ - Email cannot be changed
+ - Passwords always hashed
+
+# Product Search
+- Keyword search:
+  - Title
+  - Description
+  - Category
+  - Seller
+- Price filtering:
+  - min/max price
+- Pagination implemented
+
+# Rating System 
+- Bidders can rate sellers after winning
+- Ratings stored in:
+  - Rating
+  - seller_ratings
+- Displays:
+  - average rating
+  - rating count
+ 
+# Watchlist (Optional Feature) 
+- Add/remove items
+- Persistent in database
+- Cannot add own listings
+
+# Payment System 
+- Winning bidder proceeds to payment
+- Transaction recorded
+- Listing marked as "Sold"
+
+# HelpDesk System (Optional Feature) 
+- Users can submit requests:
+  - Add category
+  - General support
+- Helpdesk can:
+  - Claim requests
+  - Complete requests
+Special Feature:
+- Completeing "AddCategory" dynamically updates database
+
+# Account Deletion
+- Seperate flows for:
+  - Seller
+  - Bidder
+Features:
+- Requires password confirmation
+- Deletes:
+  - Role-specific data
+  - Address / credit card info 
 # How to Run the Application 
 1. Open the project in PyCharm (or any IDE)
 2. Make sure all dependencies are installed
