@@ -889,8 +889,9 @@ def item_bid():
     roles = session.get('roles', [])
     if not user_email or ('bidder' not in roles and 'seller' not in roles):
         return redirect(url_for('authenticate', error='Access denied. Bidder or Seller account required.'))
-    listing_id = request.args.get('item')
-    seller_email = request.args.get('seller')
+    listing_id = request.args.get('item') or request.form.get('item')
+    seller_email = request.args.get('seller') or request.form.get('seller')
+    source = request.args.get('source') or request.form.get('source') or 'bidder'
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -1061,7 +1062,7 @@ def item_bid():
 
 
         print("Bid:", bid_price)
-        #after clicking the bid button on modal then reload the page with new information
+        # after clicking the bid button on modal then reload the page with new information
         return render_template(
             'listing-details-bidder.html',
             item=item,
@@ -1069,11 +1070,11 @@ def item_bid():
             current_price=highest_bid,
             avg_rating=avg_rating,
             rating_count=rating_count,
-            error = error,
-            in_watchlist = in_watchlist
+            error=error,
+            in_watchlist=in_watchlist,
+            source=source
         )
     connection.close()
-    #print(current_bid_count)
     return render_template(
         'listing-details-bidder.html',
         item=item,
@@ -1081,7 +1082,9 @@ def item_bid():
         current_price=highest_bid,
         avg_rating=avg_rating,
         rating_count=rating_count,
-        in_watchlist=in_watchlist
+        error=None,
+        in_watchlist=in_watchlist,
+        source=source
     )
 
 @app.route('/contact-helpdesk', methods=['GET', 'POST'])

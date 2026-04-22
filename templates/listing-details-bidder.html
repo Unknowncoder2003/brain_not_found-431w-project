@@ -75,7 +75,13 @@
 
             <div class="item-header d-flex justify-content-between align-items-start">
                 <div>
-                    <button onclick="history.back()" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1; text-decoration: none;">&larr; Go Back</button>
+                    {% if source == 'my-bids' %}
+                        <a href="/my-bids" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to My Bids</a>
+                    {% elif source == 'watchlist' %}
+                        <a href="/watchlist" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to Watchlist</a>
+                    {% else %}
+                        <a href="/bidder" class="btn btn-sm btn-link p-0 mb-2" style="color: #1e4fa1; text-decoration: none;">&larr; Go Back to Dashboard</a>
+                    {% endif %}
                     <h1 class="h3 mb-1">{{ item[3] }}</h1> <p class="text-muted">Listing ID: #{{ item[1] }} | Seller: {{ item[0] }}</p>
                 </div>
 
@@ -155,6 +161,9 @@
                                                 </button>
                                               </div>
                                               <form method="POST">
+                                                <input type="hidden" name="item" value="{{ item[1] }}">
+                                                <input type="hidden" name="seller" value="{{ item[0] }}">
+                                                <input type="hidden" name="source" value="{{ source }}">
                                               <div class="modal-body">
                                                   {% if error %}
                                                       <div class="alert alert-danger">

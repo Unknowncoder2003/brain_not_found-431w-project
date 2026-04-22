@@ -156,7 +156,7 @@
                                 </td>
 
                                 <td class="d-flex align-items-center" style="gap: 8px;">
-                                    <a href="/item-details?item={{ bid.Listing_ID }}&seller={{ bid.Seller_Email }}"
+                                    <a href="/item-details?item={{ bid.Listing_ID }}&seller={{ bid.Seller_Email }}&source=my-bids"
                                         class="btn btn-sm btn-outline-primary">View</a>
                                     {% if bid.display_status == "Won" and not bid.is_paid %}
                                     <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success">Pay</a>
