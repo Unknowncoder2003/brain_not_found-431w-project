@@ -813,7 +813,7 @@ def get_items(category_name, limit, offset):
 
     query = f'''
         SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
-               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) AS Current_Price,
                A.Status
         FROM Auction_Listings A
         WHERE A.Category IN ({placeholders}) AND A.Status = 1
@@ -833,7 +833,7 @@ def get_all_items(limit, offset):
 
     cursor.execute('''
         SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
-               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) AS Current_Price,
                A.Status
         FROM Auction_Listings A
         WHERE A.Status = 1
@@ -858,10 +858,10 @@ def search_items(search_term, min_price=None, max_price=None, limit=30, offset=0
     params = [keyword, keyword, keyword, keyword, keyword]
 
     if min_price:
-        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) >= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) IS NULL)"
+        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) >= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) IS NULL)"
         params.append(float(min_price))
     if max_price:
-        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) <= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) IS NULL)"
+        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) <= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) IS NULL)"
         params.append(float(max_price))
 
     count_query = f"SELECT COUNT(*) FROM Auction_Listings A {where_clause}"
@@ -870,7 +870,7 @@ def search_items(search_term, min_price=None, max_price=None, limit=30, offset=0
 
     query = f"""
         SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
-               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) AS Current_Price,
                A.Status
         FROM Auction_Listings A
         {where_clause}
