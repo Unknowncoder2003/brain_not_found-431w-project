@@ -163,6 +163,9 @@
                 </ul>
 
                 <form class="form-inline mr-auto" action="/bidder" method="GET">
+                    {% if current_category and current_category != 'All' %}
+                    <input type="hidden" name="category" value="{{ current_category }}">
+                    {% endif %}
                     <input class="form-control mr-sm-2" style="width: 400px;" type="search" name="search"
                         placeholder="Search items..." aria-label="Search" value="{{ search_term }}">
 

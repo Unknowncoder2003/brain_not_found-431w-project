@@ -845,12 +845,9 @@ def bidder():
     per_page = 30
     offset = (page - 1) * per_page
 
-    # Trigger search if ANY keyword or price filter is provided
-    if search_term or min_price or max_price:
-        items, total_items = search_items(search_term, min_price=min_price, max_price=max_price, limit=per_page, offset=offset)
-    elif category:
-        # filtering by category and all its subcategories
-        items, total_items = get_items(category, limit=per_page, offset=offset)
+    # Trigger search if ANY filter (keyword, price, or category) is provided
+    if search_term or min_price or max_price or (category and category != 'All'):
+        items, total_items = search_items(search_term, category=category, min_price=min_price, max_price=max_price, limit=per_page, offset=offset)
     else:
         # no filter: showing all active listings
         items, total_items = get_all_items(limit=per_page, offset=offset)
@@ -973,26 +970,40 @@ def get_all_items(limit, offset):
     connection.close()
     return data, total_count
 
-def search_items(search_term, min_price=None, max_price=None, limit=30, offset=0):
+def search_items(search_term, category=None, min_price=None, max_price=None, limit=30, offset=0):
     """
     Comprehensive search engine.
     Matches keyword against Title, Description, Category, and Seller Email.
-    Applies optional price filters based on current highest bid (treating no-bids as satisfying the filter).
+    Applies optional price filters based on current highest bid (treating no-bids as 0).
+    Can filter within a specific category and its descendants.
     """
     connection = get_connection()
     cursor = connection.cursor()
 
-    keyword = f"%{search_term}%"
+    params = []
+    # Start with active status
+    where_conditions = ["A.Status = 1"]
 
-    where_clause = "WHERE (A.Auction_Title LIKE ? OR A.Product_Name LIKE ? OR A.Product_Description LIKE ? OR A.Category LIKE ? OR A.Seller_Email LIKE ?) AND A.Status = 1"
-    params = [keyword, keyword, keyword, keyword, keyword]
+    if category and category != 'All':
+        category_list = get_all_subcategories(category)
+        placeholders = ', '.join(['?'] * len(category_list))
+        where_conditions.append(f"A.Category IN ({placeholders})")
+        params.extend(category_list)
 
-    if min_price:
-        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) >= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) IS NULL)"
+    if search_term and search_term.strip():
+        keyword = f"%{search_term.strip()}%"
+        where_conditions.append("(A.Auction_Title LIKE ? OR A.Product_Name LIKE ? OR A.Product_Description LIKE ? OR A.Category LIKE ? OR A.Seller_Email LIKE ?)")
+        params.extend([keyword, keyword, keyword, keyword, keyword])
+
+    if min_price and str(min_price).strip():
+        where_conditions.append("COALESCE((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email), 0) >= ?")
         params.append(float(min_price))
-    if max_price:
-        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) <= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email) IS NULL)"
+
+    if max_price and str(max_price).strip():
+        where_conditions.append("COALESCE((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID AND seller_email = A.Seller_Email), 0) <= ?")
         params.append(float(max_price))
+
+    where_clause = "WHERE " + " AND ".join(where_conditions)
 
     count_query = f"SELECT COUNT(*) FROM Auction_Listings A {where_clause}"
     cursor.execute(count_query, params)
