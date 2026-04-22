@@ -155,18 +155,17 @@
                                     {% endif %}
                                 </td>
 
-                                <td>
+                                <td class="d-flex align-items-center" style="gap: 8px;">
                                     <a href="/item-details?item={{ bid.Listing_ID }}&seller={{ bid.Seller_Email }}"
                                         class="btn btn-sm btn-outline-primary">View</a>
                                     {% if bid.display_status == "Won" and not bid.is_paid %}
-                                    <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success ml-2">Pay</a>
+                                    <a href="/pay/{{ bid.Listing_ID }}" class="btn btn-sm btn-success">Pay</a>
                                     {% elif bid.display_status == "Won" and bid.is_paid %}
-                                    <button disabled class="btn btn-sm btn-secondary ml-2">Paid</button>
+                                    <button disabled class="btn btn-sm btn-secondary">Paid</button>
                                     {% if bid.Listing_ID in rated_listings %}
-                                    <button disabled class="btn btn-sm btn-secondary ml-2">Rate</button>
+                                    <button disabled class="btn btn-sm btn-secondary">Rate</button>
                                     {% else %}
-
-                                    <button class="btn btn-sm btn-danger ml-2" data-toggle="modal"
+                                    <button class="btn btn-sm btn-danger" data-toggle="modal"
                                         data-target="#rateModal{{ bid.Listing_ID }}">
                                         Rate
                                     </button>
