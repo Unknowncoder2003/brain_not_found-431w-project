@@ -1085,7 +1085,7 @@ def item_bid():
         if cursor.fetchone():
             in_watchlist = True
 
-    #---check for consecutive bidding
+    #check for consecutive bidding
     #getting the email for highest bidder
 
     #for adding a price to the bids, when clicking the button
@@ -1172,7 +1172,7 @@ def item_bid():
                 ''', (new_auction_status, listing_id, seller_email))
                 connection.commit()
 
-                # --- Send notifications to all bidders and the seller ---
+                #Send notifications to all bidders and the seller
                 auction_title = item[3]  # Auction_Title
 
                 # Get all unique bidders on this listing
