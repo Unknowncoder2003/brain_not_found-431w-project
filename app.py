@@ -978,6 +978,7 @@ def item_bid():
         # Prevent seller from bidding on their own item
         if user_email == seller_email:
             error = "You cannot bid on your own item."
+            connection.close()
             return render_template(
                 'listing-details-bidder.html',
                 item=item,
@@ -1007,6 +1008,7 @@ def item_bid():
             latest_bidder_email = cursor.fetchone()[0]
             if user_email == latest_bidder_email:
                 error = "You recently bid this item, wait for another bidder"
+                connection.close()
                 return render_template(
                     'listing-details-bidder.html',
                     item=item,
@@ -1055,13 +1057,13 @@ def item_bid():
             item = list(item)
             item[9] = new_status
             item = tuple(item)
-            connection.close()
         else:
             print("our price is less than or equal to the current bidding limit put in another one")
             error = "Your price is less than or equal to the current bid put in another one"
 
 
         print("Bid:", bid_price)
+        connection.close()
         # after clicking the bid button on modal then reload the page with new information
         return render_template(
             'listing-details-bidder.html',
@@ -1849,7 +1851,6 @@ def register_page():
 
 @app.route('/my-bids', methods=['GET','POST'])
 def my_bids():
-    sync_listing_statuses()
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'bidder' not in roles:
@@ -1963,7 +1964,6 @@ def my_bids():
 """The dashboard for sellers to view their listings"""
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
-    sync_listing_statuses()
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'seller' not in roles:
@@ -2334,7 +2334,6 @@ def post_item():
     return render_template('post-item.html', category_tree=category_tree,email = user_email)
 @app.route('/watchlist', methods=['GET'])
 def watchlist():
-    sync_listing_statuses()
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'bidder' not in roles:
