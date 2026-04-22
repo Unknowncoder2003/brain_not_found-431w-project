@@ -1941,8 +1941,9 @@ def my_bids():
                       FROM seller_ratings
                    ''')
     auction_id = cursor.fetchall()
+    rated_listings = {row[0] for row in auction_id}
     connection.close()
-    return render_template('my-bids.html', email=user_email, listings=processed_bids, auction_id = auction_id)
+    return render_template('my-bids.html', email=user_email, listings=processed_bids, rated_listings = rated_listings)
 
 
 
