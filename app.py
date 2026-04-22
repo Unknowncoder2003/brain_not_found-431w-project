@@ -923,7 +923,7 @@ def item_bid():
 
     # Auto-repair: If max bids reached but status is still Active (1), mark as Sold (2)
     if current_bid_count >= item[8] and item[9] == 1:
-        cursor.execute('UPDATE Auction_Listings SET Status = 2 WHERE Listing_ID = ?', (listing_id,))
+        cursor.execute('UPDATE Auction_Listings SET Status = 2 WHERE Listing_ID = ? AND Seller_Email = ?', (listing_id, seller_email))
         connection.commit()
         # Refresh the item object after update
         cursor.execute('SELECT * FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
@@ -994,16 +994,16 @@ def item_bid():
             cursor.execute('''
                            SELECT MAX(bid_id)
                            FROM Bids
-                           WHERE listing_id = ?
-                           ''', (listing_id,))
+                           WHERE listing_id = ? AND seller_email = ?
+                           ''', (listing_id, seller_email))
             latest_bidder = cursor.fetchone()[0]
 
             cursor.execute('''
                            SELECT bidder_email
                            FROM Bids
-                           WHERE listing_id = ?
+                           WHERE listing_id = ? AND seller_email = ?
                              and bid_id = ?
-                           ''', (listing_id, latest_bidder))
+                           ''', (listing_id, seller_email, latest_bidder))
             latest_bidder_email = cursor.fetchone()[0]
             if user_email == latest_bidder_email:
                 error = "You recently bid this item, wait for another bidder"
@@ -1949,11 +1949,12 @@ def my_bids():
 
     connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute('''SELECT auction_id 
+    cursor.execute('''SELECT auction_id, seller_email 
                       FROM seller_ratings
-                   ''')
-    auction_id = cursor.fetchall()
-    rated_listings = {row[0] for row in auction_id}
+                      WHERE bidder_email = ?
+                   ''', (user_email,))
+    rating_rows = cursor.fetchall()
+    rated_listings = {(row[0], row[1]) for row in rating_rows}
     connection.close()
     return render_template('my-bids.html', email=user_email, listings=processed_bids, rated_listings = rated_listings)
 
@@ -2083,7 +2084,7 @@ def deactivate_listing(seller_email, listing_id):
         max_bids_row = cursor.fetchone()
         max_bids = max_bids_row[0] if max_bids_row else 0
 
-        cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ?', (listing_id,))
+        cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ? AND seller_email = ?', (listing_id, seller_email))
         bid_count = cursor.fetchone()[0]
 
         remaining_bids = max(0, max_bids - bid_count)
@@ -2132,7 +2133,7 @@ def edit_listing(seller_email, listing_id):
         connection.close()
         return "Error: Cannot edit an item that is inactive, sold, or ended.", 400
 
-    cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ?', (listing_id,))
+    cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ? AND seller_email = ?', (listing_id, seller_email))
     if cursor.fetchone()[0] > 0:
         connection.close()
         return "Error: Cannot edit an active listing that already has bids.", 400
@@ -2183,13 +2184,13 @@ def edit_listing(seller_email, listing_id):
         cursor.execute('''
             UPDATE Auction_Listings
             SET Status = CASE
-                WHEN (SELECT MAX(bid_price) FROM Bids WHERE listing_id = ?) >= Reserve_Price THEN 2
+                WHEN (SELECT MAX(bid_price) FROM Bids WHERE listing_id = ? AND seller_email = ?) >= Reserve_Price THEN 2
                 ELSE 3
             END
-            WHERE Listing_ID = ?
-              AND (SELECT COUNT(*) FROM Bids WHERE listing_id = ?) >= Max_bids
+            WHERE Listing_ID = ? AND Seller_Email = ?
+              AND (SELECT COUNT(*) FROM Bids WHERE listing_id = ? AND seller_email = ?) >= Max_bids
               AND Status = 1
-        ''', (listing_id, listing_id, listing_id))
+        ''', (listing_id, seller_email, listing_id, seller_email, listing_id, seller_email))
 
         connection.commit()
         connection.close()
@@ -2366,7 +2367,7 @@ def watchlist():
         
         conn2 = get_connection()
         cur2 = conn2.cursor()
-        cur2.execute("SELECT MAX(Bid_price) FROM Bids WHERE listing_id = ?", (item['Listing_ID'],))
+        cur2.execute("SELECT MAX(Bid_price) FROM Bids WHERE listing_id = ? AND seller_email = ?", (item['Listing_ID'], item['Seller_Email']))
         highest = cur2.fetchone()[0]
         item['Current_High_Bid'] = highest if highest else 0
         conn2.close()
@@ -2437,6 +2438,10 @@ def pay_item_get(listing_id):
     if not user_email or 'bidder' not in roles:
         return redirect(url_for('authenticate', error='Access denied. Bidder account required.'))
 
+    seller_email = request.args.get('seller')
+    if not seller_email:
+        return redirect(url_for('my_bids', error='Seller context missing.'))
+
     connection = get_connection()
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
@@ -2445,8 +2450,8 @@ def pay_item_get(listing_id):
     cursor.execute('''
         SELECT Seller_Email, Auction_Title, Product_Name
         FROM Auction_Listings
-        WHERE Listing_ID = ? AND Status = 2
-    ''', (listing_id,))
+        WHERE Listing_ID = ? AND Seller_Email = ? AND Status = 2
+    ''', (listing_id, seller_email))
     item = cursor.fetchone()
     if not item:
         connection.close()
@@ -2456,8 +2461,8 @@ def pay_item_get(listing_id):
     cursor.execute('''
         SELECT MAX(bid_price)
         FROM Bids
-        WHERE listing_id = ? AND bidder_email = ?
-    ''', (listing_id, user_email))
+        WHERE listing_id = ? AND seller_email = ? AND bidder_email = ?
+    ''', (listing_id, seller_email, user_email))
     amount_owed = cursor.fetchone()[0] or 0.0
 
     # Get user credit card
