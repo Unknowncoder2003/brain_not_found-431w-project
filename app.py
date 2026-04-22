@@ -2146,7 +2146,11 @@ def edit_listing(seller_email, listing_id):
         desc = request.form['description']
         qty = request.form['quantity']
         reserve = request.form['reserve']
-        max_b = request.form['max_bids']
+        max_b = int(request.form['max_bids'])
+        
+        if max_b < 1:
+            connection.close()
+            return "Error: Max Bids must be at least 1.", 400
 
         cursor.execute('SELECT 1 FROM Categories WHERE category_name = ?', (cat,))
         if not cursor.fetchone():
@@ -2283,6 +2287,9 @@ def post_item():
         qty = int(request.form.get('quantity'))
         reserve = float(request.form.get('reserve'))
         max_b = int(request.form.get('max_bids'))
+        
+        if max_b < 1:
+            return "Error: Max Bids must be at least 1.", 400
 
         data = [title, p_name, cat, desc, qty, reserve, max_b]
         if any(v is None or v == "" for v in data):
