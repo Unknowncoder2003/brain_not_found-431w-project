@@ -140,6 +140,23 @@
                         Bidder: <strong>{{ user['first_name'] if user and user['first_name'] else '' }}</strong>
                     </span>
                 </li>
+                {% if session.get('roles') %}
+                    {% if 'bidder' in session['roles'] and request.path != '/bidder' %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-primary ml-2" href="/bidder">Switch to Bidder</a>
+                    </li>
+                    {% endif %}
+                    {% if 'seller' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
+                    </li>
+                    {% endif %}
+                    {% if 'helpdesk' in session['roles'] %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
+                    </li>
+                    {% endif %}
+                {% endif %}
                 <li class="nav-item">
                     <a class="btn btn-sm btn-outline-danger ml-2" href="/login">Logout</a>
                 </li>

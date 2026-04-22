@@ -20,6 +20,22 @@ app.secret_key = 'super_secret_nittany_key_that_nobody_will_know'  # for the ses
 DB_NAME = 'database.db'
 host = 'http://127.0.0.1:5000/'
 
+@app.before_request
+def ensure_roles_loaded():
+    """Ensure that the session['roles'] list is always available for logged-in users."""
+    if 'email' in session and 'roles' not in session:
+        connection = get_connection()
+        cursor = connection.cursor()
+        roles = []
+        cursor.execute("SELECT 1 FROM Helpdesk WHERE email = ?", (session['email'],))
+        if cursor.fetchone(): roles.append('helpdesk')
+        cursor.execute("SELECT 1 FROM Sellers WHERE email = ?", (session['email'],))
+        if cursor.fetchone(): roles.append('seller')
+        cursor.execute("SELECT 1 FROM Bidders WHERE email = ?", (session['email'],))
+        if cursor.fetchone(): roles.append('bidder')
+        connection.close()
+        session['roles'] = roles
+
 
 def get_connection():
     """
@@ -105,6 +121,8 @@ def password_to_hash_checker(email, password):
 
 
 def find_user_html(email):
+    """Find the landing page the user should go to
+    If a user has multiple roles the priority is: Helpdesk, Seller, Bidder"""
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -204,7 +222,7 @@ def seller():
         rating_count=rating_count,
         balance = balance
     )
-
+"""The main Dashboard for Sellers."""
 @app.route('/seller-account', methods=['GET', 'POST'])
 def seller_account():
     user_email = session.get('email')
@@ -662,8 +680,9 @@ def seller_profile():
 @app.route('/bidder', methods=['GET'])
 def bidder():
     """
-    The main Dashboard for Bidders. 
-    This page lists available auctions, handles the search bar, and applies category filters.
+    Main Dashboard for Bidders.
+    Implements dynamic category traversal, advanced keyword/price search,
+    and server-side pagination to maintain high performance.
     """
     user_email = session.get('email')
     roles = session.get('roles', [])
@@ -684,20 +703,23 @@ def bidder():
     cate = get_category_tree()
 
     category = request.args.get('category')
-    search_term = request.args.get('search')
+    # Extract and clean search parameters
+    search_term = request.args.get('search', '').strip()
+    min_price = request.args.get('min_price', '').strip()
+    max_price = request.args.get('max_price', '').strip()
 
-    if search_term and search_term.strip():
-        items = search_items(search_term.strip())
-    elif category:
-        items = get_items(category)
-    else:
-        items = get_all_items()
     page = request.args.get('page', 1, type=int)
     per_page = 30
     offset = (page - 1) * per_page
-    
-    total_items = len(items)
-    items = items[offset : offset + per_page]
+
+    # Trigger search if ANY keyword or price filter is provided
+    if search_term or min_price or max_price:
+        items, total_items = search_items(search_term, min_price=min_price, max_price=max_price, limit=per_page, offset=offset)
+    elif category:
+        items, total_items = get_items(category, limit=per_page, offset=offset)
+    else:
+        items, total_items = get_all_items(limit=per_page, offset=offset)
+
     total_pages = (total_items + per_page - 1) // per_page
     
     pagination_pages = []
@@ -711,11 +733,18 @@ def bidder():
         else:
             pagination_pages = [1, None, page - 1, page, page + 1, None, total_pages]
     
+    current_category = category if category else 'All'
+    subcategories = get_subcategories(current_category)
+    breadcrumbs = get_category_path(current_category)
+
     connection.close()
     return render_template(
         'bidder.html',
         first_name=fname,
-        categories=cate,
+        categories=get_category_tree(), # Keeping for legacy dropdown if needed
+        subcategories=subcategories,
+        breadcrumbs=breadcrumbs,
+        current_category=current_category,
         items=items,
         search_term=search_term if search_term else "",
         page=page,
@@ -760,54 +789,92 @@ def get_all_subcategories(target_category):
     return all_names
 
 
-def get_items(category_name):
-    """fetch items from the selected category AND all subcategories."""
+def get_items(category_name, limit, offset):
+    """
+    Fetches active listings for a specific category AND all its subcategories.
+    Implements SQL-level pagination (LIMIT/OFFSET) and returns total count for UI pagination logic.
+    """
     # Get the full list of related categories
     category_list = get_all_subcategories(category_name)
     connection = get_connection()
     cursor = connection.cursor()
     placeholders = ', '.join(['?'] * len(category_list))
-    #query = f'SELECT Auction_Title, Listing_ID FROM Auction_Listings WHERE Category IN ({placeholders})'
+
+    count_query = f'SELECT COUNT(*) FROM Auction_Listings WHERE Category IN ({placeholders}) AND Status = 1'
+    cursor.execute(count_query, category_list)
+    total_count = cursor.fetchone()[0]
+
     query = f'''
-        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
-        FROM Auction_Listings
-        WHERE Category IN ({placeholders}) AND Status = 1
+        SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               A.Status
+        FROM Auction_Listings A
+        WHERE A.Category IN ({placeholders}) AND A.Status = 1
+        LIMIT ? OFFSET ?
     '''
-    cursor.execute(query, category_list)
+    cursor.execute(query, category_list + [limit, offset])
     data = cursor.fetchall()
     connection.close()
-    return data
+    return data, total_count
 
-def get_all_items():
+def get_all_items(limit, offset):
     connection = get_connection()
     cursor = connection.cursor()
-    #items = cursor.execute('SELECT Auction_Title, Listing_ID FROM Auction_Listings')
-    #data = items.fetchall()
+
+    cursor.execute('SELECT COUNT(*) FROM Auction_Listings WHERE Status = 1')
+    total_count = cursor.fetchone()[0]
+
     cursor.execute('''
-        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
-        FROM Auction_Listings
-        WHERE Status = 1
-    ''')
+        SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               A.Status
+        FROM Auction_Listings A
+        WHERE A.Status = 1
+        LIMIT ? OFFSET ?
+    ''', (limit, offset))
     data = cursor.fetchall()
     connection.close()
-    return data
+    return data, total_count
 
-def search_items(search_term):
+def search_items(search_term, min_price=None, max_price=None, limit=30, offset=0):
+    """
+    Comprehensive search engine.
+    Matches keyword against Title, Description, Category, and Seller Email.
+    Applies optional price filters based on current highest bid (treating no-bids as satisfying the filter).
+    """
     connection = get_connection()
     cursor = connection.cursor()
 
     keyword = f"%{search_term}%"
 
-    cursor.execute("""
-        SELECT Seller_Email, Listing_ID, Auction_Title, Product_Name
-        FROM Auction_Listings
-        WHERE (Auction_Title LIKE ? OR Product_Name LIKE ?)
-          AND Status = 1
-    """, (keyword, keyword))
+    where_clause = "WHERE (A.Auction_Title LIKE ? OR A.Product_Name LIKE ? OR A.Product_Description LIKE ? OR A.Category LIKE ? OR A.Seller_Email LIKE ?) AND A.Status = 1"
+    params = [keyword, keyword, keyword, keyword, keyword]
 
+    if min_price:
+        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) >= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) IS NULL)"
+        params.append(float(min_price))
+    if max_price:
+        where_clause += " AND ((SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) <= ? OR (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) IS NULL)"
+        params.append(float(max_price))
+
+    count_query = f"SELECT COUNT(*) FROM Auction_Listings A {where_clause}"
+    cursor.execute(count_query, params)
+    total_count = cursor.fetchone()[0]
+
+    query = f"""
+        SELECT A.Seller_Email, A.Listing_ID, A.Auction_Title, A.Product_Name,
+               (SELECT MAX(bid_price) FROM Bids WHERE listing_id = A.Listing_ID) AS Current_Price,
+               A.Status
+        FROM Auction_Listings A
+        {where_clause}
+        LIMIT ? OFFSET ?
+    """
+    params.extend([limit, offset])
+
+    cursor.execute(query, params)
     data = cursor.fetchall()
     connection.close()
-    return data
+    return data, total_count
 
 @app.route('/item-details', methods=['POST', 'GET'])
 def item_bid():
@@ -1849,6 +1916,10 @@ def my_bids():
     auction_id = cursor.fetchall()
     connection.close()
     return render_template('my-bids.html', email=user_email, listings=processed_bids, auction_id = auction_id)
+
+
+
+"""The dashboard for sellers to view their listings"""
 @app.route('/my-listings', methods=['POST', 'GET'])
 def my_listing():
     user_email = session.get('email')
@@ -1940,9 +2011,13 @@ def listing_details(seller_email, listing_id):
         rating_count=rating_count
     )
 
-
+"""The endpoint for deactivating a listing"""
 @app.route('/deactivate-listing/<seller_email>/<int:listing_id>', methods=['POST'])
 def deactivate_listing(seller_email, listing_id):
+    """
+    Handles the removal of a listing from the market.
+    Enforces audit logging by requiring a removal reason and calculating remaining bid capacity.
+    """
     user_email = session.get('email')
     roles = session.get('roles', [])
     if not user_email or 'seller' not in roles:
@@ -1951,9 +2026,25 @@ def deactivate_listing(seller_email, listing_id):
     if user_email != seller_email:
         return redirect(url_for('my_listing'))
 
+    removal_reason = request.form.get('removal_reason', 'No reason provided')
+
     try:
         connection = get_connection()
         cursor = connection.cursor()
+
+        cursor.execute('SELECT Max_bids FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
+        max_bids_row = cursor.fetchone()
+        max_bids = max_bids_row[0] if max_bids_row else 0
+
+        cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ?', (listing_id,))
+        bid_count = cursor.fetchone()[0]
+
+        remaining_bids = max(0, max_bids - bid_count)
+
+        cursor.execute('''
+            INSERT INTO Listing_Removals (seller_email, listing_id, remaining_bids, removal_reason)
+            VALUES (?, ?, ?, ?)
+        ''', (seller_email, listing_id, remaining_bids, removal_reason))
 
         cursor.execute('''
             UPDATE Auction_Listings
@@ -1971,13 +2062,35 @@ def deactivate_listing(seller_email, listing_id):
     return redirect(request.referrer)
 
 
+"""Allow sellers to edit their listings"""
 @app.route('/edit-listing/<seller_email>/<int:listing_id>', methods=['GET', 'POST'])
 def edit_listing(seller_email, listing_id):
+    """
+    Allows sellers to update listing details.
+    SECURITY: blocks edits if the listing has already received bids
+    or is no longer in an 'Active' state.
+    """
     user_email = session.get('email')
     roles = session.get('roles', [])
 
     if not user_email or user_email != seller_email or 'seller' not in roles:
         return redirect(url_for('authenticate', error='Access denied. Seller account required.'))
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute('SELECT Status FROM Auction_Listings WHERE Seller_Email = ? AND Listing_ID = ?', (seller_email, listing_id))
+    item_status = cursor.fetchone()
+    if not item_status or item_status[0] != 1:
+        connection.close()
+        return "Error: Cannot edit an item that is inactive, sold, or ended.", 400
+
+    cursor.execute('SELECT COUNT(*) FROM Bids WHERE listing_id = ?', (listing_id,))
+    if cursor.fetchone()[0] > 0:
+        connection.close()
+        return "Error: Cannot edit an active listing that already has bids.", 400
+    connection.close()
+
 
     if request.method == 'POST':
         connection = get_connection()
@@ -2046,8 +2159,51 @@ def edit_listing(seller_email, listing_id):
         return render_template('edit-listing.html', item=item, category_tree=category_tree)
 
 
+def get_subcategories(parent_name):
+    """
+    Dynamically fetches immediate child categories for the given parent.
+    Used for level-by-level hierarchy traversal without loading the full tree.
+    """
+    connection = get_connection()
+    cursor = connection.cursor()
+    # If parent is None or 'All', we look for 'Root'
+    if not parent_name or parent_name == 'All':
+        target_parent = 'Root'
+    else:
+        target_parent = parent_name
+
+    cursor.execute('SELECT category_name FROM Categories WHERE parent_category = ?', (target_parent,))
+    rows = cursor.fetchall()
+    connection.close()
+    return [row[0] for row in rows]
+
+def get_category_path(current_category):
+    """
+    Recursive path builder to generate breadcrumb navigation trails.
+    """
+    if not current_category or current_category == 'All':
+        return []
+
+    path = []
+    curr = current_category
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    while curr and curr != 'Root':
+        path.append(curr)
+        cursor.execute('SELECT parent_category FROM Categories WHERE category_name = ?', (curr,))
+        row = cursor.fetchone()
+        if row:
+            curr = row[0]
+        else:
+            break
+
+    connection.close()
+    path.reverse()
+    return path
+
 def get_category_tree():
-    """Helper function to get the category tree"""
+    """Helper function to get the category tree (used for dropdowns)"""
     connection = get_connection()
     cursor = connection.cursor()
     cursor.execute('SELECT category_name, parent_category FROM Categories')

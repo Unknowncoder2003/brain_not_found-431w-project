@@ -120,10 +120,17 @@
                     <li class="nav-item">
                         <span class="nav-link text-muted mb-0">Bidder: <strong>{{ first_name }}</strong></span>
                     </li>
-                    {% if session.get('roles') and 'seller' in session['roles'] %}
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
-                    </li>
+                    {% if session.get('roles') %}
+                        {% if 'seller' in session['roles'] %}
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-info ml-2" href="/seller">Switch to Seller</a>
+                        </li>
+                        {% endif %}
+                        {% if 'helpdesk' in session['roles'] %}
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-outline-warning ml-2" href="/helpdesk">Switch to HelpDesk</a>
+                        </li>
+                        {% endif %}
                     {% endif %}
                     <li class="nav-item">
                         <a class="btn btn-sm btn-outline-danger ml-2" href="/logout">Logout</a>
@@ -138,39 +145,30 @@
             <div class="collapse navbar-collapse" id="searchNavbar">
 
                 <!-- This macro dynamically builds out our category trees。 It calls itself to build child categories if they exist. -->
-                {% macro render_category(category) %}
-                <li class="dropdown-submenu">
-                    <a class="dropdown-item {% if category.children %}dropdown-toggle{% endif %}"
-                        href="/bidder?category={{ category.name | urlencode }}">
-                        <!-- Encode the URL so Flask receives the raw category string perfectly. -->
-                        {{ category.name }}
-                    </a>
-                    {% if category.children %}
-                    <ul class="dropdown-menu">
-                        {% for child in category.children %}
-                        {{ render_category(child) }}
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </li>
-                {% endmacro %}
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            All...
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
-                            {% for cate in categories %}
-                            {{ render_category(cate) }}
-                            {% endfor %}
-                        </ul>
+                    <li class="nav-item">
+                        <span class="nav-link text-muted font-weight-bold">Browsing: {{ current_category }}</span>
                     </li>
                 </ul>
 
                 <form class="form-inline mr-auto" action="/bidder" method="GET">
-                    <input class="form-control mr-sm-2" style="width: 600px;" type="search" name="search"
-                        placeholder="Search" aria-label="Search" value="{{ search_term }}">
+                    <input class="form-control mr-sm-2" style="width: 400px;" type="search" name="search"
+                        placeholder="Search items..." aria-label="Search" value="{{ search_term }}">
+                    
+                    <div class="input-group mr-sm-2" style="width: 130px;">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <input type="number" class="form-control" name="min_price" placeholder="Min" min="0" step="0.01" value="{{ request.args.get('min_price', '') }}">
+                    </div>
+
+                    <div class="input-group mr-sm-2" style="width: 130px;">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <input type="number" class="form-control" name="max_price" placeholder="Max" min="0" step="0.01" value="{{ request.args.get('max_price', '') }}">
+                    </div>
+
                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
                 </form>
             </div>
@@ -179,20 +177,38 @@
 
 
 
-    <!-- welcome information -->
-    <div class="container">
+    <!-- Breadcrumbs and Subcategories -->
+    <div class="container mt-4">
         <div class="row justify-content-center">
-            <div class="col-md-10 dashboard-card">
-                <h2 class="welcome-header">Hi, {{ first_name }}!</h2>
+            <div class="col-md-10">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" style="background: transparent; padding: 0 0 1rem 0; border-bottom: 1px solid #eee;">
+                        <li class="breadcrumb-item"><a href="/bidder">All</a></li>
+                        {% for crumb in breadcrumbs %}
+                            {% if loop.last %}
+                                <li class="breadcrumb-item active" aria-current="page">{{ crumb }}</li>
+                            {% else %}
+                                <li class="breadcrumb-item"><a href="/bidder?category={{ crumb | urlencode }}">{{ crumb }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ol>
+                </nav>
 
-                <p class="lead">Welcome to your Bidder dashboard. </p>
-                <p class="lead">You can navigate through the categories by clicking
-                    the <b>All..</b> button at the upper left corner.</b></p>
-                <p class="lead">You can also search for items by typing in the search bar.</b></p>
+                {% if subcategories %}
+                <div class="mt-2 mb-4">
+                    <h5 class="text-muted small font-weight-bold text-uppercase mb-3" style="letter-spacing: 1px;">Explore Subcategories</h5>
+                    <div class="d-flex flex-wrap">
+                        {% for sub in subcategories %}
+                        <a href="/bidder?category={{ sub | urlencode }}" class="btn btn-sm btn-outline-primary mr-2 mb-2 px-3" style="border-radius: 15px; font-weight: 500;">
+                            {{ sub }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
-
     <!--place to display the items -->
     <div class="container mt-4">
         <div class="row justify-content-center">
@@ -208,10 +224,27 @@
                         <div class="card h-100">
                             <div class="card-body text-center d-flex flex-column justify-content-between">
                                 <div>
-                                    <h5 class="card-title"
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        {% if i[5] == 1 %}
+                                            <span class="badge badge-success" style="font-size: 0.8rem;">Active</span>
+                                        {% elif i[5] == 0 %}
+                                            <span class="badge badge-secondary" style="font-size: 0.8rem;">Inactive</span>
+                                        {% elif i[5] == 2 %}
+                                            <span class="badge badge-info" style="font-size: 0.8rem;">Sold</span>
+                                        {% elif i[5] == 3 %}
+                                            <span class="badge badge-warning" style="font-size: 0.8rem;">Ended</span>
+                                        {% endif %}
+                                        {% if i[4] is not none %}
+                                            <h5 class="mb-0 text-success font-weight-bold">${{ "{:,.2f}".format(i[4] | float) }}</h5>
+                                        {% else %}
+                                            <h5 class="mb-0 text-secondary font-weight-bold" style="font-size: 1rem;">No Bids</h5>
+                                        {% endif %}
+                                    </div>
+                                    <h5 class="card-title mt-2"
                                         style="color: #1e4fa1; font-weight: 700; font-size: 1.15rem;">{{ i[2] }}</h5>
-                                    <h6 class="card-subtitle mb-4 text-muted"
+                                    <h6 class="card-subtitle mb-2 text-muted"
                                         style="font-size: 0.9rem; letter-spacing: 0.5px;">{{ i[3] }}</h6>
+                                    <p class="small text-muted mb-4">Sold by: <br>{{ i[0] }}</p>
                                 </div>
                                 <form action="/item-details" method="GET" class="mt-auto">
                                     <input type="hidden" name="item" value="{{ i[1] }}">
@@ -237,7 +270,7 @@
 
                     {% for p in pagination_pages %}
                         {% if p %}
-                            <a href="/bidder?page={{ p }}{% if request.args.get('search') %}&search={{ request.args.get('search') | urlencode }}{% endif %}{% if request.args.get('category') %}&category={{ request.args.get('category') | urlencode }}{% endif %}"
+                            <a href="/bidder?page={{ p }}{% if request.args.get('search') %}&search={{ request.args.get('search') | urlencode }}{% endif %}{% if request.args.get('category') %}&category={{ request.args.get('category') | urlencode }}{% endif %}{% if request.args.get('min_price') %}&min_price={{ request.args.get('min_price') | urlencode }}{% endif %}{% if request.args.get('max_price') %}&max_price={{ request.args.get('max_price') | urlencode }}{% endif %}"
                                 class="btn btn-sm {% if p == page %}btn-primary{% else %}btn-outline-primary{% endif %} mx-2"
                                 style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.2s;">
                                 {{ p }}
